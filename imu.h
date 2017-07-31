@@ -8,9 +8,9 @@
 #ifndef IMU_H_
 #define IMU_H_
 
-#include <math.h>
 #include <inttypes.h>
 
+#include <math.h>
 #include "vector2.h"
 #include "vector3.h"
 #include "matrix3.h"
