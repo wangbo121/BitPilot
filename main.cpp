@@ -12,6 +12,7 @@ using namespace std;
 #include "pid.h"
 #include "vector2.h"
 #include "vector3.h"
+#include "matrix3.h"
 
 
 
@@ -45,9 +46,9 @@ int main()
 	cout<<"vector3_result.y="<<vector3_result.y<<endl;
 	cout<<"vector3_result.z="<<vector3_result.z<<endl;
 
+	Matrix3i m3(1,2,3,4,5,6,7,8,9);
 
-
-
+	cout<<"m3.12="<<m3.a.y<<endl;
 
 	return 0;
 }
