@@ -125,6 +125,8 @@ public:
 
 protected:
 
+	Vector3f _offset;
+
 	float               _declination;
 
 	bool               _null_init_done;        ///< first-time-around flag used by offset nulling
