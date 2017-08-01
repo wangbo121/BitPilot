@@ -111,13 +111,6 @@ class AP_RC_Channel{
 
 
 
-float AP_RC_Channel::constrain(float m,float a,float b)
-{
-	if(m<=a)        m=a;
-	else if(m>=b)   m=b;
-
-	return m;
-}
 
 
 

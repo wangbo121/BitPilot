@@ -234,3 +234,12 @@ AP_RC_Channel::norm_output()
 		return (float)(radio_out - radio_trim) / (float)(radio_max  - radio_trim);
 }
 
+float
+AP_RC_Channel::constrain(float m,float a,float b)
+{
+	if(m<=a)        m=a;
+	else if(m>=b)   m=b;
+
+	return m;
+}
+

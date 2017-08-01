@@ -15,6 +15,19 @@ using namespace std;
 #include "matrix3.h"
 
 
+#include "global.h"
+
+/*
+ * 初始化驾驶仪
+ */
+int init_pilot();
+
+int loop_fast();
+
+int loop_medium();
+
+int loop_slow();
+
 
 int main()
 {
@@ -50,8 +63,41 @@ int main()
 
 	cout<<"m3.12="<<m3.a.y<<endl;
 
+	Global_Pilot g;
+
+	init_pilot();
+
+	loop_fast();
+
+	loop_medium();
+
+	loop_slow();
+
+
+
+
 	return 0;
 }
 
+int init_pilot()
+{
+	return 0;
+}
+
+int loop_fast()
+{
+
+	return 0;
+}
+
+int loop_medium()
+{
+	return 0;
+}
+
+int loop_slow()
+{
+	return 0;
+}
 
 
