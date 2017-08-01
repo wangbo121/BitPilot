@@ -39,6 +39,7 @@ public:
 		_health(1.)
 	{}
 
+
 	// Accessors
 	Vector3f	get_gyro(void) {return _omega_integ_corr; }		// We return the raw gyro vector corrected for bias
 	Vector3f	get_accel(void) { return _accel_vector; }
@@ -107,14 +108,6 @@ private:
 	float		_health;
 	bool		_centripetal;
 };
-
-float AP_DCM::constrain(float m,float a,float b)
-{
-	if(m<=a)        m=a;
-	else if(m>=b)   m=b;
-
-	return m;
-}
 
 
 

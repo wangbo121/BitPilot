@@ -5,5 +5,10 @@
  *      Author: wangbo
  */
 
+#if 0
+void navigate()
+{
 
+}
+#endif
 
