@@ -29,3 +29,13 @@ void Copter::loop()
 
 }
 
+void Copter::set_radio_passthrough(float roll_input, float pitch_input, float throttle_input, float yaw_input)
+{
+#if 0
+    _roll_radio_passthrough = roll_input;
+    _pitch_radio_passthrough = pitch_input;
+    _throttle_radio_passthrough = throttle_input;
+    _yaw_radio_passthrough = yaw_input;
+#endif
+}
+

@@ -9,8 +9,9 @@
 
 int8_t failsafeCounter = 0;		// we wait a second to take over the throttle and send the plane circling
 
+#include "copter.h"
 
-void init_rc_in()
+void Copter::init_rc_in()
 {
 #if 0
 	// set rc reversing
@@ -39,23 +40,23 @@ void init_rc_in()
 #endif
 }
 
-void init_rc_out()
+void Copter::init_rc_out()
 {
-
 #if 0
-	APM_RC.OutputCh(CH_1, 	g.channel_roll.radio_trim);					// Initialization of servo outputs
-	APM_RC.OutputCh(CH_2, 	g.channel_pitch.radio_trim);
-	APM_RC.OutputCh(CH_3, 	g.channel_throttle.radio_min);
-	APM_RC.OutputCh(CH_4, 	g.channel_rudder.radio_trim);
 
-	APM_RC.OutputCh(CH_5, 	g.rc_5.radio_trim);
-	APM_RC.OutputCh(CH_6, 	g.rc_6.radio_trim);
-	APM_RC.OutputCh(CH_7,   g.rc_7.radio_trim);
-    APM_RC.OutputCh(CH_8,   g.rc_8.radio_trim);
+	AP_RC.OutputCh(CH_1, 	g.channel_roll.radio_trim);					// Initialization of servo outputs
+	AP_RC.OutputCh(CH_2, 	g.channel_pitch.radio_trim);
+	AP_RC.OutputCh(CH_3, 	g.channel_throttle.radio_min);
+	AP_RC.OutputCh(CH_4, 	g.channel_rudder.radio_trim);
 
-	APM_RC.Init();		// APM Radio initialization
+	AP_RC.OutputCh(CH_5, 	g.rc_5.radio_trim);
+	AP_RC.OutputCh(CH_6, 	g.rc_6.radio_trim);
+	AP_RC.OutputCh(CH_7,   g.rc_7.radio_trim);
+    AP_RC.OutputCh(CH_8,   g.rc_8.radio_trim);
 
-	APM_RC.OutputCh(CH_1, 	g.channel_roll.radio_trim);					// Initialization of servo outputs
+	AP_RC.Init();		// APM Radio initialization
+
+	AP_RC.OutputCh(CH_1, 	g.channel_roll.radio_trim);					// Initialization of servo outputs
 	APM_RC.OutputCh(CH_2, 	g.channel_pitch.radio_trim);
 	APM_RC.OutputCh(CH_3, 	g.channel_throttle.radio_min);
 	APM_RC.OutputCh(CH_4, 	g.channel_rudder.radio_trim);

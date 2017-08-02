@@ -52,6 +52,7 @@ using namespace std;
 #include "pid.h"            // PID library
 #include "rc.h"         // ArduPilot Mega RC Library
 #include "rc_channel.h"     // RC Channel Library
+#include "motors.h"
 
 // Local modules
 #include "defines.h"
@@ -241,6 +242,7 @@ private:
 //    AP_DCM dcm;
 
     AP_Compass_HMC5843 compass;
+    AP_Motors *motors;
 
     /*
      * 这里得读取gps数据
@@ -888,6 +890,8 @@ private:
      */
 
     void loop_fast();
+
+    void set_radio_passthrough(float roll_input, float pitch_input, float throttle_input, float yaw_input);
 
 
 

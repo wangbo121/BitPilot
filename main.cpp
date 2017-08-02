@@ -9,12 +9,6 @@
 
 Copter copter;
 
-
-
-
-
-
-
 // Read radio
 // ----------
 void read_radio();
