@@ -893,6 +893,29 @@ private:
 
     void set_radio_passthrough(float roll_input, float pitch_input, float throttle_input, float yaw_input);
 
+    void one_second_loop();
+
+    void update_current_flight_mode(void);
+
+    void update_navigation();
+
+    void update_alt();
+
+    void stabilize();
+
+    // uses the yaw from the DCM to give more accurate turns
+    void calc_bearing_error();
+
+
+
+    // write out the servo PWM values
+    // ------------------------------
+    void set_servos_4();
+
+    void init_led();
+    void init_motor();
+    void init_mpu6050();
+
 
 
 

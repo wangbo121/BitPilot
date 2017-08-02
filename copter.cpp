@@ -15,20 +15,6 @@ Copter::Copter(void)
 
 }
 
-void Copter::setup()
-{
-
-}
-
-void Copter::loop()
-{
-
-
-
-
-
-}
-
 void Copter::set_radio_passthrough(float roll_input, float pitch_input, float throttle_input, float yaw_input)
 {
 #if 0

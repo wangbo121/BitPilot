@@ -9,44 +9,6 @@
 
 Copter copter;
 
-// Read radio
-// ----------
-void read_radio();
-
-
-void read_airspeed();
-
-
-
-
-// uses the yaw from the DCM to give more accurate turns
-void calc_bearing_error();
-
-
-void update_alt();
-
-
-
-// custom code/exceptions for flight modes
-// ---------------------------------------
-void update_current_flight_mode();
-
-void stabilize();
-
-// write out the servo PWM values
-// ------------------------------
-void set_servos_4();
-
-/******************************************************/
-/*****************/
-/*
- * 初始化驾驶仪
- */
-int init_pilot();
-int loop_fast();
-int loop_medium();
-int loop_slow();
-
 /******************************************************/
 /*****************/
 #define MAINTASK_TICK_TIME_MS 20
@@ -63,20 +25,6 @@ int maintask_cnt;
 #define TEN_HZ_CNT   5//10hz
 #define FIFTY_HZ_CNT 1//50hz
 
-
-
-void init_led();
-void init_motor();
-void init_mpu6050();
-int init_bitpilot()
-{
-	init_led();
-	init_motor();
-	init_mpu6050();
-
-
-	return 0;
-}
 int main()
 {
 	cout<<"Welcome to BitPilot"<<endl;
@@ -84,7 +32,6 @@ int main()
 	/*
 	 * 初始化工作
 	 */
-	//init_bitpilot();
 	copter.setup();
 
 	/*
@@ -99,48 +46,26 @@ int main()
 		maintask_cnt++;
 
 		copter.loop();
-
-		//copter.loop_fast();
-
-		if(0 == maintask_cnt % ONE_HZ_CNT)
-		{
-			/*
-			 * 1hz的循环
-			 */
-
-			printf("hello \n");
-		}
-
-		if(0 == maintask_cnt % TEN_HZ_CNT)
-		{
-			/*
-			 * 10hz的循环
-			 */
-
-			//copter.compass.read();     // Read magnetometer
-			//copter.compass.calculate(dcm.get_dcm_matrix());  // Calculate heading
-			//copter.compass.null_offsets(dcm.get_dcm_matrix());
-
-
-			// calculate the plane's desired bearing
-			// -------------------------------------
-			//copter.navigate();
-
-			// Read altitude from sensors
-			// ------------------
-			//update_alt();
-
-		}
-
 	}
 
 	return 0;
 }
 
-int init_pilot()
+/*
+ * wangbo20170802
+ * 其实下面这些Copter类的函数的定义是可以放在copter.cpp中的
+ * 但是对于看代码的人来说，可以直接从这里看到函数定义，就不用跳到copter.cpp中去了
+ */
+void Copter::setup()
 {
-	copter.setup();
-	return 0;
+	init_led();
+	init_motor();
+	init_mpu6050();
+}
+
+void Copter::loop()
+{
+
 }
 
 void Copter::loop_fast()
@@ -187,45 +112,51 @@ void Copter::loop_fast()
 	// uses the yaw from the DCM to give more accurate turns
 	calc_bearing_error();
 
-	read_airspeed();
+	//read_airspeed();
 }
 
-void one_second_loop()
+void Copter::read_radio()
+{
+
+}
+
+
+void Copter::one_second_loop()
 {
 	/*
 	 * 一秒钟给地面站发送一组数据--实时数据
 	 */
 }
 
-void update_GPS(void)
+void Copter::update_GPS(void)
 {
 
 }
 
-void update_current_flight_mode(void)
+void Copter::update_current_flight_mode(void)
 {
 
 }
 
-void update_navigation()
+void Copter::update_navigation()
 {
 	// wp_distance is in ACTUAL meters, not the *100 meters we get from the GPS
 	// ------------------------------------------------------------------------
 
 }
 
-void update_alt()
+void Copter::update_alt()
 {
 
 }
 
-void stabilize()
+void Copter::stabilize()
 {
 
 }
 
 // uses the yaw from the DCM to give more accurate turns
-void calc_bearing_error()
+void Copter::calc_bearing_error()
 {
 
 }
@@ -233,28 +164,24 @@ void calc_bearing_error()
 
 // write out the servo PWM values
 // ------------------------------
-void set_servos_4()
+void Copter::set_servos_4()
 {
 
 }
 
-void init_led()
+void Copter::init_led()
 {
 
 }
-void init_motor()
+void Copter::init_motor()
 {
 
 }
-void init_mpu6050()
+void Copter::init_mpu6050()
 {
 
 }
 
-void Copter::read_radio()
-{
-
-}
 
 #if 0
 //不要删除这个，还有参考价值
