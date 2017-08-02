@@ -346,3 +346,11 @@ AP_DCM::constrain(float m,float a,float b)
 	return m;
 }
 
+#if 0
+AP_DCM::AP_DCM()
+{
+
+
+}
+#endif
+

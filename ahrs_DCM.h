@@ -26,6 +26,7 @@
 class AP_DCM
 {
 public:
+#if 1
 	// Constructors
 	AP_DCM(IMU *imu, GPS *&gps, Compass *withCompass = NULL) :
 		_compass(withCompass),
@@ -38,6 +39,9 @@ public:
 		_course_over_ground_y(1),
 		_health(1.)
 	{}
+#endif
+
+	//AP_DCM();
 
 
 	// Accessors
