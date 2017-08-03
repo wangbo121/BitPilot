@@ -65,6 +65,10 @@ AP_RC::init()
 uint16_t
 AP_RC::input_ch(uint8_t ch)
 {
+	/*
+	 * 这里是从hal获取通道的pwm值
+	 */
+
 	switch(ch){
 		case CH_1:
 			return timer1diff;//中断串口服务把数据读入到timer1diff中去，然后这里返回，所以得现获取timer1diff才行

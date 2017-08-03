@@ -61,6 +61,66 @@ void Copter::setup()
 	init_led();
 	init_motor();
 	init_mpu6050();
+
+	/*
+	 * 下面这些初始化，其实应该放在跟地面站连接时
+	 * 地面站的setup按钮里，设置遥控器的最大最小值
+	 * 但是我这里先直接赋值
+	 */
+	g.channel_roll.radio_min = g.channel_roll.radio_in;
+	g.channel_pitch.radio_min = g.channel_pitch.radio_in;
+	g.channel_throttle.radio_min = g.channel_throttle.radio_in;
+	g.channel_rudder.radio_min = g.channel_rudder.radio_in;
+	g.rc_5.radio_min = g.rc_5.radio_in;
+	g.rc_6.radio_min = g.rc_6.radio_in;
+	g.rc_7.radio_min = g.rc_7.radio_in;
+	g.rc_8.radio_min = g.rc_8.radio_in;
+
+	g.channel_roll.radio_max = g.channel_roll.radio_in;
+	g.channel_pitch.radio_max = g.channel_pitch.radio_in;
+	g.channel_throttle.radio_max = g.channel_throttle.radio_in;
+	g.channel_rudder.radio_max = g.channel_rudder.radio_in;
+	g.rc_5.radio_max = g.rc_5.radio_in;
+	g.rc_6.radio_max = g.rc_6.radio_in;
+	g.rc_7.radio_max = g.rc_7.radio_in;
+	g.rc_8.radio_max = g.rc_8.radio_in;
+
+	g.channel_roll.radio_trim = g.channel_roll.radio_in;
+	g.channel_pitch.radio_trim = g.channel_pitch.radio_in;
+	g.channel_rudder.radio_trim = g.channel_rudder.radio_in;
+	// 3 is not trimed
+	g.rc_5.radio_trim = 1500;
+	g.rc_6.radio_trim = 1500;
+	g.rc_7.radio_trim = 1500;
+	g.rc_8.radio_trim = 1500;
+
+	g.channel_roll.radio_min = 1000;
+	g.channel_pitch.radio_min = 1000;
+	g.channel_throttle.radio_min = 1000;
+	g.channel_rudder.radio_min = 1000;
+	g.rc_5.radio_min = 1000;
+	g.rc_6.radio_min = 1000;
+	g.rc_7.radio_min = 1000;
+	g.rc_8.radio_min = 1000;
+
+	g.channel_roll.radio_max = 2000;
+	g.channel_pitch.radio_max = 2000;
+	g.channel_throttle.radio_max = 2000;
+	g.channel_rudder.radio_max = 2000;
+	g.rc_5.radio_max = 2000;
+	g.rc_6.radio_max = 2000;
+	g.rc_7.radio_max = 2000;
+	g.rc_8.radio_max = 2000;
+
+	g.channel_roll.radio_trim = 1500;
+	g.channel_pitch.radio_trim = 1500;
+	g.channel_rudder.radio_trim = 1500;
+	// 3 is not trimed
+	g.rc_5.radio_trim = 1500;
+	g.rc_6.radio_trim = 1500;
+	g.rc_7.radio_trim = 1500;
+	g.rc_8.radio_trim = 1500;
+
 }
 
 void Copter::loop()
