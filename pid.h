@@ -18,6 +18,18 @@ public:
 
 	float 	get_pid(int32_t error, uint16_t dt_ms, float scaler = 1.0);
 
+	int32_t         get_pi(int32_t error, float dt);
+	int32_t         get_p(int32_t error);
+	int32_t         get_i(int32_t error, float dt);
+
+//	// get_pid - get results from pid controller
+//	float       get_pid();
+//	float       get_pi();
+//	float       get_p();
+//	float       get_i();
+//	float       get_d();
+
+
 	/// Reset the PID integrator
 	///
 	void	reset_I();

@@ -126,7 +126,7 @@ void Copter::loop_fast()
 	//set_servos_4();
 	// send outputs to the motors library immediately
 	//motors_output();
-	motors->output();
+	motors_output();
 }
 
 void Copter::read_radio()
@@ -157,6 +157,13 @@ void Copter::stabilize()
 void Copter::set_servos_4()
 {
 
+}
+void Copter::motors_output()
+{
+	motors->set_roll(g.channel_roll.servo_out);
+	motors->set_pitch(g.channel_pitch.servo_out);
+	motors->set_yaw(g.channel_rudder.servo_out);
+	motors->output();
 }
 
 void Copter::init_led()

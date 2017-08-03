@@ -66,6 +66,28 @@
 # define LOW_VOLTAGE			9.6
 #endif
 
+// YAW debug
+// ---------
+#define YAW_HOLD 0
+#define YAW_BRAKE 1
+#define YAW_RATE 2
+#define YAW_STABILE 0
+
+#define ROLL_PITCH_STABLE       0
+#define ROLL_PITCH_ACRO         1
+#define ROLL_PITCH_AUTO         2
+#define ROLL_PITCH_STABLE_OF    3
+#define ROLL_PITCH_TOY          4       // THOR This is the Roll and Pitch
+                                        // mode
+
+#define THROTTLE_MANUAL         0
+#define THROTTLE_HOLD           1
+#define THROTTLE_AUTO           2
+
+// definitions for earth frame and body frame
+// used to specify frame to rate controllers
+#define EARTH_FRAME     0
+#define BODY_FRAME      1
 
 
 
@@ -171,6 +193,27 @@ public:
       BIT_PID         pidServoRudder;
       BIT_PID         pidTeThrottle;
       BIT_PID         pidNavPitchAltitude;
+
+      BIT_PID                  pid_rate_roll;
+	  BIT_PID                  pid_rate_pitch;
+	  BIT_PID                  pid_rate_yaw;
+	  BIT_PID                  pid_loiter_rate_lat;
+	  BIT_PID                  pid_loiter_rate_lon;
+	  BIT_PID                  pid_nav_lat;
+	  BIT_PID                  pid_nav_lon;
+
+	  BIT_PID                  pid_throttle;
+	  BIT_PID                  pid_optflow_roll;
+	  BIT_PID                  pid_optflow_pitch;
+
+	  BIT_PID                  pi_loiter_lat;
+	  BIT_PID                  pi_loiter_lon;
+	  BIT_PID                  pi_stabilize_roll;
+	  BIT_PID                  pi_stabilize_pitch;
+	  BIT_PID                  pi_stabilize_yaw;
+	  BIT_PID                  pi_alt_hold;
+
+
 
       uint8_t     junk;
 };

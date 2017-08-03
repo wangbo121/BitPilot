@@ -419,6 +419,51 @@ private:
     unsigned long 	elapsedTime;				// for doing custom events
     float 			load;						// % MCU cycles used
 
+   uint8_t yaw_mode;
+    // The current desired control scheme for roll and pitch / navigation
+   uint8_t roll_pitch_mode;
+    // The current desired control scheme for altitude hold
+    uint8_t throttle_mode;
+
+    // Attitude control variables
+    float command_rx_roll=0;        // User commands
+    float command_rx_roll_old;
+    float command_rx_roll_diff;
+    float command_rx_pitch=0;
+    float command_rx_pitch_old;
+    float command_rx_pitch_diff;
+    float command_rx_yaw=0;
+    float command_rx_yaw_diff;
+    int control_roll;           // PID control results
+    int control_pitch;
+    int control_yaw;
+    //float K_aux;
+
+	  ////////////////////////////////////////////////////////////////////////////////
+	  // Rate contoller targets
+	  ////////////////////////////////////////////////////////////////////////////////
+	  uint8_t rate_targets_frame;    // indicates whether rate targets provided in earth or body frame
+	   int32_t roll_rate_target_ef;
+	  int32_t pitch_rate_target_ef;
+	  int32_t yaw_rate_target_ef;
+	  int32_t roll_rate_target_bf ;     // body frame roll rate target
+	  int32_t pitch_rate_target_bf ;    // body frame pitch rate target
+	  int32_t yaw_rate_target_bf;      // body frame yaw rate target
+
+	  ////////////////////////////////////////////////////////////////////////////////
+	  // Orientation
+	  ////////////////////////////////////////////////////////////////////////////////
+	  // Convienience accessors for commonly used trig functions. These values are generated
+	  // by the DCM through a few simple equations. They are used throughout the code where cos and sin
+	  // would normally be used.
+	  // The cos values are defaulted to 1 to get a decent initial value for a level state
+	  float cos_roll_x;
+	  float cos_pitch_x;
+	  float cos_yaw_x ;
+	  float sin_yaw_y;
+	  float sin_roll;
+	  float sin_pitch;
+
 
     void compass_accumulate(void);
     void compass_cal_update(void);
@@ -753,7 +798,7 @@ private:
     void auto_disarm_check();
     bool init_arm_motors(bool arming_from_gcs);
     void init_disarm_motors();
-    void motors_output();
+    //void motors_output();
     void lost_vehicle_check();
     void run_nav_updates(void);
     void calc_distance_and_bearing();
@@ -941,6 +986,7 @@ private:
     void update_roll_pitch_mode(void);
 
 
+    void motors_output();
 
 
 

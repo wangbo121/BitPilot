@@ -62,3 +62,75 @@ BIT_PID::reset_I()
 	_last_error = 0;
 	_last_derivative = 0;
 }
+
+int32_t BIT_PID::get_p(int32_t error)
+{
+    return (float)error * _kp;
+}
+
+int32_t BIT_PID::get_i(int32_t error, float dt)
+{
+    if(dt != 0) {
+        _integrator += ((float)error * _ki) * dt;
+
+        if (_integrator < -_imax) {
+            _integrator = -_imax;
+        } else if (_integrator > _imax) {
+            _integrator = _imax;
+        }
+    }
+    return _integrator;
+}
+
+int32_t BIT_PID::get_pi(int32_t error, float dt)
+{
+    return get_p(error) + get_i(error, dt);
+}
+
+
+#if 0
+float BIT_PID::get_p()
+{
+   float  result = (_input * _kp);
+    return result;
+}
+
+float BIT_PID::get_i()
+{
+    if(!is_zero(_ki) && !is_zero(_dt)) {
+        _integrator += ((float)_input * _ki) * _dt;
+        if (_integrator < -_imax) {
+            _integrator = -_imax;
+        } else if (_integrator > _imax) {
+            _integrator = _imax;
+        }
+        _pid_info.I = _integrator;
+        return _integrator;
+    }
+    return 0;
+}
+
+float BIT_PID::get_d()
+{
+    // derivative component
+    _pid_info.D = (_kd * _derivative);
+    return _pid_info.D;
+}
+
+float BIT_PID::get_ff(float requested_rate)
+{
+    _pid_info.FF = (float)requested_rate * _ff;
+    return _pid_info.FF;
+}
+
+
+float BIT_PID::get_pi()
+{
+    return get_p() + get_i();
+}
+
+float BIT_PID::get_pid()
+{
+    return get_p() + get_i() + get_d();
+}
+#endif
