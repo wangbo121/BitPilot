@@ -79,6 +79,7 @@ public:
 	 * 我自己添加了一些
 	 */
 	void navigate();
+	//void get_stabilize_roll(int32_t target_angle);
 
 
 private:
@@ -226,6 +227,8 @@ private:
     AP_IMU_Oilpan *imu;
 
 //    AP_DCM dcm;
+    AP_DCM *dcm;
+    AP_DCM *ahrs;
 
     AP_Compass_HMC5843 compass;
     AP_Motors *motors;
@@ -877,6 +880,63 @@ private:
     void init_led();
     void init_motor();
     void init_mpu6050();
+
+
+
+    //get_yaw_rate_stabilized_ef(g.rc_4.control_in);
+    void get_stabilize_roll(int32_t target_angle);
+
+   void get_stabilize_pitch(int32_t target_angle);
+   void get_stabilize_yaw(int32_t target_angle);
+   void get_stabilize_rate_yaw(int32_t target_rate);
+   void get_acro_roll(int32_t target_rate);
+   void get_acro_pitch(int32_t target_rate);
+   void get_acro_yaw(int32_t target_rate);
+   // Roll with rate input and stabilized in the earth frame
+    void get_roll_rate_stabilized_ef(int32_t stick_angle);
+
+    // Pitch with rate input and stabilized in the earth frame
+    void get_pitch_rate_stabilized_ef(int32_t stick_angle);
+
+    // Yaw with rate input and stabilized in the earth frame
+    void get_yaw_rate_stabilized_ef(int32_t stick_angle);
+
+    // set_roll_rate_target - to be called by upper controllers to set roll rate targets in the earth frame
+    void set_roll_rate_target( int32_t desired_rate, uint8_t earth_or_body_frame );
+
+    // set_pitch_rate_target - to be called by upper controllers to set pitch rate targets in the earth frame
+    void set_pitch_rate_target( int32_t desired_rate, uint8_t earth_or_body_frame );
+
+    // set_yaw_rate_target - to be called by upper controllers to set yaw rate targets in the earth frame
+    void set_yaw_rate_target( int32_t desired_rate, uint8_t earth_or_body_frame );
+
+    // update_rate_contoller_targets - converts earth frame rates to body frame rates for rate controllers
+    void update_rate_contoller_targets();
+
+    // run roll, pitch and yaw rate controllers and send output to motors
+    // targets for these controllers comes from stabilize controllers
+    void run_rate_controllers();
+
+    int16_t get_rate_roll(int32_t target_rate);
+
+    int16_t get_rate_pitch(int32_t target_rate);
+
+    int16_t get_rate_yaw(int32_t target_rate);
+
+    int16_t get_throttle_rate(int16_t z_target_speed);
+
+    /*
+     *  reset all I integrators
+     */
+    void reset_I_all(void);
+
+    void reset_rate_I();
+
+    void reset_throttle_I(void);
+
+    void reset_stability_I(void);
+
+
 
 
 

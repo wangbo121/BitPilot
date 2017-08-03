@@ -64,9 +64,9 @@ public:
 
 	float		get_health(void);
 
-	long		roll_sensor;					// Degrees * 100
-	long		pitch_sensor;					// Degrees * 100
-	long		yaw_sensor;						// Degrees * 100
+	int32_t		roll_sensor;					// Degrees * 100
+	int32_t		pitch_sensor;					// Degrees * 100
+	int32_t		yaw_sensor;						// Degrees * 100
 
 	float		roll;							// Radians
 	float		pitch;							// Radians

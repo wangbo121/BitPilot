@@ -62,24 +62,25 @@ float linear_interpolate(float low_output, float high_output,
     return low_output + p * (high_output - low_output);
 }
 
-#if 0
-/*
+#if 1
+
 template <typename T>
 float wrap_180(const T angle, float unit_mod)
 {
-    auto res = wrap_360(angle, unit_mod);
+    float res = wrap_360(angle, unit_mod);
     if (res > 180.f * unit_mod) {
         res -= 360.f * unit_mod;
     }
     return res;
 }
-*/
+
 
 template float wrap_180<int>(const int angle, float unit_mod);
 template float wrap_180<short>(const short angle, float unit_mod);
 template float wrap_180<float>(const float angle, float unit_mod);
 template float wrap_180<double>(const double angle, float unit_mod);
 
+#if 0
 template <typename T>
 auto wrap_180_cd(const T angle) -> decltype(wrap_180(angle, 100.f))
 {
@@ -90,6 +91,9 @@ template auto wrap_180_cd<float>(const float angle) -> decltype(wrap_180(angle, 
 template auto wrap_180_cd<int>(const int angle) -> decltype(wrap_180(angle, 100.f));
 template auto wrap_180_cd<short>(const short angle) -> decltype(wrap_180(angle, 100.f));
 template auto wrap_180_cd<double>(const double angle) -> decltype(wrap_360(angle, 100.f));
+#endif
+
+
 
 template <typename T>
 float wrap_360(const T angle, float unit_mod)
@@ -107,6 +111,8 @@ template float wrap_360<short>(const short angle, float unit_mod);
 template float wrap_360<float>(const float angle, float unit_mod);
 template float wrap_360<double>(const double angle, float unit_mod);
 
+
+#if 0
 template <typename T>
 auto wrap_360_cd(const T angle) -> decltype(wrap_360(angle, 100.f))
 {
@@ -117,11 +123,12 @@ template auto wrap_360_cd<float>(const float angle) -> decltype(wrap_360(angle, 
 template auto wrap_360_cd<int>(const int angle) -> decltype(wrap_360(angle, 100.f));
 template auto wrap_360_cd<short>(const short angle) -> decltype(wrap_360(angle, 100.f));
 template auto wrap_360_cd<double>(const double angle) -> decltype(wrap_360(angle, 100.f));
+#endif
 
 template <typename T>
 float wrap_PI(const T radian)
 {
-    auto res = wrap_2PI(radian);
+    float res = wrap_2PI(radian);
     if (res > M_PI) {
         res -= M_2PI;
     }
