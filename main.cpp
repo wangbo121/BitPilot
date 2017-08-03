@@ -65,7 +65,7 @@ void Copter::setup()
 
 void Copter::loop()
 {
-
+	loop_fast();
 }
 
 void Copter::loop_fast()
@@ -92,8 +92,17 @@ void Copter::loop_fast()
 	update_current_flight_mode();
 
 	/* 4--把期望的roll pitch yaw作用于飞机 */
-	if (control_mode > MANUAL)
+	switch(control_mode)
+	{
+	case MANUAL:
+		break;
+	case STABILIZE:
 		stabilize();
+		break;
+	default:
+		stabilize();
+		break;
+	}
 
 	/* 5--把计算所得控制量输出给电机 */
 	set_servos_4();
@@ -101,19 +110,14 @@ void Copter::loop_fast()
 
 void Copter::read_radio()
 {
-
-}
-
-
-void Copter::one_second_loop()
-{
-	/*
-	 * 一秒钟给地面站发送一组数据--实时数据
-	 */
-}
-
-void Copter::update_GPS(void)
-{
+	g.channel_roll.set_pwm(ap_rc.input_ch(CH_1));
+	g.channel_pitch.set_pwm(ap_rc.input_ch(CH_2));
+	g.channel_throttle.set_pwm(ap_rc.input_ch(CH_3));
+	g.channel_rudder.set_pwm(ap_rc.input_ch(CH_4));
+	g.rc_5.set_pwm(ap_rc.input_ch(CH_5));
+	g.rc_6.set_pwm(ap_rc.input_ch(CH_6));
+	g.rc_7.set_pwm(ap_rc.input_ch(CH_7));
+	g.rc_8.set_pwm(ap_rc.input_ch(CH_8));
 
 }
 
@@ -122,29 +126,10 @@ void Copter::update_current_flight_mode(void)
 
 }
 
-void Copter::update_navigation()
-{
-	// wp_distance is in ACTUAL meters, not the *100 meters we get from the GPS
-	// ------------------------------------------------------------------------
-
-}
-
-void Copter::update_alt()
-{
-
-}
-
 void Copter::stabilize()
 {
 
 }
-
-// uses the yaw from the DCM to give more accurate turns
-void Copter::calc_bearing_error()
-{
-
-}
-
 
 // write out the servo PWM values
 // ------------------------------
@@ -166,6 +151,44 @@ void Copter::init_mpu6050()
 
 }
 
+
+
+
+
+
+
+
+
+void Copter::one_second_loop()
+{
+	/*
+	 * 一秒钟给地面站发送一组数据--实时数据
+	 */
+}
+
+
+void Copter::update_navigation()
+{
+	// wp_distance is in ACTUAL meters, not the *100 meters we get from the GPS
+	// ------------------------------------------------------------------------
+
+}
+
+void Copter::update_alt()
+{
+
+}
+
+void Copter::update_GPS(void)
+{
+
+}
+
+// uses the yaw from the DCM to give more accurate turns
+void Copter::calc_bearing_error()
+{
+
+}
 
 #if 0
 //不要删除这个，还有参考价值

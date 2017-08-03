@@ -79,15 +79,14 @@ public:
 	 * 我自己添加了一些
 	 */
 	void navigate();
+
+
 private:
-
-
-
-
 
     // Global parameters are all contained within the 'g' class.
     Global_Pilot g;
 
+    AP_RC ap_rc;
 
     // primary input control channels
     AP_RC_Channel *channel_roll;
