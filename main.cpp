@@ -86,7 +86,8 @@ void Copter::loop_fast()
 	read_radio();
 
 	/* 2--更新姿态，获取飞机现在的姿态角 */
-	//dcm.update_DCM(G_Dt);
+	///dcm->update_DCM(G_Dt);
+	ahrs->update_DCM(G_Dt);
 
     // custom code/exceptions for flight modes
     // ---------------------------------------
@@ -94,8 +95,8 @@ void Copter::loop_fast()
 	 * 这两个函数是从rc读取进来的pwm值，将其转换为目标角度roll_target等
 	 * 角度的pid，第一级pid
 	 */
-    //update_yaw_mode();
-    //update_roll_pitch_mode();
+    update_yaw_mode();
+    update_roll_pitch_mode();
 
     // update targets to rate controllers
     /*
@@ -122,9 +123,10 @@ void Copter::loop_fast()
 	//attitude_control->rate_controller_run();
 
 	/* 5--把计算所得控制量输出给电机 */
-	set_servos_4();
+	//set_servos_4();
 	// send outputs to the motors library immediately
 	//motors_output();
+	motors->output();
 }
 
 void Copter::read_radio()

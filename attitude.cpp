@@ -163,3 +163,14 @@ Copter::reset_stability_I(void)
 {
 }
 
+void
+Copter::update_yaw_mode(void)
+{
+
+}
+
+void
+Copter::update_roll_pitch_mode(void)
+{
+}
+

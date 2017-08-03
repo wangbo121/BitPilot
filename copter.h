@@ -936,6 +936,9 @@ private:
 
     void reset_stability_I(void);
 
+    void update_yaw_mode(void);
+
+    void update_roll_pitch_mode(void);
 
 
 
