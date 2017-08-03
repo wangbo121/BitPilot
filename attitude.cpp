@@ -6,3 +6,4 @@
  */
 
 
+//get_yaw_rate_stabilized_ef(g.rc_4.control_in);

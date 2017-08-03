@@ -70,49 +70,33 @@ void Copter::loop()
 
 void Copter::loop_fast()
 {
-
-	// This is the fast loop - we want it to execute at 50Hz if possible
-	// -----------------------------------------------------------------
-	if (delta_ms_fast_loop > G_Dt_max)
-		G_Dt_max = delta_ms_fast_loop;
-
 	/*
 	 * wangbo20170801
 	 * 其实如果只是增稳控制的话
-	 * 只需要下面5步骤就可以了，其他都是用来与地面站通信然后实现自动驾驶的，比如气压计，空速计，gps，导航，航点等
+	 * 只需要下面5步骤就可以了
+	 * 其他的都是用来与地面站通信然后实现自动驾驶的，比如气压计，空速计，gps，导航，航点等
 	 * 1--read_radio
 	 * 2--update_DCM
 	 * 3--update_current_flight_mode
 	 * 4--stabilize
 	 * 5--set_servos
 	 */
-	// Read radio
-	// ----------
+
+	/* 1--读取接收机的信号，获取遥控器各个通道 */
 	read_radio();
 
-
-	/*
-	 * 这个dcm的初始化构造函数有问题，得再改改
-	 */
+	/* 2--更新姿态，获取飞机现在的姿态角 */
 	//dcm.update_DCM(G_Dt);
 
-	// custom code/exceptions for flight modes
-	// ---------------------------------------
+	/* 3--update_current_flight_mode 更新控制状态，从而选择控制方式 */
 	update_current_flight_mode();
 
-	// apply desired roll, pitch and yaw to the plane
-	// ----------------------------------------------
+	/* 4--把期望的roll pitch yaw作用于飞机 */
 	if (control_mode > MANUAL)
 		stabilize();
 
-	// write out the servo PWM values
-	// ------------------------------
+	/* 5--把计算所得控制量输出给电机 */
 	set_servos_4();
-
-	// uses the yaw from the DCM to give more accurate turns
-	calc_bearing_error();
-
-	//read_airspeed();
 }
 
 void Copter::read_radio()

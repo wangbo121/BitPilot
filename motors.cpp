@@ -39,6 +39,17 @@ AP_Motors::AP_Motors(uint16_t loop_rate, uint16_t speed_hz) :
     limit.throttle_lower = true;
     limit.throttle_upper = true;
 };
+void
+AP_Motors::output()
+{
+#if 0
+    // capture desired roll, pitch, yaw and throttle from receiver
+    _roll_in->calc_pwm();
+    _pitch_in->calc_pwm();
+    _throttle_in->calc_pwm();
+    _yaw_in->calc_pwm();
+#endif
+}
 
 void AP_Motors::armed(bool arm)
 {
@@ -89,6 +100,8 @@ void AP_Motors::rc_write(uint8_t chan, uint16_t pwm)
      * 这里应该就是输出给电机了
      */
     //hal.rcout->write(chan, pwm);
+
+
 }
 
 /*

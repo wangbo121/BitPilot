@@ -63,6 +63,8 @@ public:
     // Constructor
     AP_Motors(uint16_t loop_rate, uint16_t speed_hz = AP_MOTORS_SPEED_DEFAULT);
 
+    void output();
+
     // check initialisation succeeded
     bool                initialised_ok() const { return _flags.initialised_ok; }
 

@@ -212,19 +212,6 @@ private:
     // Used to exit the roll and pitch auto trim function
     uint8_t auto_trim_counter;
 
-    /*
-     * 下面这些是我把现在的ArduCopter中的Copter文件中的变量放在这里了
-     */
-
-    ////////////////////////////////////////////////////////////////////////////////
-    // Parameters
-    ////////////////////////////////////////////////////////////////////////////////
-    //
-    // Global parameters are all contained within the 'g' class.
-    //
-   // Global_Pilot      g;
-
-
     // All GPS access should be through this pointer.
     GPS         *g_gps;
 
@@ -256,33 +243,9 @@ private:
     // Global variables
     ////////////////////////////////////////////////////////////////////////////////
 
-    int8_t    control_mode        = MANUAL;
+    int8_t    control_mode;
     int8_t    oldSwitchPosition;              // for remembering the control mode switch
 
-    const char *comma = ",";
-#if 0
-    const char* flight_mode_strings[] = {
-    	"Manual",
-    	"Circle",
-    	"Stabilize",
-    	"Auto",
-    	"RTL",
-    	"Loiter",
-    	"Takeoff",
-    	"Land"};
-#endif
-
-    /* Radio values
-    		Channel assignments
-    			1   Ailerons (rudder if no ailerons)
-    			2   Elevator
-    			3   Throttle
-    			4   Rudder (if we have ailerons)
-    			5   Mode
-    			6   TBD
-    			7   TBD
-    			8   TBD
-    */
 
 
 

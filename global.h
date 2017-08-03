@@ -13,24 +13,66 @@
 #include "rc_channel.h"
 #include "pid.h"
 
-// Auto Pilot modes
-// ----------------
+#define TRUE 1
+#define FALSE 0
+#define ToRad(x) (x*0.01745329252)	// *pi/180
+#define ToDeg(x) (x*57.2957795131)	// *180/pi
+
+#define DEBUG 0
+
+// Radio channels
+#define CH_1 0
+#define CH_2 1
+#define CH_3 2
+#define CH_4 3
+#define CH_5 4
+#define CH_6 5
+#define CH_7 6
+#define CH_8 7
+
+#define CH_ROLL CH_1
+#define CH_PITCH CH_2
+#define CH_THROTTLE CH_3
+#define CH_RUDDER CH_4
+
+/*
+ * Radio values
+ *			Channel assignments
+ *			1   Ailerons (rudder if no ailerons)
+ *			2   Elevator
+ *			3   Throttle
+ *			4   Rudder (if we have ailerons)
+ *			5   Mode
+ *			6   TBD  to be done
+ *			7   TBD
+ *			8   TBD
+ */
+
+/*
+ * 飞机的控制模式 从0开始是手动情况下的不同模式
+ *  从10开始是自动情况下的不同模式
+ */
 #define MANUAL 0
 #define CIRCLE 1			 // When flying sans GPS, and we loose the radio, just circle
 #define STABILIZE 2
 
-#define FLY_BY_WIRE_A 5		// Fly By Wire A has left stick horizontal => desired roll angle, left stick vertical => desired pitch angle, right stick vertical = manual throttle
-#define FLY_BY_WIRE_B 6		// Fly By Wire B has left stick horizontal => desired roll angle, left stick vertical => desired pitch angle, right stick vertical => desired airspeed
-							// Fly By Wire B = Fly By Wire A if you have AIRSPEED_SENSOR 0
-#define AUTO 10
-#define RTL 11
-#define LOITER 12
-#define TAKEOFF 13
-#define LAND 14
+#define AUTO_OMISSION 10
+#define AUTO_RTL 11
+#define AUTO_LOITER 12
+#define AUTO_TAKEOFF 13
+#define AUTO_LAND 14
 
 #ifndef LOW_VOLTAGE
 # define LOW_VOLTAGE			9.6
 #endif
+
+
+
+
+
+
+
+
 
 
 
