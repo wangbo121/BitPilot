@@ -44,7 +44,7 @@ AP_Motors::output()
 {
 #if 0
     // capture desired roll, pitch, yaw and throttle from receiver
-    _roll_in->calc_pwm();
+    ->calc_pwm();
     _pitch_in->calc_pwm();
     _throttle_in->calc_pwm();
     _yaw_in->calc_pwm();

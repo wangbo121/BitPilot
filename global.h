@@ -55,6 +55,7 @@
 #define MANUAL 0
 #define CIRCLE 1			 // When flying sans GPS, and we loose the radio, just circle
 #define STABILIZE 2
+#define ACRO 3
 
 #define AUTO_OMISSION 10
 #define AUTO_RTL 11
@@ -174,6 +175,7 @@ public:
 	int8_t		battery_monitoring;	// 0=disabled, 1=3 cell lipo, 2=4 cell lipo, 3=total voltage only, 4=total voltage and current
 	int16_t	pack_capacity;		// Battery pack capacity less reserve
 
+	AP_RC _rc;
 	// RC channels
 	AP_RC_Channel  channel_roll;
 	AP_RC_Channel  channel_pitch;

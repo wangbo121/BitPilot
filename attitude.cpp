@@ -314,4 +314,46 @@ Copter::update_roll_pitch_mode(void)
 		break;
 	}
 }
+void
+Copter::update_throttle_mode()
+{
 
+	int16_t throttle_out;
+	// calculate angle boost
+	if(throttle_mode ==  THROTTLE_MANUAL) {
+		angle_boost = get_angle_boost(g.channel_throttle.control_in);
+	}else{
+		angle_boost = get_angle_boost(g.throttle_cruise);
+	}
+
+	switch(throttle_mode)
+	{
+	case THROTTLE_MANUAL:
+		if (g.channel_throttle.control_in > 0)
+		{
+			if (control_mode == ACRO)
+			{
+				g.channel_throttle.servo_out        = g.channel_throttle.control_in;
+			}
+			else
+			{
+				g.channel_throttle.servo_out        = g.channel_throttle.control_in + angle_boost;
+			}
+		}
+		break;
+	case THROTTLE_HOLD:
+		break;
+	case THROTTLE_AUTO:
+		break;
+	default:
+		break;
+	}
+}
+
+int16_t Copter::get_angle_boost(int16_t value)
+{
+
+	 float temp = cos_pitch_x * cos_roll_x;
+	temp = constrain_value(temp, .75f, 1.0f);
+	return ((float)(value + 80) / temp) - (value + 80);
+}

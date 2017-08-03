@@ -123,9 +123,6 @@ void Copter::loop_fast()
 	//attitude_control->rate_controller_run();
 
 	/* 5--把计算所得控制量输出给电机 */
-	//set_servos_4();
-	// send outputs to the motors library immediately
-	//motors_output();
 	motors_output();
 }
 
@@ -160,10 +157,44 @@ void Copter::set_servos_4()
 }
 void Copter::motors_output()
 {
-	motors->set_roll(g.channel_roll.servo_out);
-	motors->set_pitch(g.channel_pitch.servo_out);
-	motors->set_yaw(g.channel_rudder.servo_out);
-	motors->output();
+	int16_t             motor_out[AP_MOTORS_MAX_NUM_MOTORS];
+
+    int8_t              _num_motors; // not a very useful variable as you really need to check the motor_enabled array to see which motors are enabled
+    float               _roll_factor[AP_MOTORS_MAX_NUM_MOTORS]; // each motors contribution to roll
+    float               _pitch_factor[AP_MOTORS_MAX_NUM_MOTORS]; // each motors contribution to pitch
+    float               _yaw_factor[AP_MOTORS_MAX_NUM_MOTORS];  // each motors contribution to yaw (normally 1 or -1)
+
+
+    /*
+     * 这里给factor赋值
+     */
+
+	g.channel_roll.calc_pwm();
+	g.channel_pitch.calc_pwm();
+	g.channel_rudder.calc_pwm();
+	g.channel_throttle.calc_pwm();
+
+	for(int i=0;i<4;i++)
+	{
+		motor_out[0]=g.channel_throttle.pwm_out+ \
+				                 g.channel_roll.pwm_out*_roll_factor[i]+\
+				                 g.channel_pitch.pwm_out* _pitch_factor[i]+\
+				                 g.channel_rudder.pwm_out * _yaw_factor[i];
+	}
+	for(int i=0;i<4;i++)
+	{
+		g._rc.output_ch_pwm(i,motor_out[i]);
+	}
+
+
+
+
+
+
+
+
+
+	//motors->output();
 }
 
 void Copter::init_led()

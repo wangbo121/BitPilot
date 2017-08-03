@@ -464,6 +464,9 @@ private:
 	  float sin_roll;
 	  float sin_pitch;
 
+	  // An additional throttle added to keep the copter at the same altitude when banking
+	  int16_t angle_boost;
+
 
     void compass_accumulate(void);
     void compass_cal_update(void);
@@ -987,7 +990,9 @@ private:
 
 
     void motors_output();
+    void update_throttle_mode();
 
+    int16_t get_angle_boost(int16_t value);
 
 
 };

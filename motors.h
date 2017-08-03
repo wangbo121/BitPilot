@@ -10,6 +10,8 @@
 
 #include <inttypes.h>
 #include "BIT_MATH.h"
+#include "rc.h"
+#include "rc_channel.h"
 
 // offsets for motors in motor_out and _motor_filtered arrays
 #define AP_MOTORS_MOT_1 0U
@@ -242,6 +244,9 @@ protected:
     float _yaw_radio_passthrough = 0.0f;      // yaw input from pilot in -1 ~ +1 range.  used for setup and providing servo feedback while landed
 
     uint8_t             _pwm_type;            // PWM output type
+
+    AP_RC*       _rc;                            // APM_RC class used to send updates to ESCs/Servos
+    AP_RC_Channel*         _rc_roll, *_rc_pitch, *_rc_throttle, *_rc_yaw;  // input in from users
 };
 
 
