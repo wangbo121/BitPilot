@@ -159,7 +159,7 @@ void Copter::loop_fast()
 	read_radio();
 
 	/* 2--更新姿态，获取飞机现在的姿态角 */
-	ahrs->update_DCM(G_Dt);
+	//ahrs->update_DCM(G_Dt);
 
 	/* 3--update_current_flight_mode 更新控制状态，从而选择控制方式 */
 	update_current_flight_mode();
@@ -239,12 +239,12 @@ void Copter::set_servos_4()
 }
 void Copter::motors_output()
 {
-	int16_t             motor_out[AP_MOTORS_MAX_NUM_MOTORS];
+	int16_t             motor_out[BIT_MOTORS_MAX_NUM_MOTORS];
 
     int8_t              _num_motors; // not a very useful variable as you really need to check the motor_enabled array to see which motors are enabled
-    float               _roll_factor[AP_MOTORS_MAX_NUM_MOTORS]; // each motors contribution to roll
-    float               _pitch_factor[AP_MOTORS_MAX_NUM_MOTORS]; // each motors contribution to pitch
-    float               _yaw_factor[AP_MOTORS_MAX_NUM_MOTORS];  // each motors contribution to yaw (normally 1 or -1)
+    float               _roll_factor[BIT_MOTORS_MAX_NUM_MOTORS]; // each motors contribution to roll
+    float               _pitch_factor[BIT_MOTORS_MAX_NUM_MOTORS]; // each motors contribution to pitch
+    float               _yaw_factor[BIT_MOTORS_MAX_NUM_MOTORS];  // each motors contribution to yaw (normally 1 or -1)
 
     /*
      * 这里给factor赋值-1 0 或者1

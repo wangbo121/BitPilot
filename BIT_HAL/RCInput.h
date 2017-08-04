@@ -15,7 +15,7 @@
 #define RC_INPUT_MIN_PULSEWIDTH 900
 #define RC_INPUT_MAX_PULSEWIDTH 2100
 
-class AP_HAL::RCInput {
+class BIT_HAL::RCInput {
 public:
     /**
      * Call init from the platform hal instance init, so that both the type of

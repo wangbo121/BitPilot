@@ -37,7 +37,7 @@
 #endif
 
 
-class AP_HAL::RCOutput {
+class BIT_HAL::RCOutput {
 public:
      void init() ;
 

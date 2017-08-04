@@ -10,7 +10,7 @@
 #ifndef BIT_HAL_NAMESPACE_H_
 #define BIT_HAL_NAMESPACE_H_
 
-namespace AP_HAL {
+namespace BIT_HAL {
 
     /* Toplevel pure virtual class Hal.*/
     class HAL;

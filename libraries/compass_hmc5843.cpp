@@ -23,7 +23,7 @@
 #define SingleConversion     0x01
 
 // Public Methods //////////////////////////////////////////////////////////////
-bool AP_Compass_HMC5843::init()
+bool BIT_Compass_HMC5843::init()
 {
   int numAttempts = 0;
   int success = 0;
@@ -40,7 +40,7 @@ bool AP_Compass_HMC5843::init()
 }
 
 // Read Sensor data
-void AP_Compass_HMC5843::read()
+void BIT_Compass_HMC5843::read()
 {
   int i = 0;
   unsigned char  buff[6];

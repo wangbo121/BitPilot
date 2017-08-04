@@ -14,26 +14,26 @@
 #include "rc_channel.h"
 
 // offsets for motors in motor_out and _motor_filtered arrays
-#define AP_MOTORS_MOT_1 0U
-#define AP_MOTORS_MOT_2 1U
-#define AP_MOTORS_MOT_3 2U
-#define AP_MOTORS_MOT_4 3U
-#define AP_MOTORS_MOT_5 4U
-#define AP_MOTORS_MOT_6 5U
-#define AP_MOTORS_MOT_7 6U
-#define AP_MOTORS_MOT_8 7U
-#define AP_MOTORS_MOT_9 8U
-#define AP_MOTORS_MOT_10 9U
-#define AP_MOTORS_MOT_11 10U
-#define AP_MOTORS_MOT_12 11U
+#define BIT_MOTORS_MOT_1 0U
+#define BIT_MOTORS_MOT_2 1U
+#define BIT_MOTORS_MOT_3 2U
+#define BIT_MOTORS_MOT_4 3U
+#define BIT_MOTORS_MOT_5 4U
+#define BIT_MOTORS_MOT_6 5U
+#define BIT_MOTORS_MOT_7 6U
+#define BIT_MOTORS_MOT_8 7U
+#define BIT_MOTORS_MOT_9 8U
+#define BIT_MOTORS_MOT_10 9U
+#define BIT_MOTORS_MOT_11 10U
+#define BIT_MOTORS_MOT_12 11U
 
-#define AP_MOTORS_MAX_NUM_MOTORS 12
+#define BIT_MOTORS_MAX_NUM_MOTORS 12
 
 // motor update rate
-#define AP_MOTORS_SPEED_DEFAULT     490 // default output rate to the motors
+#define BIT_MOTORS_SPEED_DEFAULT     490 // default output rate to the motors
 
-/// @class      AP_Motors
-class AP_Motors {
+/// @class      BIT_Motors
+class BIT_Motors {
 public:
 
     enum motor_frame_class {
@@ -63,7 +63,7 @@ public:
     };
 
     // Constructor
-    AP_Motors(uint16_t loop_rate, uint16_t speed_hz = AP_MOTORS_SPEED_DEFAULT);
+    BIT_Motors(uint16_t loop_rate, uint16_t speed_hz = BIT_MOTORS_SPEED_DEFAULT);
 
     void output();
 
@@ -129,7 +129,7 @@ public:
     void                set_air_density_ratio(float ratio) { _air_density_ratio = ratio; }
 
     // structure for holding motor limit flags
-    struct AP_Motors_limit {
+    struct BIT_Motors_limit {
         uint8_t roll_pitch      : 1; // we have reached roll or pitch limit
         uint8_t yaw             : 1; // we have reached yaw limit
         uint8_t throttle_lower  : 1; // we have reached throttle's lower limit
@@ -207,7 +207,7 @@ protected:
    // int16_t calc_pwm_output_0to1(float input, const SRV_Channel *servo);
 
     // flag bitmask
-    struct AP_Motors_flags {
+    struct BIT_Motors_flags {
         uint8_t armed              : 1;    // 0 if disarmed, 1 if armed
         uint8_t interlock          : 1;    // 1 if the motor interlock is enabled (i.e. motors run), 0 if disabled (motors don't run)
         uint8_t initialised_ok     : 1;    // 1 if initialisation was successful
@@ -234,7 +234,7 @@ protected:
     float               _air_density_ratio;     // air density / sea level density - decreases in altitude
 
     // mapping to output channels
-    uint8_t             _motor_map[AP_MOTORS_MAX_NUM_MOTORS];
+    uint8_t             _motor_map[BIT_MOTORS_MAX_NUM_MOTORS];
     uint16_t            _motor_map_mask;
     uint16_t            _motor_fast_mask;
 
@@ -246,8 +246,8 @@ protected:
 
     uint8_t             _pwm_type;            // PWM output type
 
-    AP_RC*       _rc;                            // APM_RC class used to send updates to ESCs/Servos
-    AP_RC_Channel*         _rc_roll, *_rc_pitch, *_rc_throttle, *_rc_yaw;  // input in from users
+    BIT_RC*       _rc;                            // APM_RC class used to send updates to ESCs/Servos
+    BIT_RC_Channel*         _rc_roll, *_rc_pitch, *_rc_throttle, *_rc_yaw;  // input in from users
 };
 
 

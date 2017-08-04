@@ -13,35 +13,35 @@
 #define C_LED_PIN   35
 
 // Sensors: GYROX, GYROY, GYROZ, ACCELX, ACCELY, ACCELZ
-const uint8_t AP_IMU_Oilpan::_sensors[6]        = { 1, 2, 0, 4, 5, 6};	// Channel assignments on the APM oilpan
-const int8_t  AP_IMU_Oilpan::_sensor_signs[6]	= {	1,-1,-1, 1,-1,-1};  // Channel orientation vs. normal
+const uint8_t BIT_IMU_Oilpan::_sensors[6]        = { 1, 2, 0, 4, 5, 6};	// Channel assignments on the APM oilpan
+const int8_t  BIT_IMU_Oilpan::_sensor_signs[6]	= {	1,-1,-1, 1,-1,-1};  // Channel orientation vs. normal
 
 // Temp compensation curve constants
 // These must be produced by measuring data and curve fitting
 // [X/Y/Z gyro][A/B/C or 0 order/1st order/2nd order constants]
 //
-const float   AP_IMU_Oilpan::_gyro_temp_curve[3][3] = {
+const float   BIT_IMU_Oilpan::_gyro_temp_curve[3][3] = {
 	{1658,0,0},			// Values to use if no temp compensation data available
 	{1658,0,0},			// Based on average values for 20 sample boards
 	{1658,0,0}
 };
 
 void
-AP_IMU_Oilpan::init()
+BIT_IMU_Oilpan::init()
 {
 }
 
 /**************************************************/
 
 void
-AP_IMU_Oilpan::init_gyro()
+BIT_IMU_Oilpan::init_gyro()
 {
     _init_gyro();
 
 }
 
 void
-AP_IMU_Oilpan::_init_gyro()
+BIT_IMU_Oilpan::_init_gyro()
 {
 	int flashcount = 0;
 	int tc_temp;
@@ -53,13 +53,13 @@ AP_IMU_Oilpan::_init_gyro()
 }
 
 void
-AP_IMU_Oilpan::init_accel()
+BIT_IMU_Oilpan::init_accel()
 {
     _init_accel();
 }
 
 void
-AP_IMU_Oilpan::_init_accel()
+BIT_IMU_Oilpan::_init_accel()
 {
 	int flashcount = 0;
 	float adc_in;
@@ -75,7 +75,7 @@ AP_IMU_Oilpan::_init_accel()
 //---------------------------------------------------
 
 float
-AP_IMU_Oilpan::_sensor_compensation(uint8_t channel, int temperature) const
+BIT_IMU_Oilpan::_sensor_compensation(uint8_t channel, int temperature) const
 {
     // do gyro temperature compensation
     if (channel < 3) {
@@ -90,7 +90,7 @@ AP_IMU_Oilpan::_sensor_compensation(uint8_t channel, int temperature) const
 }
 
 float
-AP_IMU_Oilpan::_sensor_in(uint8_t channel, int temperature)
+BIT_IMU_Oilpan::_sensor_in(uint8_t channel, int temperature)
 {
     float   adc_in;
 
@@ -102,7 +102,7 @@ AP_IMU_Oilpan::_sensor_in(uint8_t channel, int temperature)
 
 
 bool
-AP_IMU_Oilpan::update(void)
+BIT_IMU_Oilpan::update(void)
 {
 	int tc_temp;
 	//int tc_temp = _adc->Ch(_gyro_temp_ch);

@@ -6,7 +6,7 @@
  */
 
 
-/// @file	AP_GPS_NMEA.cpp
+/// @file	BIT_GPS_NMEA.cpp
 /// @brief	NMEA protocol parser
 ///
 /// This is a lightweight NMEA parser, derived originally from the
@@ -26,7 +26,7 @@
 // for NMEA.  GPS_AUTO will try to set any SiRF unit to binary mode as part of
 // the autodetection process.
 //
-const char AP_GPS_NMEA::_SiRF_init_string[]  =
+const char BIT_GPS_NMEA::_SiRF_init_string[]  =
 	"$PSRF103,0,0,1,1*25\r\n"	// GGA @ 1Hz
 	"$PSRF103,1,0,0,1*25\r\n"	// GLL off
 	"$PSRF103,2,0,0,1*26\r\n"	// GSA off
@@ -44,7 +44,7 @@ const char AP_GPS_NMEA::_SiRF_init_string[]  =
 // Note that we may see a MediaTek in NMEA mode if we are connected to a non-DIYDrones
 // MediaTek-based GPS.
 //
-const char AP_GPS_NMEA::_MTK_init_string[]  =
+const char BIT_GPS_NMEA::_MTK_init_string[]  =
 	"$PMTK314,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0*28\r\n"	// GGA & VTG once every fix
 	"$PMTK330,0*2E"										// datum = WGS84
 	"$PMTK313,1*2E\r\n"									// SBAS on
@@ -60,7 +60,7 @@ const char AP_GPS_NMEA::_MTK_init_string[]  =
 // We don't attempt to send $PUBX,41 as the unit must already be talking NMEA
 // and we don't know the baudrate.
 //
-const char AP_GPS_NMEA::_ublox_init_string[]  =
+const char BIT_GPS_NMEA::_ublox_init_string[]  =
 	"$PUBX,40,gga,0,1,0,0,0,0*7B\r\n"	// GGA on at one per fix
 	"$PUBX,40,vtg,0,1,0,0,0,0*7F\r\n"	// VTG on at one per fix
 	"$PUBX,40,rmc,0,0,0,0,0,0*67\r\n"	// RMC off (XXX suppress other message types?)
@@ -68,9 +68,9 @@ const char AP_GPS_NMEA::_ublox_init_string[]  =
 
 // NMEA message identifiers ////////////////////////////////////////////////////
 //
-const char AP_GPS_NMEA::_gprmc_string[]  = "GPRMC";
-const char AP_GPS_NMEA::_gpgga_string[]  = "GPGGA";
-const char AP_GPS_NMEA::_gpvtg_string[]  = "GPVTG";
+const char BIT_GPS_NMEA::_gprmc_string[]  = "GPRMC";
+const char BIT_GPS_NMEA::_gpgga_string[]  = "GPGGA";
+const char BIT_GPS_NMEA::_gpvtg_string[]  = "GPVTG";
 
 // Convenience macros //////////////////////////////////////////////////////////
 //
@@ -78,7 +78,7 @@ const char AP_GPS_NMEA::_gpvtg_string[]  = "GPVTG";
 
 #if 0
 // Constructors ////////////////////////////////////////////////////////////////
-AP_GPS_NMEA::AP_GPS_NMEA(Stream *s) :
+BIT_GPS_NMEA::BIT_GPS_NMEA(Stream *s) :
 	GPS(s)
 {
 	FastSerial	*fs = (FastSerial *)_port;
@@ -92,7 +92,7 @@ AP_GPS_NMEA::AP_GPS_NMEA(Stream *s) :
 #endif
 
 // Public Methods //////////////////////////////////////////////////////////////
-void AP_GPS_NMEA::init(void)
+void BIT_GPS_NMEA::init(void)
 {
 #if 0
 	BetterStream	*bs = (BetterStream *)_port;
@@ -108,7 +108,7 @@ void AP_GPS_NMEA::init(void)
 #endif
 }
 
-bool AP_GPS_NMEA::read(void)
+bool BIT_GPS_NMEA::read(void)
 {
 	int numc;
 	bool parsed = false;
@@ -125,7 +125,7 @@ bool AP_GPS_NMEA::read(void)
 	return parsed;
 }
 
-bool AP_GPS_NMEA::_decode(char c)
+bool BIT_GPS_NMEA::_decode(char c)
 {
 	bool valid_sentence = false;
 
@@ -165,7 +165,7 @@ bool AP_GPS_NMEA::_decode(char c)
 //
 // internal utilities
 //
-int AP_GPS_NMEA::_from_hex(char a)
+int BIT_GPS_NMEA::_from_hex(char a)
 {
 	if (a >= 'A' && a <= 'F')
 		return a - 'A' + 10;
@@ -175,7 +175,7 @@ int AP_GPS_NMEA::_from_hex(char a)
 		return a - '0';
 }
 
-unsigned long AP_GPS_NMEA::_parse_decimal()
+unsigned long BIT_GPS_NMEA::_parse_decimal()
 {
 	char *p = _term;
 	unsigned long ret = 100UL * atol(p);
@@ -191,7 +191,7 @@ unsigned long AP_GPS_NMEA::_parse_decimal()
 	return ret;
 }
 
-unsigned long AP_GPS_NMEA::_parse_degrees()
+unsigned long BIT_GPS_NMEA::_parse_degrees()
 {
 	char *p, *q;
 	uint8_t deg = 0, min = 0;
@@ -232,7 +232,7 @@ unsigned long AP_GPS_NMEA::_parse_degrees()
 
 // Processes a just-completed term
 // Returns true if new sentence has just passed checksum test and is validated
-bool AP_GPS_NMEA::_term_complete()
+bool BIT_GPS_NMEA::_term_complete()
 {
 	// handle the last term in a message
 	if (_is_checksum_term) {

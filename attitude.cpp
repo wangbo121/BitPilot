@@ -62,7 +62,7 @@ Copter::get_stabilize_yaw(int32_t target_angle)
 {
 	int32_t target_rate,i_term;
 	int32_t angle_error;
-	int32_t output = 0;
+	//int32_t output = 0;
 
 	// angle error
 	angle_error             = wrap_180(target_angle - ahrs->yaw_sensor,100.0);
@@ -226,13 +226,13 @@ Copter::run_rate_controllers()
 int16_t
 Copter::get_rate_roll(int32_t target_rate)
 {
-	 static int32_t last_rate = 0;                                       // previous iterations rate
+	// static int32_t last_rate = 0;                                       // previous iterations rate
 	int32_t p,i,d;                                                                      // used to capture pid values for logging
 	int32_t current_rate;                                                       // this iteration's rate
 	int32_t rate_error;                                                                 // simply target_rate - current_rate
-	int32_t rate_d;                                                                     // roll's acceleration
+	//int32_t rate_d;                                                                     // roll's acceleration
 	int32_t output;                                                                     // output from pid controller
-	int32_t rate_d_dampener;                                                    // value to dampen output based on acceleration
+	//int32_t rate_d_dampener;                                                    // value to dampen output based on acceleration
 
 	// get current rate
 	current_rate    = (omega.x * DEGX100);
@@ -265,13 +265,13 @@ Copter::get_rate_roll(int32_t target_rate)
 int16_t
 Copter::get_rate_pitch(int32_t target_rate)
 {
-	static int32_t last_rate = 0;                                       // previous iterations rate
+	//static int32_t last_rate = 0;                                       // previous iterations rate
 	    int32_t p,i,d;                                                                      // used to capture pid values for logging
 	    int32_t current_rate;                                                       // this iteration's rate
 	    int32_t rate_error;                                                                 // simply target_rate - current_rate
-	    int32_t rate_d;                                                                     // roll's acceleration
+	   // int32_t rate_d;                                                                     // roll's acceleration
 	    int32_t output;                                                                     // output from pid controller
-	    int32_t rate_d_dampener;                                                    // value to dampen output based on acceleration
+	    //int32_t rate_d_dampener;                                                    // value to dampen output based on acceleration
 
 	    // get current rate
 	    current_rate    = (omega.y * DEGX100);

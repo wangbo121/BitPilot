@@ -13,12 +13,12 @@
 
 /// NMEA parser
 ///
-class AP_GPS_NMEA : public GPS
+class BIT_GPS_NMEA : public GPS
 {
 public:
 	/// Constructor
 	///
-	//AP_GPS_NMEA(Stream *s);
+	//BIT_GPS_NMEA(Stream *s);
 
 	/// Perform a (re)initialisation of the GPS; sends the
 	/// protocol configuration messages.

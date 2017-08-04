@@ -52,6 +52,7 @@
  * 飞机的控制模式 从0开始是手动情况下的不同模式
  *  从10开始是自动情况下的不同模式
  */
+#if 0
 #define MANUAL 0
 #define CIRCLE 1			 // When flying sans GPS, and we loose the radio, just circle
 #define STABLE 2
@@ -62,6 +63,7 @@
 #define AUTO_LOITER 12
 #define AUTO_TAKEOFF 13
 #define AUTO_LAND 14
+#endif
 
 #ifndef LOW_VOLTAGE
 # define LOW_VOLTAGE			9.6
@@ -237,16 +239,16 @@ public:
 	int8_t		battery_monitoring;	// 0=disabled, 1=3 cell lipo, 2=4 cell lipo, 3=total voltage only, 4=total voltage and current
 	int16_t	pack_capacity;		// Battery pack capacity less reserve
 
-	AP_RC _rc;
+	BIT_RC _rc;
 	// RC channels
-	AP_RC_Channel  channel_roll;
-	AP_RC_Channel  channel_pitch;
-	AP_RC_Channel  channel_throttle;
-	AP_RC_Channel  channel_rudder;
-	AP_RC_Channel	rc_5;
-	AP_RC_Channel	rc_6;
-	AP_RC_Channel	rc_7;
-	AP_RC_Channel	rc_8;
+	BIT_RC_Channel  channel_roll;
+	BIT_RC_Channel  channel_pitch;
+	BIT_RC_Channel  channel_throttle;
+	BIT_RC_Channel  channel_rudder;
+	BIT_RC_Channel	rc_5;
+	BIT_RC_Channel	rc_6;
+	BIT_RC_Channel	rc_7;
+	BIT_RC_Channel	rc_8;
 
       // BIT_PID controllers
       //

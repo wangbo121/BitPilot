@@ -22,14 +22,14 @@
 
 
 void
-AP_DCM::set_compass(Compass *compass)
+BIT_DCM::set_compass(Compass *compass)
 {
 	_compass = compass;
 }
 
 /**************************************************/
 void
-AP_DCM::update_DCM(float _G_Dt)
+BIT_DCM::update_DCM(float _G_Dt)
 {
 	_imu->update();
 	_gyro_vector 	= _imu->get_gyro();			// Get current values for IMU sensors
@@ -60,7 +60,7 @@ printm(const char *l, Matrix3f &m)
 
 /**************************************************/
 void
-AP_DCM::matrix_update(float _G_Dt)
+BIT_DCM::matrix_update(float _G_Dt)
 {
 	Matrix3f	update_matrix;
 	Matrix3f	temp_matrix;
@@ -109,7 +109,7 @@ AP_DCM::matrix_update(float _G_Dt)
 
 /**************************************************/
 void
-AP_DCM::accel_adjust(void)
+BIT_DCM::accel_adjust(void)
 {
 	Vector3f veloc, temp;
 	float vel;
@@ -138,7 +138,7 @@ simple matter to stay ahead of it.
 We call the process of enforcing the orthogonality conditions 襯enormalization?
 */
 void
-AP_DCM::normalize(void)
+BIT_DCM::normalize(void)
 {
 	float error = 0;
 	Vector3f	temporary[3];
@@ -173,7 +173,7 @@ AP_DCM::normalize(void)
 
 /**************************************************/
 Vector3f
-AP_DCM::renorm(Vector3f const &a, int &problem)
+BIT_DCM::renorm(Vector3f const &a, int &problem)
 {
 	float	renorm;
 
@@ -194,7 +194,7 @@ AP_DCM::renorm(Vector3f const &a, int &problem)
 
 /**************************************************/
 void
-AP_DCM::drift_correction(void)
+BIT_DCM::drift_correction(void)
 {
 	//Compensation the Roll, Pitch and Yaw drift.
 	//float mag_heading_x;
@@ -294,7 +294,7 @@ AP_DCM::drift_correction(void)
 
 /**************************************************/
 void
-AP_DCM::euler_angles(void)
+BIT_DCM::euler_angles(void)
 {
 	#if (OUTPUTMODE == 2)				 // Only accelerometer info (debugging purposes)
 	roll 		= atan2(_accel_vector.y, -_accel_vector.z);		// atan2(acc_y, acc_z)
@@ -317,28 +317,28 @@ AP_DCM::euler_angles(void)
 /**************************************************/
 
 float
-AP_DCM::get_health(void)
+BIT_DCM::get_health(void)
 {
 	return _health;
 }
 
 // degrees -> radians
 float
-AP_DCM::radians(float deg)
+BIT_DCM::radians(float deg)
 {
     return deg * DEG_TO_RAD;
 }
 
 // radians -> degrees
 float
-AP_DCM::degrees(float rad)
+BIT_DCM::degrees(float rad)
 {
     return rad * RAD_TO_DEG;
 }
 
 
 float
-AP_DCM::constrain(float m,float a,float b)
+BIT_DCM::constrain(float m,float a,float b)
 {
 	if(m<=a)        m=a;
 	else if(m>=b)   m=b;
@@ -347,7 +347,7 @@ AP_DCM::constrain(float m,float a,float b)
 }
 
 #if 0
-AP_DCM::AP_DCM()
+BIT_DCM::BIT_DCM()
 {
 
 
