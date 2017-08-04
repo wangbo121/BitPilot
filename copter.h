@@ -231,6 +231,7 @@ private:
 //    BIT_DCM dcm;
     BIT_DCM *dcm;
     BIT_DCM *ahrs;
+    //BIT_DCM_Oilpan *ahrs;
 
     BIT_Compass_HMC5843 compass;
     BIT_Motors *motors;
