@@ -36,7 +36,6 @@ int main(int argc,char * const argv[])
 	 * 然后执行copter的setup和loop函数，
 	 * 跟直接写在下面是一样的
 	 */
-
 #if 0
 	/*
 	 * 初始化工作
@@ -127,10 +126,6 @@ void Copter::setup()
 	g.channel_rudder.set_reverse(0);
 	g.channel_throttle.set_reverse(0);
 	g.rc_5.set_reverse(0);
-
-
-
-
 }
 
 void Copter::loop()
@@ -153,18 +148,18 @@ void Copter::loop_fast()
 	 * 1--read_radio
 	 * 2--update_DCM
 	 * 3--update_current_flight_mode
-	 * 4--stabilize
+	 * 4--control根据飞行模式 control_mode的选项，选择不同的控制方式
 	 * 5--set_servos
 	 */
 
-	std::cout<<"hello wangbo loopfast"<<std::endl;
+	std::cout<<"Hello loopfast"<<std::endl;
 	sleep(1);
 
 	/* 1--读取接收机的信号，获取遥控器各个通道 */
 	read_radio();
 
 	/* 2--更新姿态，获取飞机现在的姿态角 */
-	//ahrs->update_DCM(G_Dt);
+	ahrs->update_DCM(G_Dt);
 
 	/* 3--update_current_flight_mode 更新控制状态，从而选择控制方式 */
 	update_current_flight_mode();

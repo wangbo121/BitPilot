@@ -13,9 +13,6 @@
 #include <stdint.h>
 //#include <type_traits>
 
-
-#include "defines.h"
-
 #include "vector2.h"
 #include "vector3.h"
 #include "matrix3.h"
