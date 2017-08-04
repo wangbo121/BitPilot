@@ -57,7 +57,6 @@ using namespace std;
 #include "motors.h"
 
 // Local modules
-#include "defines.h"
 #include "global.h"
 //#include "GCS.h"
 
