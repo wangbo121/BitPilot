@@ -27,12 +27,17 @@ int main(int argc,char * const argv[])
 {
 	cout<<"Welcome to BitPilot"<<endl;
 
-
-
 	hal.run(argc,argv,&copter);
 
 	return 0;
 
+	/*
+	 * hal的run函数就是调用copter，
+	 * 然后执行copter的setup和loop函数，
+	 * 跟直接写在下面是一样的
+	 */
+
+#if 0
 	/*
 	 * 初始化工作
 	 */
@@ -49,12 +54,11 @@ int main(int argc,char * const argv[])
 		select(0, NULL, NULL, NULL, &maintask_tick);
 		maintask_cnt++;
 
-
-
 		copter.loop();
 	}
 
 	return 0;
+#endif
 }
 
 /*
@@ -64,10 +68,15 @@ int main(int argc,char * const argv[])
  */
 void Copter::setup()
 {
+#ifdef TEST
+	std::cout<<"hello wangbo"<<std::endl;
+
+#else
+
 	//init_led();
 	//init_motor();
 	//init_mpu6050();
-#if 0
+
 	/*
 	 * 下面这些初始化，其实应该放在跟地面站连接时
 	 * 地面站的setup按钮里，设置遥控器的最大最小值
@@ -127,19 +136,16 @@ void Copter::setup()
 	g.rc_7.radio_trim = 1500;
 	g.rc_8.radio_trim = 1500;
 #endif
-	std::cout<<"hello wangbo"<<std::endl;
-
 }
 
 void Copter::loop()
 {
+#ifdef TEST
 	std::cout<<"hello wangbo loop"<<std::endl;
 	sleep(1);
-
-
-
-
-	//loop_fast();
+#else
+	loop_fast();
+#endif
 }
 
 void Copter::loop_fast()
@@ -156,13 +162,16 @@ void Copter::loop_fast()
 	 * 5--set_servos
 	 */
 
+	std::cout<<"hello wangbo loopfast"<<std::endl;
+	sleep(1);
+
 	/* 1--读取接收机的信号，获取遥控器各个通道 */
 	read_radio();
 
 	/* 2--更新姿态，获取飞机现在的姿态角 */
 	///dcm->update_DCM(G_Dt);
-	ahrs->update_DCM(G_Dt);
-
+	//ahrs->update_DCM(G_Dt);
+#if 0
     // custom code/exceptions for flight modes
     // ---------------------------------------
 	/*
@@ -195,9 +204,10 @@ void Copter::loop_fast()
 	}
 	// run low level rate controllers that only require IMU data
 	//attitude_control->rate_controller_run();
-
+#endif
 	/* 5--把计算所得控制量输出给电机 */
-	motors_output();
+	//motors_output();
+
 }
 
 void Copter::read_radio()
@@ -210,6 +220,11 @@ void Copter::read_radio()
 	g.rc_6.set_pwm(ap_rc.input_ch(CH_6));
 	g.rc_7.set_pwm(ap_rc.input_ch(CH_7));
 	g.rc_8.set_pwm(ap_rc.input_ch(CH_8));
+
+	g.channel_roll.set_pwm(1000);
+	g.channel_pitch.set_pwm(1200);
+	g.channel_throttle.set_pwm(1400);
+	g.channel_rudder.set_pwm(1500);
 
 }
 
@@ -240,8 +255,12 @@ void Copter::motors_output()
 
 
     /*
-     * 这里给factor赋值
+     * 这里给factor赋值-1 0 或者1
      */
+    _roll_factor[0]    = -1;_roll_factor[1]   = +1;_roll_factor[2]    = +1;_roll_factor[0]    = +1;
+    _pitch_factor[0] = -1;_pitch_factor[1] = +1;_pitch_factor[2] = +1;_pitch_factor[0] = +1;
+    _yaw_factor[0]  = -1;_yaw_factor[1]  = +1;_yaw_factor[2]   = +1;_yaw_factor[0]  = +1;
+
 
 	g.channel_roll.calc_pwm();
 	g.channel_pitch.calc_pwm();
@@ -258,17 +277,13 @@ void Copter::motors_output()
 	for(int i=0;i<4;i++)
 	{
 		g._rc.output_ch_pwm(i,motor_out[i]);
+//或者用下面的motors也是可以的
+		motors->rc_write(i,motor_out[i]);
+
+		std::cout<<"motor_out[i]="<<motor_out[i]<<std::endl;
+		sleep(1);
 	}
 
-
-
-
-
-
-
-
-
-	//motors->output();
 }
 
 void Copter::init_led()

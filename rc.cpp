@@ -5,8 +5,16 @@
  *      Author: wangbo
  */
 
+/*
+ * 使用硬件抽象层必须包括的头文件和hal的extern声明
+ */
+#include "BIT_HAL.h"
+extern const AP_HAL::HAL& hal;
+
+
 
 #include "rc.h"
+
 
 
 // Variable definition for interrupt
@@ -68,29 +76,42 @@ AP_RC::input_ch(uint8_t ch)
 	/*
 	 * 这里是从hal获取通道的pwm值
 	 */
+	switch(ch)
+	{
+	case CH_1:
+		return hal.rcin->read(CH_1);
+		break;
+	case CH_2:
+		return hal.rcin->read(CH_1);
+		break;
+	case CH_3:
+		return hal.rcin->read(CH_1);
+		break;
+	case CH_4:
+		return hal.rcin->read(CH_1);
+		break;
+	case CH_5:
+		return hal.rcin->read(CH_1);
+		break;
+	case CH_6:
+		return hal.rcin->read(CH_1);
+		break;
+	case CH_7:
+		return hal.rcin->read(CH_1);
+		break;
+	case CH_8:
+		return hal.rcin->read(CH_1);
+		break;
 
-	switch(ch){
-		case CH_1:
-			return timer1diff;//中断串口服务把数据读入到timer1diff中去，然后这里返回，所以得现获取timer1diff才行
-			break;
-
-		case CH_2:
-			return timer2diff;
-			break;
-
-		case CH_3:
-			return timer3diff;
-			break;
-
-		case CH_4:
-			return timer4diff;
-			break;
+	default:
+		break;
 	}
 }
 
 void
 AP_RC::output_ch_pwm(uint8_t ch, uint16_t pwm)
 {
+
 	switch(ch){
 		case CH_1:
 			pwm <<= 1;								// multiplies by 2 为什么要乘以2呢？

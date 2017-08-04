@@ -176,6 +176,7 @@ public:
     enum pwm_type { PWM_TYPE_NORMAL=0, PWM_TYPE_ONESHOT=1, PWM_TYPE_ONESHOT125=2, PWM_TYPE_BRUSHED=3 };
     //pwm_type            get_pwm_type(void) const { return (pwm_type)_pwm_type.get(); }
 
+    void        rc_write(uint8_t chan, uint16_t pwm);
 protected:
     // output functions that should be overloaded by child classes
     //virtual void        output_armed_stabilizing()=0;
@@ -185,7 +186,7 @@ protected:
     //virtual uint32_t    rc_map_mask(uint32_t mask) const;
     // output functions that should be overloaded by child classes
 	void        output_armed_stabilizing();
-	void        rc_write(uint8_t chan, uint16_t pwm);
+//	void        rc_write(uint8_t chan, uint16_t pwm);
 	void        rc_set_freq(uint32_t mask, uint16_t freq_hz);
 	void        rc_enable_ch(uint8_t chan);
 	uint32_t    rc_map_mask(uint32_t mask) const;

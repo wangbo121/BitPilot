@@ -5,6 +5,12 @@
  *      Author: wangbo
  */
 
+/*
+ * 使用硬件抽象层必须包括的头文件和hal的extern声明
+ */
+#include "BIT_HAL.h"
+extern const AP_HAL::HAL& hal;
+
 
 #include "motors.h"
 // Constructor
@@ -76,6 +82,8 @@ void AP_Motors::set_radio_passthrough(float roll_input, float pitch_input, float
  */
 void AP_Motors::rc_write(uint8_t chan, uint16_t pwm)
 {
+
+
     if (_motor_map_mask & (1U<<chan)) {
         // we have a mapped motor number for this channel
         chan = _motor_map[chan];
@@ -99,7 +107,7 @@ void AP_Motors::rc_write(uint8_t chan, uint16_t pwm)
      * wangbo20170802
      * 这里应该就是输出给电机了
      */
-    //hal.rcout->write(chan, pwm);
+    hal.rcout->write(chan, pwm);
 
 
 }
