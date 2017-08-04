@@ -7,8 +7,6 @@
 
 #include "copter.h"
 
-Copter copter;
-
 /******************************************************/
 /*****************/
 #define MAINTASK_TICK_TIME_MS 20
@@ -25,9 +23,15 @@ int maintask_cnt;
 #define TEN_HZ_CNT   5//10hz
 #define FIFTY_HZ_CNT 1//50hz
 
-int main()
+int main(int argc,char * const argv[])
 {
 	cout<<"Welcome to BitPilot"<<endl;
+
+
+
+	hal.run(argc,argv,&copter);
+
+	return 0;
 
 	/*
 	 * 初始化工作
@@ -45,6 +49,8 @@ int main()
 		select(0, NULL, NULL, NULL, &maintask_tick);
 		maintask_cnt++;
 
+
+
 		copter.loop();
 	}
 
@@ -58,10 +64,10 @@ int main()
  */
 void Copter::setup()
 {
-	init_led();
-	init_motor();
-	init_mpu6050();
-
+	//init_led();
+	//init_motor();
+	//init_mpu6050();
+#if 0
 	/*
 	 * 下面这些初始化，其实应该放在跟地面站连接时
 	 * 地面站的setup按钮里，设置遥控器的最大最小值
@@ -120,12 +126,20 @@ void Copter::setup()
 	g.rc_6.radio_trim = 1500;
 	g.rc_7.radio_trim = 1500;
 	g.rc_8.radio_trim = 1500;
+#endif
+	std::cout<<"hello wangbo"<<std::endl;
 
 }
 
 void Copter::loop()
 {
-	loop_fast();
+	std::cout<<"hello wangbo loop"<<std::endl;
+	sleep(1);
+
+
+
+
+	//loop_fast();
 }
 
 void Copter::loop_fast()

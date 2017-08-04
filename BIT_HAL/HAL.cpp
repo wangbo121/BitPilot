@@ -10,9 +10,11 @@
 #include <assert.h>
 
 #include "HAL.h"
+#include "RCInput.h"
+#include "RCOutput.h"
 
 namespace AP_HAL {
-
+#if 0
 HAL::FunCallbacks::FunCallbacks(void (*setup_fun)(void), void (*loop_fun)(void))
     : _setup(setup_fun)
     , _loop(loop_fun)
@@ -20,6 +22,39 @@ HAL::FunCallbacks::FunCallbacks(void (*setup_fun)(void), void (*loop_fun)(void))
     assert(setup_fun);
     assert(loop_fun);
 }
+#endif
+
+#if 0
+void HAL::FunCallbacks::setup()
+{
+
+}
+void HAL::FunCallbacks::loop()
+{
+
+}
+#endif
 
 }
 
+AP_HAL::RCInput rcin;
+AP_HAL::RCOutput rcout;
+
+
+static AP_HAL::HAL halInstance(&rcin,&rcout);
+
+const AP_HAL::HAL& AP_HAL::get_HAL() {
+    //static const AP_HAL::HAL hal;
+    return halInstance;
+}
+
+void AP_HAL::HAL::run(int argc, char * const argv[], Callbacks* callbacks) const
+{
+	callbacks->setup();
+	while(1)
+	{
+		callbacks->loop();
+	}
+
+
+}

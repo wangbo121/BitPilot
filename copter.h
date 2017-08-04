@@ -35,6 +35,8 @@ using namespace std;
 #include <semaphore.h>
 #include <sys/stat.h>
 
+#include "BIT_HAL.h"
+
 // Libraries
 #include "vector2.h"
 #include "vector3.h"
@@ -59,15 +61,15 @@ using namespace std;
 #include "global.h"
 //#include "GCS.h"
 
-class Copter {
+class Copter :public AP_HAL::HAL::Callbacks{
 public:
 
     Copter(void);
 
 
 
-    void setup();
-    void loop();
+    void setup() override;
+    void loop() override;
 
 public:
     void mavlink_delay_cb();
@@ -997,8 +999,9 @@ private:
 
 };
 
-extern Copter copter;
 
+extern const AP_HAL::HAL& hal;
+extern Copter copter;
 
 
 

@@ -17,6 +17,7 @@ namespace AP_HAL {
 
 
     class RCInput;
+    class RCOutput;
 
 
     // Must be implemented by the concrete HALs.

@@ -7,6 +7,8 @@
 
 #include "copter.h"
 
+const AP_HAL::HAL& hal = AP_HAL::get_HAL();
+
 /*
  * 构造函数是没有返回值的
  */
@@ -25,3 +27,4 @@ void Copter::set_radio_passthrough(float roll_input, float pitch_input, float th
 #endif
 }
 
+Copter copter;

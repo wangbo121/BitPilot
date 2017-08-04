@@ -11,12 +11,15 @@
 #include "BIT_HAL_Namespace.h"
 
 #include "RCInput.h"
+#include "RCOutput.h"
 
 class AP_HAL::HAL {
 public:
-    HAL( AP_HAL::RCInput*    _rcin)
+    HAL( AP_HAL::RCInput*    _rcin,
+    		AP_HAL::RCOutput*    _rcout)
         :
-        rcin(_rcin)
+        rcin(_rcin),
+		rcout(_rcout)
     {
 
         //AP_HAL::init();
@@ -26,22 +29,27 @@ public:
         virtual void setup() = 0;
         virtual void loop() = 0;
     };
-
+#if 0
     struct FunCallbacks : public Callbacks {
         FunCallbacks(void (*setup_fun)(void), void (*loop_fun)(void));
 
-        void setup() override { _setup(); }
-        void loop() override { _loop(); }
+        //void setup() override { _setup(); }
+        //void loop() override { _loop(); }
+        virtual void setup();
+        virtual void loop() ;
 
     private:
         void (*_setup)(void);
         void (*_loop)(void);
     };
+#endif
 
-    virtual void run(int argc, char * const argv[], Callbacks* callbacks) const = 0;
+    //virtual void run(int argc, char * const argv[], Callbacks* callbacks) const = 0;
+    void run(int argc, char * const argv[], Callbacks* callbacks)  const ;
 
 
     AP_HAL::RCInput*    rcin;
+    AP_HAL::RCOutput*    rcout;
 
 };
 
