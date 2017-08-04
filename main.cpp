@@ -68,11 +68,6 @@ int main(int argc,char * const argv[])
  */
 void Copter::setup()
 {
-#ifdef TEST
-	std::cout<<"hello wangbo"<<std::endl;
-
-#else
-
 	//init_led();
 	//init_motor();
 	//init_mpu6050();
@@ -82,33 +77,11 @@ void Copter::setup()
 	 * 地面站的setup按钮里，设置遥控器的最大最小值
 	 * 但是我这里先直接赋值
 	 */
-	g.channel_roll.radio_min = g.channel_roll.radio_in;
-	g.channel_pitch.radio_min = g.channel_pitch.radio_in;
-	g.channel_throttle.radio_min = g.channel_throttle.radio_in;
-	g.channel_rudder.radio_min = g.channel_rudder.radio_in;
-	g.rc_5.radio_min = g.rc_5.radio_in;
-	g.rc_6.radio_min = g.rc_6.radio_in;
-	g.rc_7.radio_min = g.rc_7.radio_in;
-	g.rc_8.radio_min = g.rc_8.radio_in;
 
-	g.channel_roll.radio_max = g.channel_roll.radio_in;
-	g.channel_pitch.radio_max = g.channel_pitch.radio_in;
-	g.channel_throttle.radio_max = g.channel_throttle.radio_in;
-	g.channel_rudder.radio_max = g.channel_rudder.radio_in;
-	g.rc_5.radio_max = g.rc_5.radio_in;
-	g.rc_6.radio_max = g.rc_6.radio_in;
-	g.rc_7.radio_max = g.rc_7.radio_in;
-	g.rc_8.radio_max = g.rc_8.radio_in;
-
-	g.channel_roll.radio_trim = g.channel_roll.radio_in;
-	g.channel_pitch.radio_trim = g.channel_pitch.radio_in;
-	g.channel_rudder.radio_trim = g.channel_rudder.radio_in;
-	// 3 is not trimed
-	g.rc_5.radio_trim = 1500;
-	g.rc_6.radio_trim = 1500;
-	g.rc_7.radio_trim = 1500;
-	g.rc_8.radio_trim = 1500;
-
+	/*
+	 * 1RC_Channel对象的内部变量的初始化
+	 * 这个在angle_to_pwm,pwm_to_angle等中都有用
+	 */
 	g.channel_roll.radio_min = 1000;
 	g.channel_pitch.radio_min = 1000;
 	g.channel_throttle.radio_min = 1000;
@@ -129,13 +102,35 @@ void Copter::setup()
 
 	g.channel_roll.radio_trim = 1500;
 	g.channel_pitch.radio_trim = 1500;
+	g.channel_throttle.radio_trim = 1500;
 	g.channel_rudder.radio_trim = 1500;
-	// 3 is not trimed
+	// 3 is not trimed  这里arducopter中注释说，throttle是没有trim的，但是没有的话，我的运行就有错误，到底是有没有呢
 	g.rc_5.radio_trim = 1500;
 	g.rc_6.radio_trim = 1500;
 	g.rc_7.radio_trim = 1500;
 	g.rc_8.radio_trim = 1500;
-#endif
+
+	g.channel_roll.set_angle(4500);//这个是设置舵机能单侧摆动的最大值，45度
+	g.channel_pitch.set_angle(4500);
+	g.channel_throttle.set_angle(4500);
+	g.channel_rudder.set_angle(4500);
+	g.rc_5.set_angle(4500);
+
+	g.channel_roll.dead_zone=0;
+	g.channel_pitch.dead_zone=0;
+	g.channel_rudder.dead_zone=0;
+	g.channel_throttle.dead_zone=0;
+	g.rc_5.dead_zone=0;
+
+	g.channel_roll.set_reverse(0);//不取反
+	g.channel_pitch.set_reverse(0);
+	g.channel_rudder.set_reverse(0);
+	g.channel_throttle.set_reverse(0);
+	g.rc_5.set_reverse(0);
+
+
+
+
 }
 
 void Copter::loop()
@@ -169,23 +164,7 @@ void Copter::loop_fast()
 	read_radio();
 
 	/* 2--更新姿态，获取飞机现在的姿态角 */
-	///dcm->update_DCM(G_Dt);
 	//ahrs->update_DCM(G_Dt);
-#if 0
-    // custom code/exceptions for flight modes
-    // ---------------------------------------
-	/*
-	 * 这两个函数是从rc读取进来的pwm值，将其转换为目标角度roll_target等
-	 * 角度的pid，第一级pid
-	 */
-    update_yaw_mode();
-    update_roll_pitch_mode();
-
-    // update targets to rate controllers
-    /*
-     * 这个是第二级pid，把上面的结果导入到这里
-     */
-    update_rate_contoller_targets();
 
 	/* 3--update_current_flight_mode 更新控制状态，从而选择控制方式 */
 	update_current_flight_mode();
@@ -193,44 +172,63 @@ void Copter::loop_fast()
 	/* 4--把期望的roll pitch yaw作用于飞机 */
 	switch(control_mode)
 	{
-	case MANUAL:
-		break;
 	case STABILIZE:
-		stabilize();
+		std::cout<<"Hello STABILIZE MODE"<<std::endl;
+		/*
+		* 先是roll pitch yaw的2级pid控制
+		* 再是油门throttle的2级pid控制
+		* 都是只是计算得出g.channel.servo_out的值
+		* 在motors_output时再把这些计算的值真正输出
+		*/
+		update_roll_pitch_mode();
+		update_yaw_mode();
+		run_rate_controllers();
+
+		update_throttle_mode();//计算油门量的输出值
 		break;
+	case ACRO:
+		std::cout<<"Hello ACRO MODE"<<std::endl;
+		// call rate controllers
+		g.channel_roll.servo_out = g.channel_roll.control_in;
+		g.channel_pitch.servo_out = g.channel_pitch.control_in;
+		g.channel_rudder.servo_out = g.channel_rudder.control_in;
+
+		g.channel_throttle.servo_out=g.channel_throttle.control_in;
+		break;
+
 	default:
-		stabilize();
 		break;
 	}
-	// run low level rate controllers that only require IMU data
-	//attitude_control->rate_controller_run();
-#endif
+
 	/* 5--把计算所得控制量输出给电机 */
-	//motors_output();
+	motors_output();
 
 }
 
 void Copter::read_radio()
 {
+	/*
+	 * //set_pwm做两件事，
+	 * 1是给radion_in赋值，作为从rc_channel读取回来的数
+	 * 2是把control_in = pwm_to_angle(radio)，也就是把读取回来的pwm转为-4500～+4500角度控制值
+	 */
 	g.channel_roll.set_pwm(ap_rc.input_ch(CH_1));
 	g.channel_pitch.set_pwm(ap_rc.input_ch(CH_2));
 	g.channel_throttle.set_pwm(ap_rc.input_ch(CH_3));
 	g.channel_rudder.set_pwm(ap_rc.input_ch(CH_4));
 	g.rc_5.set_pwm(ap_rc.input_ch(CH_5));
-	g.rc_6.set_pwm(ap_rc.input_ch(CH_6));
-	g.rc_7.set_pwm(ap_rc.input_ch(CH_7));
-	g.rc_8.set_pwm(ap_rc.input_ch(CH_8));
-
-	g.channel_roll.set_pwm(1000);
-	g.channel_pitch.set_pwm(1200);
-	g.channel_throttle.set_pwm(1400);
-	g.channel_rudder.set_pwm(1500);
-
 }
 
 void Copter::update_current_flight_mode(void)
 {
-
+	if(g.rc_5.radio_in>1000&&g.rc_5.radio_in<1500)
+	{
+		control_mode=ACRO;
+	}
+	else if(g.rc_5.radio_in>1500)
+	{
+		control_mode=STABILIZE;
+	}
 }
 
 void Copter::stabilize()
@@ -253,23 +251,42 @@ void Copter::motors_output()
     float               _pitch_factor[AP_MOTORS_MAX_NUM_MOTORS]; // each motors contribution to pitch
     float               _yaw_factor[AP_MOTORS_MAX_NUM_MOTORS];  // each motors contribution to yaw (normally 1 or -1)
 
-
     /*
      * 这里给factor赋值-1 0 或者1
      */
-    _roll_factor[0]    = -1;_roll_factor[1]   = +1;_roll_factor[2]    = +1;_roll_factor[0]    = +1;
-    _pitch_factor[0] = -1;_pitch_factor[1] = +1;_pitch_factor[2] = +1;_pitch_factor[0] = +1;
-    _yaw_factor[0]  = -1;_yaw_factor[1]  = +1;_yaw_factor[2]   = +1;_yaw_factor[0]  = +1;
-
+    _roll_factor[0]  =  -1;  _pitch_factor[0]  = +1;  _yaw_factor[0]  = +1;
+    _roll_factor[1]  =  -1;  _pitch_factor[1]  =  -1;  _yaw_factor[1]  =  -1;
+    _roll_factor[2]  = +1;  _pitch_factor[2]  =  -1;  _yaw_factor[2]  = +1;
+    _roll_factor[3]  = +1;  _pitch_factor[3]  = +1;  _yaw_factor[3]  =  -1;
 
 	g.channel_roll.calc_pwm();
 	g.channel_pitch.calc_pwm();
 	g.channel_rudder.calc_pwm();
 	g.channel_throttle.calc_pwm();
 
+	std::cout<<"g.channel_roll.servo_out="<<g.channel_roll.servo_out<<std::endl;
+	std::cout<<"g.channel_pitch.servo_out="<<g.channel_pitch.servo_out<<std::endl;
+	std::cout<<"g.channel_rudder.servo_out="<<g.channel_rudder.servo_out<<std::endl;
+	std::cout<<"g.channel_throttle.servo_out="<<g.channel_throttle.servo_out<<std::endl;
+
+	std::cout<<"********准备输出pwm脉宽给电机***********"<<std::endl;
+
+	std::cout<<"g.channel_roll.pwm_out="<<g.channel_roll.pwm_out<<std::endl;
+	std::cout<<"g.channel_pitch.pwm_out="<<g.channel_pitch.pwm_out<<std::endl;
+	std::cout<<"g.channel_rudder.pwm_out="<<g.channel_rudder.pwm_out<<std::endl;
+
+	std::cout<<"g.channel_throttle.radio_out="<<g.channel_throttle.radio_out<<std::endl;
+
+
 	for(int i=0;i<4;i++)
 	{
-		motor_out[0]=g.channel_throttle.pwm_out+ \
+
+		/*
+		 * 一定要注意这里的throttle是用的radio_out，radio_out=pwm_out+radio_trim，
+		 * calc是把servo_out的-4500～+4500转为pwm的-500～+500
+		 * radio_out=pwm_out+radio_trim=pwm_out+1500 radio_out的范围是1000-2000
+		 */
+		motor_out[i]=g.channel_throttle.radio_out+ \
 				                 g.channel_roll.pwm_out*_roll_factor[i]+\
 				                 g.channel_pitch.pwm_out* _pitch_factor[i]+\
 				                 g.channel_rudder.pwm_out * _yaw_factor[i];
@@ -277,13 +294,11 @@ void Copter::motors_output()
 	for(int i=0;i<4;i++)
 	{
 		g._rc.output_ch_pwm(i,motor_out[i]);
-//或者用下面的motors也是可以的
+		//或者用下面的motors也是可以的
 		motors->rc_write(i,motor_out[i]);
-
-		std::cout<<"motor_out[i]="<<motor_out[i]<<std::endl;
+		std::cout<<"motor_out["<<i<<"]="<<motor_out[i]<<std::endl;
 		sleep(1);
 	}
-
 }
 
 void Copter::init_led()

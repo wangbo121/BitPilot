@@ -51,14 +51,14 @@ class AP_RC_Channel{
 	// setup the control preferences
 	void 		set_range(int low, int high);
 	void 		set_angle(int angle);
-	void 		set_reverse(bool reverse);
+	void 		set_reverse(uint8_t reverse);
 	bool		get_reverse(void);
 
 	// read input from APM_RC - create a control_in value
 	void 		set_pwm(int pwm);
 
 	// pwm is stored here
-	int16_t		radio_in;
+	int16_t		radio_in;//这个是从rc_channel类读取过来的数值，范围是1000～2000
 
 	// call after first set_pwm
 	void 		trim();
@@ -67,13 +67,13 @@ class AP_RC_Channel{
 	bool		get_failsafe(void);
 
 	// value generated from PWM
-	int16_t 	control_in;
+	int16_t 	control_in;//这个把radio_in这个变量，通过pwm_to_angle转为角度值的控制量输入
 	int16_t 	dead_zone; // used to keep noise down and create a dead zone.
 
 	int			control_mix(float value);
 
 	// current values to the servos - degrees * 100 (approx assuming servo is -45 to 45 degrees except [3] is 0 to 100
-	int16_t 	servo_out;
+	int16_t 	servo_out;//这个是最终输出给舵机的角度值-45～45
 
 	// generate PWM from servo_out value
 	void 		calc_pwm(void);
@@ -81,8 +81,8 @@ class AP_RC_Channel{
 	float constrain(float m,float a,float b);
 
 	// PWM is without the offset from radio_min
-	int16_t 	pwm_out;
-	int16_t 	radio_out;
+	int16_t 	pwm_out;//这个的范围是-500～500
+	int16_t 	radio_out;//这个范围是1000～2000
 
 	int16_t		radio_min;
 	int16_t		radio_trim;
@@ -107,6 +107,7 @@ class AP_RC_Channel{
 	bool 		_type;
 	int16_t 	_high;
 	int16_t 	_low;
+
 };
 
 

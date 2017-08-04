@@ -205,6 +205,8 @@ Copter::update_rate_contoller_targets()
 	        roll_rate_target_bf = roll_rate_target_ef - sin_pitch * yaw_rate_target_ef;
 	        pitch_rate_target_bf = cos_roll_x * pitch_rate_target_ef + sin_roll * cos_pitch_x * yaw_rate_target_ef;
 	        yaw_rate_target_bf = cos_pitch_x * cos_roll_x * yaw_rate_target_ef - sin_roll * pitch_rate_target_ef;
+
+	        std::cout<<"roll_rate_target_bf="<<roll_rate_target_bf<<std::endl;
 	    }
 
 }
@@ -224,14 +226,81 @@ Copter::run_rate_controllers()
 int16_t
 Copter::get_rate_roll(int32_t target_rate)
 {
+	 static int32_t last_rate = 0;                                       // previous iterations rate
+	int32_t p,i,d;                                                                      // used to capture pid values for logging
+	int32_t current_rate;                                                       // this iteration's rate
+	int32_t rate_error;                                                                 // simply target_rate - current_rate
+	int32_t rate_d;                                                                     // roll's acceleration
+	int32_t output;                                                                     // output from pid controller
+	int32_t rate_d_dampener;                                                    // value to dampen output based on acceleration
 
-	return 0;
+	// get current rate
+	current_rate    = (omega.x * DEGX100);
+
+	// calculate and filter the acceleration
+	//rate_d                  = roll_rate_d_filter.apply(current_rate - last_rate);
+
+	// store rate for next iteration
+	//last_rate               = current_rate;
+
+	// call pid controller
+	rate_error      = target_rate - current_rate;
+	p                       = g.pid_rate_roll.get_p(rate_error);
+
+		i                       = g.pid_rate_roll.get_i(rate_error, G_Dt);
+	d                       = g.pid_rate_roll.get_d(rate_error, G_Dt);
+	output          = p + i + d;
+
+
+	// constrain output
+	output = constrain_value(output, -5000, 5000);
+
+	// output control
+	return output;
+
+
+
 }
 
 int16_t
 Copter::get_rate_pitch(int32_t target_rate)
 {
-	return 0;
+	static int32_t last_rate = 0;                                       // previous iterations rate
+	    int32_t p,i,d;                                                                      // used to capture pid values for logging
+	    int32_t current_rate;                                                       // this iteration's rate
+	    int32_t rate_error;                                                                 // simply target_rate - current_rate
+	    int32_t rate_d;                                                                     // roll's acceleration
+	    int32_t output;                                                                     // output from pid controller
+	    int32_t rate_d_dampener;                                                    // value to dampen output based on acceleration
+
+	    // get current rate
+	    current_rate    = (omega.y * DEGX100);
+
+	    // calculate and filter the acceleration
+	    //rate_d                  = pitch_rate_d_filter.apply(current_rate - last_rate);
+
+	    // store rate for next iteration
+	   // last_rate               = current_rate;
+
+	    // call pid controller
+	    rate_error      = target_rate - current_rate;
+	    p                       = g.pid_rate_pitch.get_p(rate_error);
+
+
+	        i                       = g.pid_rate_pitch.get_i(rate_error, G_Dt);
+
+	    d                       = g.pid_rate_pitch.get_d(rate_error, G_Dt);
+	    output          = p + i + d;
+
+
+
+	    // constrain output
+	    output = constrain_value(output, -5000, 5000);
+
+
+	    // output control
+	    return output;
+
 
 }
 
@@ -239,14 +308,65 @@ int16_t
 Copter::get_rate_yaw(int32_t target_rate)
 {
 
-	return 0;
+	int32_t p,i,d;                                                                      // used to capture pid values for logging
+		    int32_t rate_error;
+		    int32_t output;
+
+		    // rate control
+		    rate_error              = target_rate - (omega.z * DEGX100);
+
+		    // separately calculate p, i, d values for logging
+		    p = g.pid_rate_yaw.get_p(rate_error);
+		    // freeze I term if we've breached yaw limits
+
+		        i = g.pid_rate_yaw.get_i(rate_error, G_Dt);
+
+		    d = g.pid_rate_yaw.get_d(rate_error, G_Dt);
+
+		    output  = p+i+d;
+		    output = constrain_value(output, -4500, 4500);
+
+
+
+
+		    return  output;
+
 
 }
 
 int16_t
 Copter::get_throttle_rate(int16_t z_target_speed)
 {
-	return 0;
+	 int32_t p,i,d;      // used to capture pid values for logging
+	    int16_t z_rate_error, output;
+
+	    z_rate_error    = z_target_speed - climb_rate;              // calc the speed error
+
+
+	    int32_t tmp     = (z_target_speed * z_target_speed * (int32_t)g.throttle_cruise) / 200000;
+
+	    if(z_target_speed < 0) tmp = -tmp;
+
+	    output                  = constrain_value(tmp, -3200, 3200);
+
+	    // separately calculate p, i, d values for logging
+	    p = g.pid_throttle.get_p(z_rate_error);
+	    // freeze I term if we've breached throttle limits
+
+	        i = g.pid_throttle.get_integrator();
+
+	        i = g.pid_throttle.get_i(z_rate_error, .02);
+
+	    d = g.pid_throttle.get_d(z_rate_error, .02);
+
+	    //
+	    // limit the rate
+	    output +=  constrain_value(p+i+d, -80, 120);
+
+
+
+	    return output;
+
 }
 
 
@@ -278,11 +398,15 @@ Copter::reset_stability_I(void)
 void
 Copter::update_yaw_mode(void)
 {
+	yaw_mode=YAW_MANUAL;
 	switch(yaw_mode)
 	{
 	case YAW_STABILE:
 		get_stabilize_yaw(g.channel_rudder.control_in);
 		break;
+	case YAW_ACRO:
+		break;
+
 	default:
 		break;
 	}
@@ -293,21 +417,18 @@ Copter::update_roll_pitch_mode(void)
 {
 	switch(roll_pitch_mode)
 	{
-	case ROLL_PITCH_ACRO:
-
-			get_roll_rate_stabilized_ef(g.channel_roll.control_in);
-			get_pitch_rate_stabilized_ef(g.channel_pitch.control_in);
-
-			/* 下面的这两个貌似是特技模式，但是也是角速度模式 */
-			//get_acro_roll(g.rc_1.control_in);
-			//get_acro_pitch(g.rc_2.control_in);
-		break;
 	case ROLL_PITCH_STABLE:
 		control_roll            = g.channel_roll.control_in;
 		control_pitch           = g.channel_roll.control_in;
-
 		get_stabilize_roll(control_roll);
 		get_stabilize_pitch(control_pitch);
+		break;
+	case ROLL_PITCH_ACRO:
+		get_roll_rate_stabilized_ef(g.channel_roll.control_in);
+		get_pitch_rate_stabilized_ef(g.channel_pitch.control_in);
+		/* 下面的这两个貌似是ACRO特技模式，但是也是角速度模式 */
+		//get_acro_roll(g.rc_1.control_in);
+		//get_acro_pitch(g.rc_2.control_in);
 		break;
 
 	default:
@@ -317,8 +438,6 @@ Copter::update_roll_pitch_mode(void)
 void
 Copter::update_throttle_mode()
 {
-
-	int16_t throttle_out;
 	// calculate angle boost
 	if(throttle_mode ==  THROTTLE_MANUAL) {
 		angle_boost = get_angle_boost(g.channel_throttle.control_in);
@@ -328,23 +447,16 @@ Copter::update_throttle_mode()
 
 	switch(throttle_mode)
 	{
-	case THROTTLE_MANUAL:
+	case THROTTLE_STABLE:
 		if (g.channel_throttle.control_in > 0)
 		{
-			if (control_mode == ACRO)
-			{
-				g.channel_throttle.servo_out        = g.channel_throttle.control_in;
-			}
-			else
-			{
-				g.channel_throttle.servo_out        = g.channel_throttle.control_in + angle_boost;
-			}
+			g.channel_throttle.servo_out        = g.channel_throttle.control_in + angle_boost;
 		}
 		break;
-	case THROTTLE_HOLD:
+	case THROTTLE_ACRO:
+		g.channel_throttle.servo_out        = g.channel_throttle.control_in;
 		break;
-	case THROTTLE_AUTO:
-		break;
+
 	default:
 		break;
 	}

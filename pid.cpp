@@ -82,6 +82,27 @@ int32_t BIT_PID::get_i(int32_t error, float dt)
     return _integrator;
 }
 
+int32_t        BIT_PID:: get_d(int32_t error, float dt)
+{
+	if ((_kd != 0) && (dt != 0)) {
+		_derivative = (error - _last_error) / dt;
+
+		// discrete low pass filter, cuts out the
+		// high frequency noise that can drive the controller crazy
+		_derivative = _last_derivative +
+					  (dt / ( _filter + dt)) * (_derivative - _last_derivative);
+
+		// update state
+		_last_error            = error;
+		_last_derivative    = _derivative;
+
+		// add in derivative component
+		return _kd * _derivative;
+	}
+	return 0;
+
+}
+
 int32_t BIT_PID::get_pi(int32_t error, float dt)
 {
     return get_p(error) + get_i(error, dt);

@@ -5,7 +5,7 @@
  *      Author: wangbo
  */
 
-
+#include <iostream>
 #include <math.h>
 #include "rc_channel.h"
 
@@ -29,7 +29,7 @@ AP_RC_Channel::set_angle(int angle)
 }
 
 void
-AP_RC_Channel::set_reverse(bool reverse)
+AP_RC_Channel::set_reverse(uint8_t reverse)
 {
 	if (reverse) _reverse = -1;
 	else _reverse = 1;
@@ -59,32 +59,9 @@ AP_RC_Channel::trim()
 void
 AP_RC_Channel::set_pwm(int pwm)
 {
-	//Serial.print(pwm,DEC);
-
-	if(_filter){
-		if(radio_in == 0)
-			radio_in = pwm;
-		else
-			radio_in = ((pwm + radio_in) >> 1);		// Small filtering
-	}else{
-		radio_in = pwm;
-	}
-
-	if(_type == RANGE){
-		//Serial.print("range ");
-		control_in = pwm_to_range();
-		control_in = (control_in < dead_zone) ? 0 : control_in;
-		if (fabs(scale_output) > 0){
-			control_in *= scale_output;
-		}
-
-	}else{
-		control_in = pwm_to_angle();
-		control_in = (fabs(control_in) < dead_zone) ? 0 : control_in;
-		if (fabs(scale_output) > 0){
-			control_in *= scale_output;
-		}
-	}
+	//std::cout<<"pwm="<<pwm<<std::endl;
+	radio_in = pwm;
+	control_in = pwm_to_angle();
 }
 
 int
@@ -104,14 +81,13 @@ AP_RC_Channel::get_failsafe(void)
 void
 AP_RC_Channel::calc_pwm(void)
 {
+	//std::cout<<"radio_min="<<radio_min<<std::endl;
+	//std::cout<<"radio_max="<<radio_max<<std::endl;
+	//std::cout<<"servo_out="<<servo_out<<std::endl;
 
-	if(_type == RANGE){
-		pwm_out 	= range_to_pwm();
-		radio_out 	= pwm_out + radio_min;
-	}else{
-		pwm_out 	= angle_to_pwm();
-		radio_out 	= pwm_out + radio_trim;
-	}
+	pwm_out 	= angle_to_pwm();
+	radio_out 	= pwm_out + radio_trim;
+
 	radio_out = constrain(radio_out, radio_min, radio_max);
 }
 
@@ -168,10 +144,19 @@ AP_RC_Channel::update_min_max()
 int16_t
 AP_RC_Channel::pwm_to_angle()
 {
+
+	int16_t radio_trim_high = radio_trim + dead_zone;
+	int16_t radio_trim_low  = radio_trim - dead_zone;
+
+	// prevent div by 0
+	if ((radio_trim_low - radio_min) == 0 || (radio_max - radio_trim_high) == 0)
+		return 0;
+
+
 	if(radio_in < radio_trim)
-		return _reverse * ((long)_high * (long)(radio_in - radio_trim)) / (long)(radio_trim - radio_min);
+		return  ((long)_high * (long)(radio_in - radio_trim)) / (long)(radio_trim - radio_min);
 	else
-		return _reverse * ((long)_high * (long)(radio_in - radio_trim)) / (long)(radio_max  - radio_trim);
+		return  ((long)_high * (long)(radio_in - radio_trim)) / (long)(radio_max  - radio_trim);
 
 		//return _reverse * _high * ((float)(radio_in - radio_trim) / (float)(radio_max  - radio_trim));
 		//return _reverse * _high * ((float)(radio_in - radio_trim) / (float)(radio_trim - radio_min));
@@ -181,18 +166,20 @@ AP_RC_Channel::pwm_to_angle()
 int16_t
 AP_RC_Channel::angle_to_pwm()
 {
-	if(_reverse == -1)
+	// setup the control preferences
+
+	//set_angle(4500);
+	//std::cout<<"_high="<<_high<<std::endl;
+
+	if(servo_out > 0)
 	{
-		if(servo_out < 0)
-			return ( -1 * ((long)servo_out * (long)(radio_max - radio_trim)) / (long)_high);
-		else
-			return ( -1 * ((long)servo_out * (long)(radio_trim - radio_min)) / (long)_high);
-	} else {
-		if(servo_out > 0)
-			return ((long)servo_out * (long)(radio_max - radio_trim)) / (long)_high;
-		else
-			return ((long)servo_out * (long)(radio_trim - radio_min)) / (long)_high;
+		//std::cout<<"servo_out > 0"<<std::endl;
+		return ((long)servo_out * (long)(radio_max - radio_trim)) / (long)_high;
+
 	}
+	else
+		return ((long)servo_out * (long)(radio_trim - radio_min)) / (long)_high;
+
 
 		//return (((float)servo_out / (float)_high) * (float)(radio_max - radio_trim));
 		//return (((float)servo_out / (float)_high) * (float)(radio_trim - radio_min));

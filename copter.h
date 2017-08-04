@@ -86,6 +86,7 @@ public:
 
 private:
 
+	Vector3f omega;
     // Global parameters are all contained within the 'g' class.
     Global_Pilot g;
 
@@ -468,6 +469,17 @@ private:
 
 	  // An additional throttle added to keep the copter at the same altitude when banking
 	  int16_t angle_boost;
+
+	  ////////////////////////////////////////////////////////////////////////////////
+	  // PIDs
+	  ////////////////////////////////////////////////////////////////////////////////
+	  // This is a convienience accessor for the IMU roll rates. It's currently the raw IMU rates
+	  // and not the adjusted omega rates, but the name is stuck
+
+	  // This is used to hold radio tuning values for in-flight CH6 tuning
+	  float tuning_value;
+	  // This will keep track of the percent of roll or pitch the user is applying
+	  float roll_scale_d, pitch_scale_d;
 
 
     void compass_accumulate(void);

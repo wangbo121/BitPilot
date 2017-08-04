@@ -21,6 +21,7 @@ public:
 	int32_t         get_pi(int32_t error, float dt);
 	int32_t         get_p(int32_t error);
 	int32_t         get_i(int32_t error, float dt);
+	int32_t         get_d(int32_t input, float dt);
 
 //	// get_pid - get results from pid controller
 //	float       get_pid();
@@ -55,6 +56,18 @@ private:
 	float				_integrator;		///< integrator value
 	int32_t			_last_error;		///< last error for derivative
 	float				_last_derivative; 	///< last derivative for low-pass filter
+	float           _output;
+	float           _derivative;
+
+	/// Low pass filter cut frequency for derivative calculation.
+	///
+	static const float        _filter = 7.9577e-3; // Set to  "1 / ( 2 * PI * f_cut )";
+	// Examples for _filter:
+	// f_cut = 10 Hz -> _filter = 15.9155e-3
+	// f_cut = 15 Hz -> _filter = 10.6103e-3
+	// f_cut = 20 Hz -> _filter =  7.9577e-3
+	// f_cut = 25 Hz -> _filter =  6.3662e-3
+	// f_cut = 30 Hz -> _filter =  5.3052e-3
 
 	/// Low pass filter cut frequency for derivative calculation.
 	///

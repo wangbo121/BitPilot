@@ -54,7 +54,7 @@
  */
 #define MANUAL 0
 #define CIRCLE 1			 // When flying sans GPS, and we loose the radio, just circle
-#define STABILIZE 2
+#define STABLE 2
 #define ACRO 3
 
 #define AUTO_OMISSION 10
@@ -69,10 +69,14 @@
 
 // YAW debug
 // ---------
-#define YAW_HOLD 0
-#define YAW_BRAKE 1
-#define YAW_RATE 2
 #define YAW_STABILE 0
+#define YAW_ACRO 1
+//#define YAW_HOLD 0
+//#define YAW_BRAKE 1
+#define YAW_RATE 2
+
+#define YAW_MANUAL 3
+
 
 #define ROLL_PITCH_STABLE       0
 #define ROLL_PITCH_ACRO         1
@@ -80,7 +84,10 @@
 #define ROLL_PITCH_STABLE_OF    3
 #define ROLL_PITCH_TOY          4       // THOR This is the Roll and Pitch
                                         // mode
+#define ROLL_PITCH_MANUAL 5
 
+#define THROTTLE_STABLE 0
+#define THROTTLE_ACRO 1
 #define THROTTLE_MANUAL         0
 #define THROTTLE_HOLD           1
 #define THROTTLE_AUTO           2
@@ -90,8 +97,63 @@
 #define EARTH_FRAME     0
 #define BODY_FRAME      1
 
+// RADIANS
+#define RADX100 0.000174532925
+#define DEGX100 5729.57795
 
+// DEFAULT PIDS
 
+// roll
+#define STABILIZE_ROLL_P 0.70
+#define STABILIZE_ROLL_I 0.025
+#define STABILIZE_ROLL_D 0.04
+#define STABILIZE_ROLL_IMAX 7
+
+//pitch
+#define STABILIZE_PITCH_P 0.70
+#define STABILIZE_PITCH_I 0.025
+#define STABILIZE_PITCH_D 0.04
+#define STABILIZE_PITCH_IMAX 7
+
+// yaw stablise
+#define STABILIZE_YAW_P  0.7
+#define STABILIZE_YAW_I  0.02
+#define STABILIZE_YAW_D  0.0
+
+// yaw rate
+#define RATE_YAW_P  0.135
+#define RATE_YAW_I  0.0
+#define RATE_YAW_D  0.0
+
+// throttle
+#define THROTTLE_P 0.2
+#define THROTTLE_I 0.001
+#define THROTTLE_IMAX 100
+
+// Auto Pilot modes
+// ----------------
+#define STABILIZE 0                     // hold level position
+#define ACRO 1                          // rate control  比例控制，其实也就是纯手动控制
+#define ALT_HOLD 2                      // AUTO control
+#define AUTO 3                          // AUTO control
+#define GUIDED 4                        // AUTO control
+#define LOITER 5                        // Hold a single location
+#define RTL 6                           // AUTO control
+#define CIRCLE 7                        // AUTO control
+#define POSITION 8                      // AUTO control
+#define LAND 9                          // AUTO control
+#define OF_LOITER 10            // Hold a single location using optical flow
+                                // sensor
+#define TOY_A 11                                // THOR Enum for Toy mode
+#define TOY_M 12                                // THOR Enum for Toy mode
+#define NUM_MODES 13
+
+#define SIMPLE_1 1
+#define SIMPLE_2 2
+#define SIMPLE_3 4
+#define SIMPLE_4 8
+#define SIMPLE_5 16
+#define SIMPLE_6 32
 
 
 

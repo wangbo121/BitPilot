@@ -79,28 +79,33 @@ AP_RC::input_ch(uint8_t ch)
 	switch(ch)
 	{
 	case CH_1:
+		return 1500;
 		return hal.rcin->read(CH_1);
 		break;
 	case CH_2:
-		return hal.rcin->read(CH_1);
+		return 1600;//1200;
+		return hal.rcin->read(CH_2);
 		break;
 	case CH_3:
-		return hal.rcin->read(CH_1);
+		return 1200;//1300;
+		return hal.rcin->read(CH_3);
 		break;
 	case CH_4:
-		return hal.rcin->read(CH_1);
+		return 1500;//1700;
+		return hal.rcin->read(CH_4);
 		break;
 	case CH_5:
-		return hal.rcin->read(CH_1);
+		return 1400;
+		return hal.rcin->read(CH_5);
 		break;
 	case CH_6:
-		return hal.rcin->read(CH_1);
+		return hal.rcin->read(CH_6);
 		break;
 	case CH_7:
-		return hal.rcin->read(CH_1);
+		return hal.rcin->read(CH_7);
 		break;
 	case CH_8:
-		return hal.rcin->read(CH_1);
+		return hal.rcin->read(CH_8);
 		break;
 
 	default:
@@ -112,44 +117,16 @@ void
 AP_RC::output_ch_pwm(uint8_t ch, uint16_t pwm)
 {
 
-	switch(ch){
-		case CH_1:
-			pwm <<= 1;								// multiplies by 2 为什么要乘以2呢？
-			//OCR1A = pwm;
-			break;
-
-		case CH_2:
-			pwm <<= 1;
-			//OCR1B = pwm;							// multiplies by 2
-			break;
-
-		case CH_3:
-			_timer_out				= pwm % 512;
-			_timer_ovf_a			= pwm / 512;
-			_timer_out >>= 1;						// divides by 2
-			//OCR2A = _timer_out;
-			/*
-			 * 对于油门，看来APM的想法跟我的是一样的呀，只有再变化时，才再去赋值 wangbo
-			 */
-			/*
-			if(OCR2A != _timer_out)
-				OCR2A = _timer_out;
-				*/
-
-			break;
-
-		case CH_4:
-			_timer_out				= pwm % 512;
-			_timer_ovf_b			= pwm / 512;
-			_timer_out >>= 1;						// divides by 2
-			//OCR2B = _timer_out;
-
-			/*
-			if(OCR2B != _timer_out)
-				OCR2B = _timer_out;
-				*/
-
-			break;
+	switch(ch)
+	{
+	case CH_1:
+		break;
+	case CH_2:
+		break;
+	case CH_3:
+		break;
+	case CH_4:
+		break;
 	}
 }
 
