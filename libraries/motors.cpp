@@ -9,12 +9,12 @@
  * 使用硬件抽象层必须包括的头文件和hal的extern声明
  */
 #include "BIT_HAL.h"
-extern const BIT_HAL::HAL& hal;
+extern const AP_HAL::HAL& hal;
 
 
 #include "motors.h"
 // Constructor
-BIT_Motors::BIT_Motors(uint16_t loop_rate, uint16_t speed_hz) :
+AP_Motors::AP_Motors(uint16_t loop_rate, uint16_t speed_hz) :
     _loop_rate(loop_rate),
     _speed_hz(speed_hz),
     _roll_in(0.0f),
@@ -46,7 +46,7 @@ BIT_Motors::BIT_Motors(uint16_t loop_rate, uint16_t speed_hz) :
     limit.throttle_upper = true;
 };
 void
-BIT_Motors::output()
+AP_Motors::output()
 {
 #if 0
     // capture desired roll, pitch, yaw and throttle from receiver
@@ -57,11 +57,11 @@ BIT_Motors::output()
 #endif
 }
 
-void BIT_Motors::armed(bool arm)
+void AP_Motors::armed(bool arm)
 {
     if (_flags.armed != arm) {
         _flags.armed = arm;
-       // BIT_Notify::flags.armed = arm;
+       // AP_Notify::flags.armed = arm;
         if (!arm) {
             //save_params_on_disarm();
         }
@@ -69,7 +69,7 @@ void BIT_Motors::armed(bool arm)
 };
 
 // pilot input in the -1 ~ +1 range for roll, pitch and yaw. 0~1 range for throttle
-void BIT_Motors::set_radio_passthrough(float roll_input, float pitch_input, float throttle_input, float yaw_input)
+void AP_Motors::set_radio_passthrough(float roll_input, float pitch_input, float throttle_input, float yaw_input)
 {
     _roll_radio_passthrough = roll_input;
     _pitch_radio_passthrough = pitch_input;
@@ -80,7 +80,7 @@ void BIT_Motors::set_radio_passthrough(float roll_input, float pitch_input, floa
 /*
   write to an output channel
  */
-void BIT_Motors::rc_write(uint8_t chan, uint16_t pwm)
+void AP_Motors::rc_write(uint8_t chan, uint16_t pwm)
 {
     /*
      * wangbo20170802
@@ -92,7 +92,7 @@ void BIT_Motors::rc_write(uint8_t chan, uint16_t pwm)
 /*
   set frequency of a set of channels
  */
-void BIT_Motors::rc_set_freq(uint32_t mask, uint16_t freq_hz)
+void AP_Motors::rc_set_freq(uint32_t mask, uint16_t freq_hz)
 {
     mask = rc_map_mask(mask);
     if (freq_hz > 50) {
@@ -104,13 +104,13 @@ void BIT_Motors::rc_set_freq(uint32_t mask, uint16_t freq_hz)
         freq_hz > 50 &&
         mask != 0) {
         // tell HAL to do immediate output
-       // hal.rcout->set_output_mode(BIT_HAL::RCOutput::MODE_PWM_ONESHOT);
+       // hal.rcout->set_output_mode(AP_HAL::RCOutput::MODE_PWM_ONESHOT);
     } else if (_pwm_type == PWM_TYPE_BRUSHED) {
-        //hal.rcout->set_output_mode(BIT_HAL::RCOutput::MODE_PWM_BRUSHED);
+        //hal.rcout->set_output_mode(AP_HAL::RCOutput::MODE_PWM_BRUSHED);
     }
 }
 #if 0
-void BIT_Motors::rc_enable_ch(uint8_t chan)
+void AP_Motors::rc_enable_ch(uint8_t chan)
 {
     if (_motor_map_mask & (1U<<chan)) {
         // we have a mapped motor number for this channel
@@ -123,13 +123,13 @@ void BIT_Motors::rc_enable_ch(uint8_t chan)
 /*
   map an internal motor mask to real motor mask
  */
-uint32_t BIT_Motors::rc_map_mask(uint32_t mask) const
+uint32_t AP_Motors::rc_map_mask(uint32_t mask) const
 {
     uint32_t mask2 = 0;
     for (uint8_t i=0; i<32; i++) {
         uint32_t bit = 1UL<<i;
         if (mask & bit) {
-            if ((i < BIT_MOTORS_MAX_NUM_MOTORS) && (_motor_map_mask & bit)) {
+            if ((i < AP_MOTORS_MAX_NUM_MOTORS) && (_motor_map_mask & bit)) {
                 // we have a mapped motor number for this channel
                 mask2 |= (1UL << _motor_map[i]);
             } else {
@@ -142,7 +142,7 @@ uint32_t BIT_Motors::rc_map_mask(uint32_t mask) const
 
 #if 0
 // convert input in -1 to +1 range to pwm output
-int16_t BIT_Motors::calc_pwm_output_1to1(float input, const SRV_Channel *servo)
+int16_t AP_Motors::calc_pwm_output_1to1(float input, const SRV_Channel *servo)
 {
     int16_t ret;
 
@@ -162,7 +162,7 @@ int16_t BIT_Motors::calc_pwm_output_1to1(float input, const SRV_Channel *servo)
 }
 
 // convert input in 0 to +1 range to pwm output
-int16_t BIT_Motors::calc_pwm_output_0to1(float input, const SRV_Channel *servo)
+int16_t AP_Motors::calc_pwm_output_0to1(float input, const SRV_Channel *servo)
 {
     int16_t ret;
 
@@ -180,10 +180,10 @@ int16_t BIT_Motors::calc_pwm_output_0to1(float input, const SRV_Channel *servo)
 /*
   add a motor, setting up _motor_map and _motor_map_mask as needed
  */
-void BIT_Motors::add_motor_num(int8_t motor_num)
+void AP_Motors::add_motor_num(int8_t motor_num)
 {
     // ensure valid motor number is provided
-    if( motor_num >= 0 && motor_num < BIT_MOTORS_MAX_NUM_MOTORS ) {
+    if( motor_num >= 0 && motor_num < AP_MOTORS_MAX_NUM_MOTORS ) {
         uint8_t chan;
         SRV_Channel::Aux_servo_function_t function;
         if (motor_num < 8) {

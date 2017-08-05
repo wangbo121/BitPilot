@@ -11,11 +11,11 @@
 #include "HAL.h"
 
 
- void BIT_HAL::RCInput::init()
+ void AP_HAL::RCInput::init()
  {
 
  }
-    void BIT_HAL::RCInput::teardown()
+    void AP_HAL::RCInput::teardown()
     {
 
     }
@@ -23,7 +23,7 @@
     /**
      * Return true if there has been new input since the last call to new_input()
      */
-      bool BIT_HAL::RCInput::new_input(void)
+      bool AP_HAL::RCInput::new_input(void)
       {
 
       }
@@ -31,25 +31,25 @@
     /**
      * Return the number of valid channels in the last read
      */
-      uint8_t  BIT_HAL::RCInput::num_channels()
+      uint8_t  AP_HAL::RCInput::num_channels()
       {
 
       }
 
     /* Read a single channel at a time */
-      uint16_t BIT_HAL::RCInput::read(uint8_t ch)
+      uint16_t AP_HAL::RCInput::read(uint8_t ch)
       {
 
       }
 
     /* Read an array of channels, return the valid count */
-      uint8_t BIT_HAL::RCInput::read(uint16_t* periods, uint8_t len)
+      uint8_t AP_HAL::RCInput::read(uint16_t* periods, uint8_t len)
       {
 
       }
 
     /* get receiver based RSSI if available. -1 for unknown, 0 for no link, 255 for maximum link */
-      int16_t BIT_HAL::RCInput::get_rssi(void)
+      int16_t AP_HAL::RCInput::get_rssi(void)
       {
     	  return -1;
       }
@@ -71,7 +71,7 @@
       //void clear_overrides() = 0;
 
     /* execute receiver bind */
-      bool BIT_HAL::RCInput::rc_bind(int dsmMode)
+      bool AP_HAL::RCInput::rc_bind(int dsmMode)
       {
     	  return false;
       }

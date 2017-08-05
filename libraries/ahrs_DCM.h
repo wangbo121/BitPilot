@@ -23,12 +23,12 @@
 #define DEG_TO_RAD      (M_PI / 180.0f)
 #define RAD_TO_DEG      (180.0f / M_PI)
 
-class BIT_DCM
+class AP_DCM
 {
 public:
 #if 1
 	// Constructors
-	BIT_DCM(IMU *imu, GPS *&gps, Compass *withCompass = NULL) :
+	AP_DCM(IMU *imu, GPS *&gps, Compass *withCompass = NULL) :
 		_compass(withCompass),
 		_gps(gps),
 		_imu(imu),
@@ -41,7 +41,7 @@ public:
 	{}
 #endif
 
-	//BIT_DCM();
+	//AP_DCM();
 
 
 	// Accessors

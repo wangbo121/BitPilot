@@ -12,9 +12,9 @@
 #include <math.h>		// for fabs()
 
 //实例化的对象只对应(管理)一个 PID 控制器
-class BIT_PID {
+class AP_PID {
 public:
-	BIT_PID();
+	AP_PID();
 
 	float 	get_pid(int32_t error, uint16_t dt_ms, float scaler = 1.0);
 

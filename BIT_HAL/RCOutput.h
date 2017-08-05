@@ -13,7 +13,7 @@
 #define RC_OUTPUT_MIN_PULSEWIDTH 400
 #define RC_OUTPUT_MAX_PULSEWIDTH 2100
 
-/* Define the CH_n names, indexed from 1#include "BIT_HAL_Namespace.h", if we don't have them already */
+/* Define the CH_n names, indexed from 1#include "AP_HAL_Namespace.h", if we don't have them already */
 #ifndef CH_1
 #define CH_1 0
 #define CH_2 1
@@ -37,7 +37,7 @@
 #endif
 
 
-class BIT_HAL::RCOutput {
+class AP_HAL::RCOutput {
 public:
      void init() ;
 

@@ -9,7 +9,7 @@
  * 使用硬件抽象层必须包括的头文件和hal的extern声明
  */
 #include "BIT_HAL.h"
-extern const BIT_HAL::HAL& hal;
+extern const AP_HAL::HAL& hal;
 
 
 
@@ -46,13 +46,13 @@ volatile uint16_t	_timer_ovf_b;
 volatile uint16_t	_timer_ovf;
 
 
-BIT_RC::BIT_RC()
+AP_RC::AP_RC()
 {
 
 }
 
 void
-BIT_RC::init()
+AP_RC::init()
 {
 
 
@@ -71,7 +71,7 @@ BIT_RC::init()
 }
 
 uint16_t
-BIT_RC::input_ch(uint8_t ch)
+AP_RC::input_ch(uint8_t ch)
 {
 	/*
 	 * 这里是从hal获取通道的pwm值
@@ -114,7 +114,7 @@ BIT_RC::input_ch(uint8_t ch)
 }
 
 void
-BIT_RC::output_ch_pwm(uint8_t ch, uint16_t pwm)
+AP_RC::output_ch_pwm(uint8_t ch, uint16_t pwm)
 {
 
 	switch(ch)

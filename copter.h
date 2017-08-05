@@ -60,7 +60,7 @@ using namespace std;
 #include "global.h"
 //#include "GCS.h"
 
-class Copter :public BIT_HAL::HAL::Callbacks{
+class Copter :public AP_HAL::HAL::Callbacks{
 public:
 
     Copter(void);
@@ -89,23 +89,23 @@ private:
     // Global parameters are all contained within the 'g' class.
     Global_Pilot g;
 
-    BIT_RC ap_rc;
+    AP_RC ap_rc;
 
     // primary input control channels
-    BIT_RC_Channel *channel_roll;
-    BIT_RC_Channel *channel_pitch;
-    BIT_RC_Channel *channel_throttle;
-    BIT_RC_Channel *channel_yaw;
+    AP_RC_Channel *channel_roll;
+    AP_RC_Channel *channel_pitch;
+    AP_RC_Channel *channel_throttle;
+    AP_RC_Channel *channel_yaw;
 
 
 
-    BIT_GPS_NMEA gps;
+    AP_GPS_NMEA gps;
 
     // flight modes convenience array
     int8_t *flight_modes;
 
-    //BIT_Baro barometer;
-    //BIT_Compass_HMC5843 compass;
+    //AP_Baro barometer;
+    //AP_Compass_HMC5843 compass;
 
     // Location & Navigation
     int32_t wp_bearing;
@@ -221,20 +221,20 @@ private:
      * 下面这些都是真实传感器的实例化
      */
     // real sensors
-    //BIT_ADC_ADS7844          adc;
+    //AP_ADC_ADS7844          adc;
     //APM_BMP085_Class        barometer;
-    //BIT_Compass_HMC5843      compass();
+    //AP_Compass_HMC5843      compass();
 
-    //BIT_DCM              dcm;
-    BIT_IMU_Oilpan *imu;
+    //AP_DCM              dcm;
+    AP_IMU_Oilpan *imu;
 
-//    BIT_DCM dcm;
-    BIT_DCM *dcm;
-    BIT_DCM *ahrs;
-    //BIT_DCM_Oilpan *ahrs;
+//    AP_DCM dcm;
+    AP_DCM *dcm;
+    AP_DCM *ahrs;
+    //AP_DCM_Oilpan *ahrs;
 
-    BIT_Compass_HMC5843 compass;
-    BIT_Motors *motors;
+    AP_Compass_HMC5843 compass;
+    AP_Motors *motors;
 
     /*
      * 这里得读取gps数据
@@ -242,7 +242,7 @@ private:
     // real GPS selection
 
 
-    //BIT_RangeFinder_MaxsonarXL sonar;
+    //AP_RangeFinder_MaxsonarXL sonar;
 
     ////////////////////////////////////////////////////////////////////////////////
     // Global variables
@@ -764,7 +764,7 @@ private:
     void parachute_release();
     void parachute_manual_release();
 
-    // support for BIT_Avoidance custom flight mode, AVOID_ADSB
+    // support for AP_Avoidance custom flight mode, AVOID_ADSB
     bool avoid_adsb_init(bool ignore_checks);
     void avoid_adsb_run();
     bool avoid_adsb_set_velocity(const Vector3f& velocity_neu);
@@ -1012,7 +1012,7 @@ private:
 };
 
 
-extern const BIT_HAL::HAL& hal;
+extern const AP_HAL::HAL& hal;
 extern Copter copter;
 
 

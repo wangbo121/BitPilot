@@ -18,11 +18,11 @@
  *
  */
 
-class BIT_RC
+class AP_RC
 {
   private:
   public:
-	BIT_RC();
+	AP_RC();
 	void 		init();
 	void 		output_ch_pwm(uint8_t ch, uint16_t pwm);
 	uint16_t 	input_ch(uint8_t ch);

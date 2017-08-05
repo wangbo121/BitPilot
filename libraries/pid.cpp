@@ -7,12 +7,12 @@
 
 #include "pid.h"
 
-BIT_PID::BIT_PID()
+AP_PID::AP_PID()
 {
 }
 
 float
-BIT_PID::get_pid(int32_t error, uint16_t dt, float scaler)
+AP_PID::get_pid(int32_t error, uint16_t dt, float scaler)
 {
 	float output		= 0;
  	float delta_time	= (float)dt / 1000.0;
@@ -56,19 +56,19 @@ BIT_PID::get_pid(int32_t error, uint16_t dt, float scaler)
 }
 
 void
-BIT_PID::reset_I()
+AP_PID::reset_I()
 {
 	_integrator = 0;
 	_last_error = 0;
 	_last_derivative = 0;
 }
 
-int32_t BIT_PID::get_p(int32_t error)
+int32_t AP_PID::get_p(int32_t error)
 {
     return (float)error * _kp;
 }
 
-int32_t BIT_PID::get_i(int32_t error, float dt)
+int32_t AP_PID::get_i(int32_t error, float dt)
 {
     if(dt != 0) {
         _integrator += ((float)error * _ki) * dt;
@@ -82,7 +82,7 @@ int32_t BIT_PID::get_i(int32_t error, float dt)
     return _integrator;
 }
 
-int32_t        BIT_PID:: get_d(int32_t error, float dt)
+int32_t        AP_PID:: get_d(int32_t error, float dt)
 {
 	if ((_kd != 0) && (dt != 0)) {
 		_derivative = (error - _last_error) / dt;
@@ -103,20 +103,20 @@ int32_t        BIT_PID:: get_d(int32_t error, float dt)
 
 }
 
-int32_t BIT_PID::get_pi(int32_t error, float dt)
+int32_t AP_PID::get_pi(int32_t error, float dt)
 {
     return get_p(error) + get_i(error, dt);
 }
 
 
 #if 0
-float BIT_PID::get_p()
+float AP_PID::get_p()
 {
    float  result = (_input * _kp);
     return result;
 }
 
-float BIT_PID::get_i()
+float AP_PID::get_i()
 {
     if(!is_zero(_ki) && !is_zero(_dt)) {
         _integrator += ((float)_input * _ki) * _dt;
@@ -131,26 +131,26 @@ float BIT_PID::get_i()
     return 0;
 }
 
-float BIT_PID::get_d()
+float AP_PID::get_d()
 {
     // derivative component
     _pid_info.D = (_kd * _derivative);
     return _pid_info.D;
 }
 
-float BIT_PID::get_ff(float requested_rate)
+float AP_PID::get_ff(float requested_rate)
 {
     _pid_info.FF = (float)requested_rate * _ff;
     return _pid_info.FF;
 }
 
 
-float BIT_PID::get_pi()
+float AP_PID::get_pi()
 {
     return get_p() + get_i();
 }
 
-float BIT_PID::get_pid()
+float AP_PID::get_pid()
 {
     return get_p() + get_i() + get_d();
 }

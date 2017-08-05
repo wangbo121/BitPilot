@@ -14,7 +14,7 @@
 
 // setup the control preferences
 void
-BIT_RC_Channel::set_range(int low, int high)
+AP_RC_Channel::set_range(int low, int high)
 {
 	_type 	= RANGE;
 	_high 	= high;
@@ -22,42 +22,42 @@ BIT_RC_Channel::set_range(int low, int high)
 }
 
 void
-BIT_RC_Channel::set_angle(int angle)
+AP_RC_Channel::set_angle(int angle)
 {
 	_type 	= ANGLE;
 	_high 	= angle;
 }
 
 void
-BIT_RC_Channel::set_reverse(uint8_t reverse)
+AP_RC_Channel::set_reverse(uint8_t reverse)
 {
 	if (reverse) _reverse = -1;
 	else _reverse = 1;
 }
 
 bool
-BIT_RC_Channel::get_reverse(void)
+AP_RC_Channel::get_reverse(void)
 {
 	if (_reverse==-1) return 1;
 	else return 0;
 }
 
 void
-BIT_RC_Channel::set_filter(bool filter)
+AP_RC_Channel::set_filter(bool filter)
 {
 	_filter = filter;
 }
 
 // call after first read
 void
-BIT_RC_Channel::trim()
+AP_RC_Channel::trim()
 {
 	radio_trim = radio_in;
 }
 
 // read input from APM_RC - create a control_in value
 void
-BIT_RC_Channel::set_pwm(int pwm)
+AP_RC_Channel::set_pwm(int pwm)
 {
 	//std::cout<<"pwm="<<pwm<<std::endl;
 	radio_in = pwm;
@@ -65,21 +65,21 @@ BIT_RC_Channel::set_pwm(int pwm)
 }
 
 int
-BIT_RC_Channel::control_mix(float value)
+AP_RC_Channel::control_mix(float value)
 {
 	return (1 - fabs(control_in / _high)) * value + control_in;
 }
 
 // are we below a threshold?
 bool
-BIT_RC_Channel::get_failsafe(void)
+AP_RC_Channel::get_failsafe(void)
 {
 	return (radio_in < (radio_min - 50));
 }
 
 // returns just the PWM without the offset from radio_min
 void
-BIT_RC_Channel::calc_pwm(void)
+AP_RC_Channel::calc_pwm(void)
 {
 	//std::cout<<"radio_min="<<radio_min<<std::endl;
 	//std::cout<<"radio_max="<<radio_max<<std::endl;
@@ -94,7 +94,7 @@ BIT_RC_Channel::calc_pwm(void)
 // ------------------------------------------
 
 void
-BIT_RC_Channel::load_eeprom(void)
+AP_RC_Channel::load_eeprom(void)
 {
 	//radio_min 	= eeprom_read_word((uint16_t *)	_address);
 	//radio_max	= eeprom_read_word((uint16_t *)	(_address + 2));
@@ -102,7 +102,7 @@ BIT_RC_Channel::load_eeprom(void)
 }
 
 void
-BIT_RC_Channel::save_eeprom(void)
+AP_RC_Channel::save_eeprom(void)
 {
 	//eeprom_write_word((uint16_t *)	_address, 			radio_min);
 	//eeprom_write_word((uint16_t *)	(_address + 2), 	radio_max);
@@ -111,14 +111,14 @@ BIT_RC_Channel::save_eeprom(void)
 
 // ------------------------------------------
 void
-BIT_RC_Channel::save_trim(void)
+AP_RC_Channel::save_trim(void)
 {
 	//eeprom_write_word((uint16_t *)	(_address + 4), 	radio_trim);
 	//_ee.write_int((_address + 4), 	radio_trim);
 }
 
 void
-BIT_RC_Channel::load_trim(void)
+AP_RC_Channel::load_trim(void)
 {
 	//radio_trim 	= eeprom_read_word((uint16_t *)	(_address + 4));
 	//_ee.write_int((_address + 4), 	radio_trim);
@@ -127,13 +127,13 @@ BIT_RC_Channel::load_trim(void)
 // ------------------------------------------
 
 void
-BIT_RC_Channel::zero_min_max()
+AP_RC_Channel::zero_min_max()
 {
 	radio_min = radio_max = radio_in;
 }
 
 void
-BIT_RC_Channel::update_min_max()
+AP_RC_Channel::update_min_max()
 {
 	//radio_min = min(radio_min, radio_in);
 	//radio_max = max(radio_max, radio_in);
@@ -142,7 +142,7 @@ BIT_RC_Channel::update_min_max()
 // ------------------------------------------
 
 int16_t
-BIT_RC_Channel::pwm_to_angle()
+AP_RC_Channel::pwm_to_angle()
 {
 
 	int16_t radio_trim_high = radio_trim + dead_zone;
@@ -164,7 +164,7 @@ BIT_RC_Channel::pwm_to_angle()
 
 
 int16_t
-BIT_RC_Channel::angle_to_pwm()
+AP_RC_Channel::angle_to_pwm()
 {
 	// setup the control preferences
 
@@ -188,14 +188,14 @@ BIT_RC_Channel::angle_to_pwm()
 // ------------------------------------------
 
 int16_t
-BIT_RC_Channel::pwm_to_range()
+AP_RC_Channel::pwm_to_range()
 {
 	//return (_low + ((_high - _low) * ((float)(radio_in - radio_min) / (float)(radio_max - radio_min))));
 	return (_low + ((long)(_high - _low) * (long)(radio_in - radio_min)) / (long)(radio_max - radio_min));
 }
 
 int16_t
-BIT_RC_Channel::range_to_pwm()
+AP_RC_Channel::range_to_pwm()
 {
 	//return (((float)(servo_out - _low) / (float)(_high - _low)) * (float)(radio_max - radio_min));
 	return ((long)(servo_out - _low) * (long)(radio_max - radio_min)) / (long)(_high - _low);
@@ -204,7 +204,7 @@ BIT_RC_Channel::range_to_pwm()
 // ------------------------------------------
 
 float
-BIT_RC_Channel::norm_input()
+AP_RC_Channel::norm_input()
 {
 	if(radio_in < radio_trim)
 		return _reverse * (float)(radio_in - radio_trim) / (float)(radio_trim - radio_min);
@@ -213,7 +213,7 @@ BIT_RC_Channel::norm_input()
 }
 
 float
-BIT_RC_Channel::norm_output()
+AP_RC_Channel::norm_output()
 {
 	if(radio_out < radio_trim)
 		return (float)(radio_out - radio_trim) / (float)(radio_trim - radio_min);
@@ -222,7 +222,7 @@ BIT_RC_Channel::norm_output()
 }
 
 float
-BIT_RC_Channel::constrain(float m,float a,float b)
+AP_RC_Channel::constrain(float m,float a,float b)
 {
 	if(m<=a)        m=a;
 	else if(m>=b)   m=b;

@@ -1,12 +1,12 @@
 /*
- * BIT_MATH.h
+ * AP_MATH.h
  *
  *  Created on: 2017-8-1
  *      Author: wangbo
  */
 
-#ifndef BIT_MATH_H_
-#define BIT_MATH_H_
+#ifndef AP_MATH_H_
+#define AP_MATH_H_
 
 #include <cmath>
 #include <limits>
@@ -180,4 +180,4 @@ float rand_float(void);
 // generate a random Vector3f of size 1
 Vector3f rand_vec3f(void);
 
-#endif /* BIT_MATH_H_ */
+#endif /* AP_MATH_H_ */

@@ -8,19 +8,19 @@
 #ifndef RC_CHANNEL_H_
 #define RC_CHANNEL_H_
 
-//#include <BIT_Common.h>
+//#include <AP_Common.h>
 #include <stdint.h>
 
-/// @class	BIT_RC_Channel
+/// @class	AP_RC_Channel
 /// @brief	Object managing one RC channel
-class BIT_RC_Channel{
+class AP_RC_Channel{
   public:
 	/// Constructor
 	///
 	/// @param key      EEPROM storage key for the channel trim parameters.
 	/// @param name     Optional name for the group.
 	///
-	BIT_RC_Channel(uint16_t address) :
+	AP_RC_Channel(uint16_t address) :
 		_address(address),
 		_high(1),
 		_filter(true),
@@ -29,7 +29,7 @@ class BIT_RC_Channel{
 		scale_output(1.0)
 	{}
 
-	BIT_RC_Channel() :
+	AP_RC_Channel() :
 		_high(1),
 		_filter(true),
 		_reverse(1),

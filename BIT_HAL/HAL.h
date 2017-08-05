@@ -13,16 +13,16 @@
 #include "RCInput.h"
 #include "RCOutput.h"
 
-class BIT_HAL::HAL {
+class AP_HAL::HAL {
 public:
-    HAL( BIT_HAL::RCInput*    _rcin,
-    		BIT_HAL::RCOutput*    _rcout)
+    HAL( AP_HAL::RCInput*    _rcin,
+    		AP_HAL::RCOutput*    _rcout)
         :
         rcin(_rcin),
 		rcout(_rcout)
     {
 
-        //BIT_HAL::init();
+        //AP_HAL::init();
     }
 
     struct Callbacks {
@@ -48,8 +48,8 @@ public:
     void run(int argc, char * const argv[], Callbacks* callbacks)  const ;
 
 
-    BIT_HAL::RCInput*    rcin;
-    BIT_HAL::RCOutput*    rcout;
+    AP_HAL::RCInput*    rcin;
+    AP_HAL::RCOutput*    rcout;
 
 };
 

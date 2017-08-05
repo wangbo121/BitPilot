@@ -239,45 +239,45 @@ public:
 	int8_t		battery_monitoring;	// 0=disabled, 1=3 cell lipo, 2=4 cell lipo, 3=total voltage only, 4=total voltage and current
 	int16_t	pack_capacity;		// Battery pack capacity less reserve
 
-	BIT_RC _rc;
+	AP_RC _rc;
 	// RC channels
-	BIT_RC_Channel  channel_roll;
-	BIT_RC_Channel  channel_pitch;
-	BIT_RC_Channel  channel_throttle;
-	BIT_RC_Channel  channel_rudder;
-	BIT_RC_Channel	rc_5;
-	BIT_RC_Channel	rc_6;
-	BIT_RC_Channel	rc_7;
-	BIT_RC_Channel	rc_8;
+	AP_RC_Channel  channel_roll;
+	AP_RC_Channel  channel_pitch;
+	AP_RC_Channel  channel_throttle;
+	AP_RC_Channel  channel_rudder;
+	AP_RC_Channel	rc_5;
+	AP_RC_Channel	rc_6;
+	AP_RC_Channel	rc_7;
+	AP_RC_Channel	rc_8;
 
-      // BIT_PID controllers
+      // AP_PID controllers
       //
-      BIT_PID         pidNavRoll;
-      BIT_PID         pidServoRoll;
-      BIT_PID         pidServoPitch;
-      BIT_PID         pidNavPitchAirspeed;
-      BIT_PID         pidServoRudder;
-      BIT_PID         pidTeThrottle;
-      BIT_PID         pidNavPitchAltitude;
+      AP_PID         pidNavRoll;
+      AP_PID         pidServoRoll;
+      AP_PID         pidServoPitch;
+      AP_PID         pidNavPitchAirspeed;
+      AP_PID         pidServoRudder;
+      AP_PID         pidTeThrottle;
+      AP_PID         pidNavPitchAltitude;
 
-      BIT_PID                  pid_rate_roll;
-	  BIT_PID                  pid_rate_pitch;
-	  BIT_PID                  pid_rate_yaw;
-	  BIT_PID                  pid_loiter_rate_lat;
-	  BIT_PID                  pid_loiter_rate_lon;
-	  BIT_PID                  pid_nav_lat;
-	  BIT_PID                  pid_nav_lon;
+      AP_PID                  pid_rate_roll;
+	  AP_PID                  pid_rate_pitch;
+	  AP_PID                  pid_rate_yaw;
+	  AP_PID                  pid_loiter_rate_lat;
+	  AP_PID                  pid_loiter_rate_lon;
+	  AP_PID                  pid_nav_lat;
+	  AP_PID                  pid_nav_lon;
 
-	  BIT_PID                  pid_throttle;
-	  BIT_PID                  pid_optflow_roll;
-	  BIT_PID                  pid_optflow_pitch;
+	  AP_PID                  pid_throttle;
+	  AP_PID                  pid_optflow_roll;
+	  AP_PID                  pid_optflow_pitch;
 
-	  BIT_PID                  pi_loiter_lat;
-	  BIT_PID                  pi_loiter_lon;
-	  BIT_PID                  pi_stabilize_roll;
-	  BIT_PID                  pi_stabilize_pitch;
-	  BIT_PID                  pi_stabilize_yaw;
-	  BIT_PID                  pi_alt_hold;
+	  AP_PID                  pi_loiter_lat;
+	  AP_PID                  pi_loiter_lon;
+	  AP_PID                  pi_stabilize_roll;
+	  AP_PID                  pi_stabilize_pitch;
+	  AP_PID                  pi_stabilize_yaw;
+	  AP_PID                  pi_alt_hold;
 
 
 

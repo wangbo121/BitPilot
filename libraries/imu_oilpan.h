@@ -17,7 +17,7 @@
 
 #include "imu.h"
 
-class BIT_IMU_Oilpan : public IMU
+class AP_IMU_Oilpan : public IMU
 {
 
 public:
@@ -25,10 +25,10 @@ public:
     ///
     /// Saves the ADC pointer and constructs the calibration data variable.
     ///
-    /// @param  adc         Pointer to the BIT_ADC instance that is connected to the gyro and accelerometer.
-    /// @param  key         The BIT_Var::key value we will use when loading/saving calibration data.
+    /// @param  adc         Pointer to the AP_ADC instance that is connected to the gyro and accelerometer.
+    /// @param  key         The AP_Var::key value we will use when loading/saving calibration data.
     ///
-	BIT_IMU_Oilpan() 	{}
+	AP_IMU_Oilpan() 	{}
 
 	/// Do warm or cold start.
 	///

@@ -1,5 +1,5 @@
 /*
- * BIT_HAL_Namespace.h
+ * AP_HAL_Namespace.h
  *
  *  Created on: 2017-8-4
  *      Author: wangbo
@@ -7,10 +7,10 @@
 
 #pragma once
 
-#ifndef BIT_HAL_NAMESPACE_H_
-#define BIT_HAL_NAMESPACE_H_
+#ifndef AP_HAL_NAMESPACE_H_
+#define AP_HAL_NAMESPACE_H_
 
-namespace BIT_HAL {
+namespace AP_HAL {
 
     /* Toplevel pure virtual class Hal.*/
     class HAL;
@@ -27,4 +27,4 @@ namespace BIT_HAL {
 
 
 
-#endif /* BIT_HAL_NAMESPACE_H_ */
+#endif /* AP_HAL_NAMESPACE_H_ */
