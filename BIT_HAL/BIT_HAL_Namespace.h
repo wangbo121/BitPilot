@@ -10,6 +10,8 @@
 #ifndef AP_HAL_NAMESPACE_H_
 #define AP_HAL_NAMESPACE_H_
 
+#include <inttypes.h>
+
 namespace AP_HAL {
 
     /* Toplevel pure virtual class Hal.*/
@@ -19,6 +21,11 @@ namespace AP_HAL {
     class RCInput;
     class RCOutput;
 
+    class Scheduler;
+
+    /* Typdefs for function pointers (Procedure, Timed Procedure) */
+	typedef void(*Proc)(void);
+	typedef void(*TimedProc)(uint32_t);
 
     // Must be implemented by the concrete HALs.
     const HAL& get_HAL();
