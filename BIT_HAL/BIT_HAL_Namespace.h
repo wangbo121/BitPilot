@@ -18,6 +18,9 @@ namespace AP_HAL {
     class HAL;
 
 
+    class AnalogSource;
+    class AnalogIn;
+
     class RCInput;
     class RCOutput;
 
