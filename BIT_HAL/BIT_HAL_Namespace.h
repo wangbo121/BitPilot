@@ -17,6 +17,9 @@ namespace AP_HAL {
     /* Toplevel pure virtual class Hal.*/
     class HAL;
 
+    /* Toplevel class names for drivers: */
+	class UARTDriver;
+
 
     class AnalogSource;
     class AnalogIn;
@@ -32,6 +35,16 @@ namespace AP_HAL {
     class RCOutput;
 
     class Scheduler;
+
+
+
+
+
+
+    /* Utility Classes */
+	class Print;
+	class Stream;
+	class BetterStream;
 
     /* Typdefs for function pointers (Procedure, Timed Procedure) */
 	typedef void(*Proc)(void);

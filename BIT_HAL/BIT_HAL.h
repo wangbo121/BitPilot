@@ -21,6 +21,19 @@
 
 #include "RCInput.h"
 #include "RCOutput.h"
+#include "Scheduler.h"
+
+#include "UARTDriver.h"
+
+#include "AnalogIn.h"
+#include "Storage.h"
+#include "RCInput.h"
+#include "RCOutput.h"
+#include "Scheduler.h"
+
+#include "Print.h"
+#include "Stream.h"
+#include "BetterStream.h"
 
 
 

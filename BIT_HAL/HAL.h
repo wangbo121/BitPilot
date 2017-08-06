@@ -14,10 +14,12 @@
 class AP_HAL::HAL {
 public:
     HAL( AP_HAL::RCInput*    _rcin,
-    		AP_HAL::RCOutput*    _rcout)
+    		AP_HAL::RCOutput*    _rcout,
+    		AP_HAL::Scheduler * _scheduler)
         :
         rcin(_rcin),
-		rcout(_rcout)
+		rcout(_rcout),
+		scheduler(_scheduler)
     {
 
         //AP_HAL::init();
@@ -48,6 +50,7 @@ public:
 
     AP_HAL::RCInput*    rcin;
     AP_HAL::RCOutput*    rcout;
+    AP_HAL::Scheduler * scheduler;
 
 };
 

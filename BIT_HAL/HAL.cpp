@@ -39,9 +39,10 @@ void HAL::FunCallbacks::loop()
 
 AP_HAL::RCInput rcin_driver;
 AP_HAL::RCOutput rcout_driver;
+AP_HAL::Scheduler scheduler;
 
 
-static AP_HAL::HAL halInstance(&rcin_driver,&rcout_driver);
+static AP_HAL::HAL halInstance(&rcin_driver,&rcout_driver,&scheduler);
 
 const AP_HAL::HAL& AP_HAL::get_HAL() {
     //static const AP_HAL::HAL hal;
