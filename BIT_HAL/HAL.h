@@ -9,9 +9,7 @@
 #define HAL_H_
 
 #include "BIT_HAL_Namespace.h"
-
-#include "RCInput.h"
-#include "RCOutput.h"
+#include "BIT_HAL.h"
 
 class AP_HAL::HAL {
 public:

@@ -10,8 +10,8 @@
 #include <assert.h>
 
 #include "HAL.h"
-#include "RCInput.h"
-#include "RCOutput.h"
+//#include "RCInput.h"
+//#include "RCOutput.h"
 
 namespace AP_HAL {
 #if 0
