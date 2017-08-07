@@ -14,6 +14,7 @@ extern const AP_HAL::HAL& hal;
 
 #include "motors.h"
 // Constructor
+#if 0
 AP_Motors::AP_Motors(uint16_t loop_rate, uint16_t speed_hz) :
     _loop_rate(loop_rate),
     _speed_hz(speed_hz),
@@ -45,6 +46,8 @@ AP_Motors::AP_Motors(uint16_t loop_rate, uint16_t speed_hz) :
     limit.throttle_lower = true;
     limit.throttle_upper = true;
 };
+#endif
+
 void
 AP_Motors::output()
 {

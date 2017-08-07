@@ -159,7 +159,7 @@ void Copter::loop_fast()
 	read_radio();
 
 	/* 2--更新姿态，获取飞机现在的姿态角 */
-	//ahrs->update_DCM(G_Dt);
+	ahrs.update_DCM(G_Dt);
 
 	/* 3--update_current_flight_mode 更新控制状态，从而选择控制方式 */
 	update_current_flight_mode();
@@ -290,7 +290,7 @@ void Copter::motors_output()
 	{
 		g._rc.output_ch_pwm(i,motor_out[i]);
 		//或者用下面的motors也是可以的
-		motors->rc_write(i,motor_out[i]);
+		motors.rc_write(i,motor_out[i]);
 		std::cout<<"motor_out["<<i<<"]="<<motor_out[i]<<std::endl;
 		sleep(1);
 	}

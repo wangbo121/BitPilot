@@ -28,16 +28,15 @@ class AP_DCM
 public:
 #if 1
 	// Constructors
-	AP_DCM(IMU *imu, GPS *&gps, Compass *withCompass = NULL) :
-		_compass(withCompass),
+	AP_DCM(IMU &imu, GPS &gps, Compass &compass ) :
+		_compass(compass),
 		_gps(gps),
 		_imu(imu),
 		_dcm_matrix(1, 0, 0,
 					0, 1, 0,
 					0, 0, 1),
 		_course_over_ground_x(0),
-		_course_over_ground_y(1),
-		_health(1.)
+		_course_over_ground_y(1)
 	{}
 #endif
 
@@ -52,7 +51,7 @@ public:
 
 	void		set_centripetal(bool b) {_centripetal = b;}
 	bool		get_centripetal(void) {return _centripetal;}
-	void		set_compass(Compass *compass);
+	void		set_compass(Compass &compass);
 
 	float radians(float deg);
 	float degrees(float rad);
@@ -88,13 +87,13 @@ private:
 	void 		euler_angles(void);
 
 	// members
-	Compass 	* _compass;
+	Compass 	& _compass;
 
 	// note: we use ref-to-pointer here so that our caller can change the GPS without our noticing
 	//       IMU under us without our noticing.
-	GPS 		*&_gps;                     // note: this is a reference to a pointer owned by the caller
+	GPS 		&_gps;                     // note: this is a reference to a pointer owned by the caller
 
-	IMU 		*_imu;
+	IMU 		&_imu;
 
 	Matrix3f	_dcm_matrix;
 

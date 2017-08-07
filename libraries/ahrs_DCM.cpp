@@ -22,7 +22,7 @@
 
 
 void
-AP_DCM::set_compass(Compass *compass)
+AP_DCM::set_compass(Compass &compass)
 {
 	_compass = compass;
 }
@@ -31,9 +31,9 @@ AP_DCM::set_compass(Compass *compass)
 void
 AP_DCM::update_DCM(float _G_Dt)
 {
-	_imu->update();
-	_gyro_vector 	= _imu->get_gyro();			// Get current values for IMU sensors
-	_accel_vector 	= _imu->get_accel();			// Get current values for IMU sensors
+	_imu.update();
+	_gyro_vector 	= _imu.get_gyro();			// Get current values for IMU sensors
+	_accel_vector 	= _imu.get_accel();			// Get current values for IMU sensors
 
 	matrix_update(_G_Dt); 	// Integrate the DCM matrix
 	normalize();			// Normalize the DCM matrix
@@ -114,7 +114,7 @@ AP_DCM::accel_adjust(void)
 	Vector3f veloc, temp;
 	float vel;
 
-	veloc.x = _gps->ground_speed / 100;		// We are working with acceleration in m/s^2 units
+	veloc.x = _gps.ground_speed / 100;		// We are working with acceleration in m/s^2 units
 
 	// We are working with a modified version of equation 26 as our IMU object reports acceleration in the positive axis direction as positive
 
@@ -235,16 +235,16 @@ AP_DCM::drift_correction(void)
 
 	//*****YAW***************
 
-	if (_compass) {
+	if (&_compass) {
 		// We make the gyro YAW drift correction based on compass magnetic heading
-		error_course = (_dcm_matrix.a.x * _compass->heading_y) - (_dcm_matrix.b.x * _compass->heading_x);	// Equation 23, Calculating YAW error
+		error_course = (_dcm_matrix.a.x * _compass.heading_y) - (_dcm_matrix.b.x * _compass.heading_x);	// Equation 23, Calculating YAW error
 
 	} else {
 
 		// Use GPS Ground course to correct yaw gyro drift
-		if (_gps->ground_speed >= SPEEDFILT) {
-			_course_over_ground_x = cos(ToRad(_gps->ground_course/100.0));
-			_course_over_ground_y = sin(ToRad(_gps->ground_course/100.0));
+		if (_gps.ground_speed >= SPEEDFILT) {
+			_course_over_ground_x = cos(ToRad(_gps.ground_course/100.0));
+			_course_over_ground_y = sin(ToRad(_gps.ground_course/100.0));
 			if(in_motion) {
 				error_course = (_dcm_matrix.a.x * _course_over_ground_y) - (_dcm_matrix.b.x * _course_over_ground_x);	// Equation 23, Calculating YAW error
 			} else  {
@@ -252,8 +252,8 @@ AP_DCM::drift_correction(void)
 				// This is the case for when we first start moving and reset the DCM so that yaw matches the gps ground course
 				// This is just to get a reasonable estimate faster
 				yaw = atan2(_dcm_matrix.b.x, _dcm_matrix.a.x);
-				cos_psi_err = cos(ToRad(_gps->ground_course/100.0) - yaw);
-				sin_psi_err = sin(ToRad(_gps->ground_course/100.0) - yaw);
+				cos_psi_err = cos(ToRad(_gps.ground_course/100.0) - yaw);
+				sin_psi_err = sin(ToRad(_gps.ground_course/100.0) - yaw);
 				// Rxx = cos psi err, Rxy = - sin psi err, Rxz = 0
 				// Ryx = sin psi err, Ryy = cos psi err,   Ryz = 0
 				// Rzx = Rzy = 0, Rzz = 1

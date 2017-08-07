@@ -63,7 +63,9 @@ public:
     };
 
     // Constructor
-    AP_Motors(uint16_t loop_rate, uint16_t speed_hz = AP_MOTORS_SPEED_DEFAULT);
+    //AP_Motors(uint16_t loop_rate, uint16_t speed_hz = AP_MOTORS_SPEED_DEFAULT);
+    AP_Motors(){}
+
 
     void output();
 
@@ -98,7 +100,7 @@ public:
    // float               get_throttle_bidirectional() const { return constrain_float(2*(_throttle_filter.get()-0.5f),-1.0f,1.0f); }
     float               get_forward() const { return _forward_in; }
     float               get_lateral() const { return _lateral_in; }
-    virtual float       get_throttle_hover() const = 0;
+    float       get_throttle_hover() const ;
 
     // spool up states
     enum spool_up_down_desired {
@@ -107,7 +109,7 @@ public:
         DESIRED_THROTTLE_UNLIMITED = 2,     // motors are no longer constrained by start up procedure
     };
 
-    virtual void set_desired_spool_state(enum spool_up_down_desired spool) { _spool_desired = spool; };
+    void set_desired_spool_state(enum spool_up_down_desired spool) { _spool_desired = spool; };
 
     enum spool_up_down_desired get_desired_spool_state(void) const { return _spool_desired; }
 
@@ -137,35 +139,35 @@ public:
     } limit;
 
     //
-    // virtual functions that should be implemented by child classes
+    //  functions that should be implemented by child classes
     //
 
     // set update rate to motors - a value in hertz
-   // virtual void        set_update_rate( uint16_t speed_hz ) { _speed_hz = speed_hz; }
+   //  void        set_update_rate( uint16_t speed_hz ) { _speed_hz = speed_hz; }
 
     // init
-    //virtual void        init(motor_frame_class frame_class, motor_frame_type frame_type) = 0;
+    // void        init(motor_frame_class frame_class, motor_frame_type frame_type) = 0;
 
     // set frame class (i.e. quad, hexa, heli) and type (i.e. x, plus)
-    //virtual void        set_frame_class_and_type(motor_frame_class frame_class, motor_frame_type frame_type) = 0;
+    // void        set_frame_class_and_type(motor_frame_class frame_class, motor_frame_type frame_type) = 0;
 
     // enable - starts allowing signals to be sent to motors
-   // virtual void        enable() = 0;
+   //  void        enable() = 0;
 
     // output - sends commands to the motors
-    //virtual void        output() = 0;
+    // void        output() = 0;
 
     // output_min - sends minimum values out to the motors
-    //virtual void        output_min() = 0;
+    // void        output_min() = 0;
 
     // output_test - spin a motor at the pwm value specified
     //  motor_seq is the motor's sequence number from 1 to the number of motors on the frame
     //  pwm value is an actual pwm value that will be output, normally in the range of 1000 ~ 2000
-    //virtual void        output_test(uint8_t motor_seq, int16_t pwm) = 0;
+    // void        output_test(uint8_t motor_seq, int16_t pwm) = 0;
 
     // get_motor_mask - returns a bitmask of which outputs are being used for motors (1 means being used)
     //  this can be used to ensure other pwm outputs (i.e. for servos) do not conflict
-   // virtual uint16_t    get_motor_mask() = 0;
+   //  uint16_t    get_motor_mask() = 0;
 
     // pilot input in the -1 ~ +1 range for roll, pitch and yaw. 0~1 range for throttle
     void                set_radio_passthrough(float roll_input, float pitch_input, float throttle_input, float yaw_input);
@@ -179,11 +181,11 @@ public:
     void        rc_write(uint8_t chan, uint16_t pwm);
 protected:
     // output functions that should be overloaded by child classes
-    //virtual void        output_armed_stabilizing()=0;
-    //virtual void        rc_write(uint8_t chan, uint16_t pwm);
-    //virtual void        rc_set_freq(uint32_t mask, uint16_t freq_hz);
-    //virtual void        rc_enable_ch(uint8_t chan);
-    //virtual uint32_t    rc_map_mask(uint32_t mask) const;
+    // void        output_armed_stabilizing()=0;
+    // void        rc_write(uint8_t chan, uint16_t pwm);
+    // void        rc_set_freq(uint32_t mask, uint16_t freq_hz);
+    // void        rc_enable_ch(uint8_t chan);
+    // uint32_t    rc_map_mask(uint32_t mask) const;
     // output functions that should be overloaded by child classes
 	void        output_armed_stabilizing();
 //	void        rc_write(uint8_t chan, uint16_t pwm);
@@ -195,10 +197,10 @@ protected:
     void add_motor_num(int8_t motor_num);
 
     // update the throttle input filter
-    //virtual void update_throttle_filter() = 0;
+    // void update_throttle_filter() = 0;
 
     // save parameters as part of disarming
-    //virtual void save_params_on_disarm() {}
+    // void save_params_on_disarm() {}
 
     // convert input in -1 to +1 range to pwm output
    // int16_t calc_pwm_output_1to1(float input, const SRV_Channel *servo);

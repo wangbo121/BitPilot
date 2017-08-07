@@ -49,7 +49,7 @@ using namespace std;
 #include "compass_hmc5843.h"
 #include "BIT_MATH.h"        // ArduPilot Mega Vector/Matrix math Library
 #include "imu.h"         // ArduPilot Mega IMU Library
-#include "imu_oilpan.h"
+//#include "imu_oilpan.h"
 #include "ahrs_DCM.h"         // ArduPilot Mega DCM Library
 #include "pid.h"            // PID library
 #include "rc.h"         // ArduPilot Mega RC Library
@@ -99,7 +99,6 @@ private:
 
 
 
-    AP_GPS_NMEA gps;
 
     // flight modes convenience array
     int8_t *flight_modes;
@@ -215,8 +214,8 @@ private:
     uint8_t auto_trim_counter;
 
     // All GPS access should be through this pointer.
-    GPS         *g_gps;
 
+    AP_GPS_NMEA gps;
     /*
      * 下面这些都是真实传感器的实例化
      */
@@ -226,16 +225,22 @@ private:
     //AP_Compass_HMC5843      compass();
 
     //AP_DCM              dcm;
-    AP_IMU_Oilpan *imu;
+    //AP_IMU_Oilpan *imu;
+
+    IMU imu;
 
 //    AP_DCM dcm;
-    AP_DCM *dcm;
-    AP_DCM *ahrs;
+
     //AP_DCM_Oilpan *ahrs;
 
     AP_Compass_HMC5843 compass;
-    AP_Motors *motors;
+    AP_Motors motors;
 
+
+
+    //AP_DCM *dcm;
+	AP_DCM ahrs{imu,gps,compass};
+	//AP_DCM ahrs(&imu,&gps,&compass);
     /*
      * 这里得读取gps数据
      */

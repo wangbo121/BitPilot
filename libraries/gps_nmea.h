@@ -19,6 +19,7 @@ public:
 	/// Constructor
 	///
 	//AP_GPS_NMEA(Stream *s);
+	AP_GPS_NMEA(){}
 
 	/// Perform a (re)initialisation of the GPS; sends the
 	/// protocol configuration messages.
