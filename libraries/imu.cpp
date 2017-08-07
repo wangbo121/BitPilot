@@ -123,6 +123,23 @@ IMU::update(void)
 	_accel.y = _accel_scale * _sensor_in(4, tc_temp);
 	_accel.z = _accel_scale * _sensor_in(5, tc_temp);
 
+
+	_gyro.x = ToRad(0.4) ;
+	_gyro.y = ToRad(0.4);
+	_gyro.z = ToRad(0.4 );
+
+	// convert corrected accelerometer readings to acceleration
+	//
+	_accel.x = _accel_scale * 423.0 ;
+	_accel.y = _accel_scale *423.0 ;
+	_accel.z = _accel_scale * 423.0 ;
+
+	/*
+	 * 总之，这个函数是必须不断获取acc gyro的数据，把数据给到_gyro，_accel这个三维向量里
+	 * 然后才能把数据给到ahrs
+	 * 然后更新dcm矩阵
+	 */
+
 	// always updated
 	return true;
 }

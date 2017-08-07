@@ -159,6 +159,13 @@ void Copter::loop_fast()
 	read_radio();
 
 	/* 2--更新姿态，获取飞机现在的姿态角 */
+	compass.read();
+	gps.read();
+	//imu.update();
+	/*
+	 * 因为下面的ahrs中需要imu gps compass的数据，
+	 * 所以需要先读取那些传感器的数据
+	 */
 	ahrs.update_DCM(G_Dt);
 
 	/* 3--update_current_flight_mode 更新控制状态，从而选择控制方式 */

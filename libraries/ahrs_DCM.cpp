@@ -5,7 +5,7 @@
  *      Author: wangbo
  */
 
-
+#include <iostream>
 #include "ahrs_DCM.h"
 
 #define OUTPUTMODE 1				// This is just used for debugging, remove later
@@ -34,6 +34,19 @@ AP_DCM::update_DCM(float _G_Dt)
 	_imu.update();
 	_gyro_vector 	= _imu.get_gyro();			// Get current values for IMU sensors
 	_accel_vector 	= _imu.get_accel();			// Get current values for IMU sensors
+
+
+	std::cout<<"_gyro_vector.x="<<_gyro_vector.x<<std::endl;
+	std::cout<<"_gyro_vector.y="<<_gyro_vector.y<<std::endl;
+	std::cout<<"_gyro_vector.z="<<_gyro_vector.z<<std::endl;
+
+
+	std::cout<<"_accel_vector.x="<<_accel_vector.x<<std::endl;
+	std::cout<<"_accel_vector.y="<<_accel_vector.y<<std::endl;
+	std::cout<<"_accel_vector.z="<<_accel_vector.z<<std::endl;
+
+
+
 
 	matrix_update(_G_Dt); 	// Integrate the DCM matrix
 	normalize();			// Normalize the DCM matrix
@@ -312,6 +325,11 @@ AP_DCM::euler_angles(void)
 
 	if (yaw_sensor < 0)
 		yaw_sensor += 36000;
+
+
+	std::cout<<"roll_sensor_cd="<<roll_sensor<<std::endl;
+	std::cout<<"pitch_sensor_cd="<<pitch_sensor<<std::endl;
+	std::cout<<"yaw_sensor_cd="<<yaw_sensor<<std::endl;
 }
 
 /**************************************************/

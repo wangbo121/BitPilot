@@ -241,6 +241,13 @@ private:
     //AP_DCM *dcm;
 	AP_DCM ahrs{imu,gps,compass};
 	//AP_DCM ahrs(&imu,&gps,&compass);
+#if 0
+	AP_DCM ahrs():
+			_imu(imu),_gps(gps),_compass(compass)
+	{
+
+	};
+#endif
     /*
      * 这里得读取gps数据
      */
