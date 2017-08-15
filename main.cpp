@@ -5,6 +5,37 @@
  *      Author: wangbo
  */
 
+/*
+ * 添加飞行动力模型
+ *
+ */
+//#include "BIT_MATH.h"
+//#include "utility.h"
+//
+//#include "aircraft.h"
+//#include "quadcopter.h"
+#include "fdm.h"
+
+#include "SIM_Multicopter.h"
+#include "SITL.h"
+
+
+//MultiCopter multi_copter("120,48,100,10","x");
+//MultiCopter multi_copter("-122.357,37.6136,100,10","x");
+MultiCopter multi_copter("-122.357,37.6136,100,0","x");
+//MultiCopter multi_copter("-122.357,37.6136,100,10","+");
+//MultiCopter multi_copter("-122.357192862,37.6135553166,100,0","+");
+
+//MultiCopter multi_copter;
+T_FDM fdm;
+
+
+
+
+
+
+
+
 #include "copter.h"
 
 /******************************************************/
@@ -23,6 +54,25 @@ int maintask_cnt;
 #define ONE_HZ_CNT  50//1hz
 #define TEN_HZ_CNT   5//10hz
 #define FIFTY_HZ_CNT 1//50hz
+
+int _input_flag=1;
+
+
+/*
+ * 添加动力模型
+ */
+#define TEST
+#ifdef TEST
+char udp_string[]="0123456";
+#endif
+
+T_GLOBAL  gblState;
+T_AP2FG  ap2fg;
+T_FG2AP fg2ap;
+T_AP2FG  ap2fg_send;
+
+
+T_AP2FG  ap2fg_recv;
 
 int main(int argc,char * const argv[])
 {
@@ -117,6 +167,8 @@ void Copter::setup()
 	roll_pitch_mode=ROLL_PITCH_STABLE;
 	yaw_mode=YAW_STABILE;
 
+
+
 	}
 
 void Copter::loop()
@@ -179,6 +231,22 @@ void Copter::loop_fast()
 
 	/* 1--读取接收机的信号，获取遥控器各个通道 */
 	read_radio();
+
+	if(_input_flag)
+	{
+		g.channel_rudder.control_in=1000;
+
+	}
+	else
+	{
+		g.channel_rudder.control_in=1000;
+
+	}
+	_input_flag=!_input_flag;
+
+
+
+
 
 	/* 2--更新姿态，获取飞机现在的姿态角 */
 	compass.read();

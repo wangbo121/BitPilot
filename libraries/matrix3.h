@@ -66,6 +66,7 @@ public:
 	Matrix3<T> &operator /= (const T num)
 	{	return *this = *this / num;	}
 
+
 	// multiplication by a vector
 	Vector3<T> operator *(const Vector3<T> &v) const
 	{
@@ -73,7 +74,9 @@ public:
 						  b.x * v.x + b.y * v.y + b.z * v.z,
 						  c.x * v.x + c.y * v.y + c.z * v.z);
 	}
-
+	// multiplication by another Matrix3<T>
+		Matrix3<T> operator *(const Matrix3<T> &m) const;
+#if 0
 	// multiplication by another Matrix3<T>
 	Matrix3<T> operator *(const Matrix3<T> &m) const
 	{
@@ -90,7 +93,8 @@ public:
 	}
 	Matrix3<T> &operator *=(const Matrix3<T> &m)
 	{	return *this = *this * m;	}
-
+#endif
+#if 0
 	// transpose the matrix
 	Matrix3<T> transposed(void) const
 	{
@@ -98,10 +102,101 @@ public:
 						  Vector3<T>(a.y, b.y, c.y),
 						  Vector3<T>(a.z, b.z, c.z));
 	}
+
 	Matrix3<T> transpose(void)
 	{	return *this = transposed();	}
+#endif
+	// transpose the matrix
+	    Matrix3<T>          transposed(void) const;
+
+	    void transpose(void)
+	    {
+	        *this = transposed();
+	    }
+	/*
+	 * 20170813添加
+	 */
+
+	/**
+	 * Calculate the determinant of this matrix.
+	 *
+	 * @return The value of the determinant.
+	 */
+	T det() const;
+
+	/**
+	 * Calculate the inverse of this matrix.
+	 *
+	 * @param inv[in] Where to store the result.
+	 *
+	 * @return If this matrix is invertible, then true is returned. Otherwise,
+	 * \p inv is unmodified and false is returned.
+	 */
+	bool inverse(Matrix3<T>& inv) const;
+
+	/**
+	 * Invert this matrix if it is invertible.
+	 *
+	 * @return Return true if this matrix could be successfully inverted and
+	 * false otherwise.
+	 */
+	bool invert();
+
+	// zero the matrix
+	void        zero(void);
+
+
+	// setup the identity matrix
+	void        identity(void) {
+		a.x = b.y = c.z = 1;
+		a.y = a.z = 0;
+		b.x = b.z = 0;
+		c.x = c.y = 0;
+	}
+
+	// check if any elements are NAN
+	bool        is_nan(void)
+	{
+		return a.is_nan() || b.is_nan() || c.is_nan();
+	}
+
+	// create a rotation matrix from Euler angles
+	void        from_euler(float roll, float pitch, float yaw);
+
+	// create eulers from a rotation matrix
+	void        to_euler(float *roll, float *pitch, float *yaw) const;
+
+	/*
+	  calculate Euler angles (312 convention) for the matrix.
+	  See http://www.atacolorado.com/eulersequences.doc
+	  vector is returned in r, p, y order
+	*/
+	Vector3<T> to_euler312() const;
+
+	/*
+	  fill the matrix from Euler angles in radians in 312 convention
+	*/
+	void from_euler312(float roll, float pitch, float yaw);
+
+	// apply an additional rotation from a body frame gyro vector
+	// to a rotation matrix.
+	void        rotate(const Vector3<T> &g);
+
+	// create rotation matrix for rotation about the vector v by angle theta
+	// See: https://en.wikipedia.org/wiki/Rotation_matrix#General_rotations
+	// "Rotation matrix from axis and angle"
+	void        from_axis_angle(const Vector3<T> &v, float theta);
+
+	// normalize a rotation matrix
+	void        normalize(void);
+
+
+
+
 
 };
+
+
 
 typedef Matrix3<int>			Matrix3i;
 typedef Matrix3<unsigned int>	Matrix3ui;

@@ -130,8 +130,10 @@ IMU::update(void)
 
 	// convert corrected accelerometer readings to acceleration
 	//
-	_accel.x = _accel_scale * 423.0 ;
-	_accel.y = _accel_scale *423.0 ;
+//	_accel.x = _accel_scale * 423.0 ;
+//	_accel.y = _accel_scale *423.0 ;
+	_accel.x = 0.0 ;
+	_accel.y = 0.0 ;
 	_accel.z = _accel_scale * 423.0 ;
 
 	/*
