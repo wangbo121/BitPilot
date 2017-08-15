@@ -10,6 +10,10 @@
 
 #include "imu.h"
 
+//添加动力模型
+#include "fdm.h"
+#include "BIT_MATH.h"
+
 // XXX secret knowledge about the APM/oilpan wiring
 //
 #define A_LED_PIN   37
@@ -141,6 +145,25 @@ IMU::update(void)
 	 * 然后才能把数据给到ahrs
 	 * 然后更新dcm矩阵
 	 */
+
+
+	_gyro.x = fdm_feed_back.phidot;
+	_gyro.y = fdm_feed_back.thetadot;
+	_gyro.z = fdm_feed_back.psidot;
+
+	_accel.x = fdm_feed_back.A_X_pilot;
+	_accel.y = fdm_feed_back.A_Y_pilot;
+	_accel.z = fdm_feed_back.A_Z_pilot;
+
+	//roll=fdm_feed_back.phi;
+
+
+
+
+
+
+
+
 
 	// always updated
 	return true;

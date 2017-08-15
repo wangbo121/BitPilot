@@ -20,6 +20,8 @@
 #include <iostream>
 
 #include "gps_nmea.h"
+#include "fdm.h"
+#include "BIT_MATH.h"
 
 // SiRF init messages //////////////////////////////////////////////////////////
 //
@@ -128,6 +130,12 @@ bool AP_GPS_NMEA::read(void)
 	latitude=391234567;
 	altitude=10000;//100米，单位厘米
 	ground_speed=10;
+	ground_course=90;
+
+	longitude=(fdm_feed_back.longitude *RAD_TO_DEG)*1e7;
+	latitude=(fdm_feed_back.latitude *RAD_TO_DEG)*1e7;
+	altitude=(fdm_feed_back.altitude )*1e2;
+	ground_speed=sqrt(pow(fdm_feed_back.v_north,2)+pow(fdm_feed_back.v_east,2)+pow(fdm_feed_back.v_down,2));
 	ground_course=90;
 
 

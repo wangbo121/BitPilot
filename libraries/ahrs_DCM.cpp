@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include "ahrs_DCM.h"
+#include "fdm.h"
 
 #define OUTPUTMODE 1				// This is just used for debugging, remove later
 #define ToRad(x) (x*0.01745329252)	// *pi/180
@@ -339,6 +340,16 @@ AP_DCM::euler_angles(void)
 	std::cout<<"roll_sensor_cd="<<roll_sensor<<std::endl;
 	std::cout<<"pitch_sensor_cd="<<pitch_sensor<<std::endl;
 	std::cout<<"yaw_sensor_cd="<<yaw_sensor<<std::endl;
+
+	std::cout<<"fdm_feed_back yaw radian="<<fdm_feed_back.psi<<std::endl;
+
+	std::cout<<"fdm_feed_back roll="<<degrees(fdm_feed_back.phi)*100.0<<std::endl;
+	std::cout<<"fdm_feed_back pitch="<<degrees(fdm_feed_back.theta)*100.0<<std::endl;
+	std::cout<<"fdm_feed_back yaw="<<degrees(fdm_feed_back.psi)*100.0<<std::endl;
+
+	roll_sensor=(int)(degrees(fdm_feed_back.phi))*100;
+	pitch_sensor=(int)(degrees(fdm_feed_back.theta))*100;
+	yaw_sensor=(int)(degrees(fdm_feed_back.psi))*100;
 }
 
 /**************************************************/

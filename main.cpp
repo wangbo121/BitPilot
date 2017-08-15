@@ -18,21 +18,42 @@
 
 #include "SIM_Multicopter.h"
 #include "SITL.h"
+#include "udp.h"
 
 
 //MultiCopter multi_copter("120,48,100,10","x");
 //MultiCopter multi_copter("-122.357,37.6136,100,10","x");
-MultiCopter multi_copter("-122.357,37.6136,100,0","x");
+//MultiCopter multi_copter("-122.357,37.6136,100,0","x");
 //MultiCopter multi_copter("-122.357,37.6136,100,10","+");
+MultiCopter multi_copter("-122.357,37.6136,100,0","+");
 //MultiCopter multi_copter("-122.357192862,37.6135553166,100,0","+");
 
 //MultiCopter multi_copter;
 T_FDM fdm;
+T_FDM fdm_send;
+T_FDM fdm_feed_back;//这个动力模型解算出来后，就把数据返回给imu，gps，compass等
 
 
 
 
+#include <iostream>
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>//创建文件
+#include <pthread.h>
+#include <semaphore.h>
+#include <sys/stat.h>
+#include <string.h>
+/*转换int或者short的字节顺序，该程序arm平台为大端模式，地面站x86架构为小端模式*/
+#include <byteswap.h>
+
+#include<sys/socket.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+#include <string.h>
+#include "udp.h"
 
 
 
@@ -61,10 +82,10 @@ int _input_flag=1;
 /*
  * 添加动力模型
  */
-#define TEST
-#ifdef TEST
-char udp_string[]="0123456";
-#endif
+//#define TEST
+//#ifdef TEST
+//char udp_string[]="0123456";
+//#endif
 
 T_GLOBAL  gblState;
 T_AP2FG  ap2fg;
@@ -73,6 +94,30 @@ T_AP2FG  ap2fg_send;
 
 
 T_AP2FG  ap2fg_recv;
+
+/*
+		 * //这个作为遥控器的输入信号，或者说遥控器进来后经过出去又要out给servos
+		 * 虽然四旋翼最终控制的是motor，不是固定翼的servos，但是这个motor也是用servo的pwm波信号
+		 * 包括其他的舵机都是servo的1000-2000pwm波信号，所以我们统一用servo作为最终电机的
+		 * 有servo_in 和servo_out 其中servo_in就是等于channel_out的，然后进来后可能还要限幅什么的所以最终输出给电机的叫做
+		 * servo_out
+		 */
+		/*
+		 * channel_out[0]:aileron
+		 * channel_out[1]:elevator
+		 * channel_out[2]:throttle
+		 * channel_out[3]:rudder
+		 */
+		float channel_out[16];
+
+		float servos_set[16];
+
+		uint16_t servos_set_out[4];
+
+		Aircraft::sitl_input input;
+
+		int fd_socket_generic;
+		int16_t             motor_out_flightgear[AP_MOTORS_MAX_NUM_MOTORS];
 
 int main(int argc,char * const argv[])
 {
@@ -169,6 +214,33 @@ void Copter::setup()
 
 
 
+	/*
+	 * 添加动力模型
+	 */
+
+
+	servos_set[0]=1500;
+	servos_set[1]=1500;
+	servos_set[2]=1500;
+	servos_set[3]=1500;
+
+
+
+
+		memcpy(input.servos,servos_set,sizeof(servos_set));
+
+
+	open_udp_dev(IP_SEND_TO, PORT_SENT_TO, PORT_RECEIVE);
+
+	ap2fg.throttle0 = 0.2;
+	ap2fg.throttle1 = 0.3;
+	ap2fg.throttle2 = 0.4;
+	ap2fg.throttle3 = 0.5;
+
+	//int fd_socket_generic;
+	open_socket_udp_dev(&fd_socket_generic,"127.0.0.1",5056);
+
+
 	}
 
 void Copter::loop()
@@ -232,17 +304,22 @@ void Copter::loop_fast()
 	/* 1--读取接收机的信号，获取遥控器各个通道 */
 	read_radio();
 
-	if(_input_flag)
-	{
-		g.channel_rudder.control_in=1000;
+//	g.channel_rudder.set_pwm(1600);//这个set_pwm参数的范围是1000～2000
+	g.channel_pitch.set_pwm(1600);//这个set_pwm参数的范围是1000～2000
 
-	}
-	else
-	{
-		g.channel_rudder.control_in=1000;
-
-	}
-	_input_flag=!_input_flag;
+//	if(_input_flag)
+//	{
+//		//g.channel_rudder.control_in=1000;
+//		g.channel_rudder.set_pwm(2700);
+//
+//	}
+//	else
+//	{
+//		//g.channel_rudder.control_in=-1000;
+//		g.channel_rudder.set_pwm(-2700);
+//
+//	}
+//	_input_flag=!_input_flag;
 
 
 
@@ -290,6 +367,8 @@ void Copter::loop_fast()
 		g.channel_rudder.servo_out = g.channel_rudder.control_in;
 
 		g.channel_throttle.servo_out=g.channel_throttle.control_in;
+
+
 		break;
 
 	default:
@@ -298,6 +377,162 @@ void Copter::loop_fast()
 
 	/* 5--把计算所得控制量输出给电机 */
 	motors_output();
+
+	std::cout<<"g.channel_roll.radio_out="<<g.channel_roll.radio_out<<std::endl;
+	std::cout<<"g.channel_pitch.radio_out="<<g.channel_pitch.radio_out<<std::endl;
+	std::cout<<"g.channel_throttle.radio_out="<<g.channel_throttle.radio_out<<std::endl;
+	std::cout<<"g.channel_rudder.radio_out="<<g.channel_rudder.radio_out<<std::endl;
+
+
+
+	servos_set_out[0]=motor_out_flightgear[0];
+	servos_set_out[1]=motor_out_flightgear[1];
+	servos_set_out[2]=motor_out_flightgear[2];
+	servos_set_out[3]=motor_out_flightgear[3];
+
+	for(int i=0;i<4;i++)
+	{
+		std::cout<<"servos_set_out"<<"["<<i<<"]="<<servos_set_out[i]<<std::endl;
+	}
+
+//	std::cout<<"ap2fg.throttle0="<<ap2fg.throttle0<<std::endl;
+//	std::cout<<"ap2fg.throttle1="<<ap2fg.throttle1<<std::endl;
+//	std::cout<<"ap2fg.throttle2="<<ap2fg.throttle2<<std::endl;
+//	std::cout<<"ap2fg.throttle3="<<ap2fg.throttle3<<std::endl;
+
+
+	ap2fg.throttle0 = ((float)(servos_set_out[0])-1000.0)/1000.0;
+	ap2fg.throttle1 = ((float)(servos_set_out[1])-1000.0)/1000.0;
+	ap2fg.throttle2 = ((float)(servos_set_out[2])-1000.0)/1000.0;
+	ap2fg.throttle3 = ((float)(servos_set_out[3])-1000.0)/1000.0;
+
+//	std::cout<<"ap2fg.throttle0="<<ap2fg.throttle0<<std::endl;
+//	std::cout<<"ap2fg.throttle1="<<ap2fg.throttle1<<std::endl;
+//	std::cout<<"ap2fg.throttle2="<<ap2fg.throttle2<<std::endl;
+//	std::cout<<"ap2fg.throttle3="<<ap2fg.throttle3<<std::endl;
+
+	/*
+	 * 对于flightgear中的arducopter模型，我不是很了解，只是经过测试
+	 * 感觉上电机0-0.5时，电机会顺时针转，转速从0到0.5是增大的
+	 * 从1-0.5时，电机会逆时针转动，转速从1到0.5是增大的，也就是当电机的throttle是1的时候电机是不转的
+	 */
+	ap2fg.throttle0=1-(ap2fg.throttle0)*0.5;//throttle0和throttle1都是逆时针转的，所以要先乘以0.5再用1减去结果
+	ap2fg.throttle1=1-(ap2fg.throttle1)*0.5;//throttle0和throttle1都是逆时针转的，所以要先乘以0.5再用1减去结果
+	ap2fg.throttle2=(ap2fg.throttle2)*0.5;//throttle2和throttle3都是顺时针转的，所以乘以0.5就可以了
+	ap2fg.throttle3=(ap2fg.throttle3)*0.5;//throttle0和throttle0都是逆时针转的，所以乘以0.5就可以了
+
+	std::cout<<"ap2fg.throttle0="<<ap2fg.throttle0<<std::endl;
+	std::cout<<"ap2fg.throttle1="<<ap2fg.throttle1<<std::endl;
+	std::cout<<"ap2fg.throttle2="<<ap2fg.throttle2<<std::endl;
+	std::cout<<"ap2fg.throttle3="<<ap2fg.throttle3<<std::endl;
+
+
+	memcpy(&ap2fg_send,&ap2fg,sizeof(ap2fg));
+
+	if(ap2fg_send.throttle0<0.2)
+	{
+		ap2fg_send.throttle0=0.2;
+	}else if(ap2fg_send.throttle0>0.96)
+	{
+		ap2fg_send.throttle0=0.96;
+	}
+	if(ap2fg_send.throttle1<0.2)
+	{
+		ap2fg_send.throttle1=0.2;
+	}else if(ap2fg_send.throttle1>0.96)
+	{
+		ap2fg_send.throttle1=0.96;
+	}
+
+	if(ap2fg_send.throttle2<0.2)
+	{
+		ap2fg_send.throttle2=0.2;
+	}else if(ap2fg_send.throttle2>0.96)
+	{
+		ap2fg_send.throttle2=0.96;
+	}
+	if(ap2fg_send.throttle3<0.2)
+	{
+		ap2fg_send.throttle3=0.2;
+	}else if(ap2fg_send.throttle3>0.96)
+	{
+		ap2fg_send.throttle3=0.96;
+	}
+
+
+	ap2fg_send.throttle0=hton_double(ap2fg_send.throttle0);
+	ap2fg_send.throttle1=hton_double(ap2fg_send.throttle1);
+	ap2fg_send.throttle2=hton_double(ap2fg_send.throttle2);
+	ap2fg_send.throttle3=hton_double(ap2fg_send.throttle3);
+#if 0
+	ap2fg_send.latitude_deg=hton_double(ap2fg_send.latitude_deg);
+	ap2fg_send.longitude_deg=hton_double(ap2fg_send.longitude_deg);
+	ap2fg_send.altitude_ft=hton_double(ap2fg_send.altitude_ft);
+	ap2fg_send.altitude_agl_ft=hton_double(ap2fg_send.altitude_agl_ft);
+	ap2fg_send.roll_deg=hton_double(ap2fg_send.roll_deg);
+	ap2fg_send.pitch_deg=hton_double(ap2fg_send.pitch_deg);
+	ap2fg_send.heading_deg=hton_double(ap2fg_send.heading_deg);
+#endif
+
+	unsigned char socket_udp_send[2000];
+	memcpy(socket_udp_send,&ap2fg_send,sizeof(ap2fg_send));
+	send_socket_udp_data(fd_socket_generic, socket_udp_send, sizeof(ap2fg_send),"127.0.0.1",5506 );
+
+
+
+	/*
+	 * 注意这里的input.servos是uint_16类型的，无符号short型，
+	 * 所以servos_set_out一定不要有负数，所以需要提前处理servos_set_out
+	 */
+	memcpy(input.servos,servos_set_out,sizeof(servos_set_out));
+
+	multi_copter.update(input);
+
+	//sitl_fdm fdm_sitl;
+	//multi_copter.fill_fdm(fdm_sitl);//这个是apm自身带的软件仿真，以后删除掉不需要
+
+	multi_copter.fill_fdm_flightgear(fdm);
+	//fdm.psi=radians(57);
+
+	memcpy(&fdm_feed_back,&fdm,sizeof(fdm));
+	memcpy(&fdm_send,&fdm,sizeof(fdm));
+
+	fdm_send.version = htonl(FG_NET_FDM_VERSION);
+	fdm_send.latitude = htond(fdm_send.latitude);
+	fdm_send.longitude = htond(fdm_send.longitude);
+	fdm_send.altitude = htond(fdm_send.altitude);
+	fdm_send.phi = htonf(fdm_send.phi );
+	//fdm_send.phi = htonf(1.0 );
+	fdm_send.theta = htonf(fdm_send.theta);
+	fdm_send.psi = htonf(fdm_send.psi);
+	//fdm_send.psi = htonf(radians(57));
+	fdm_send.num_engines = htonl(1);
+	fdm_send.num_tanks = htonl(1);
+	fdm_send.fuel_quantity[0] = htonf(100.0);
+	fdm_send.num_wheels = htonl(3);
+	fdm_send.cur_time = htonl(time(0));
+	fdm_send.warp = htonl(1);
+	fdm_send.visibility = htonf(5000.0);
+
+//	fdm.version = htonl(FG_NET_FDM_VERSION);
+//	fdm.latitude = htond(fdm.latitude);
+//	fdm.longitude = htond(fdm.longitude);
+//	fdm.altitude = htond(fdm.altitude);
+//	fdm.phi = htonf(fdm.phi );
+//	fdm.theta = htonf(fdm.theta);
+//	fdm.psi = htonf(fdm.psi);
+//	fdm.num_engines = htonl(1);
+//	fdm.num_tanks = htonl(1);
+//	fdm.fuel_quantity[0] = htonf(100.0);
+//	fdm.num_wheels = htonl(3);
+//	fdm.cur_time = htonl(time(0));
+//	fdm.warp = htonl(1);
+//	fdm.visibility = htonf(5000.0);
+
+	//sendto(fd_sock_send, &fdm, sizeof(fdm), 0, (struct sockaddr *)&udp_sendto_addr, sizeof(udp_sendto_addr));
+	sendto(fd_sock_send, &fdm_send, sizeof(fdm_send), 0, (struct sockaddr *)&udp_sendto_addr, sizeof(udp_sendto_addr));
+
+
 #endif
 }
 
@@ -389,15 +624,26 @@ void Copter::motors_output()
 				                 g.channel_rudder.pwm_out * _yaw_factor[i];
 	}
 
+	memcpy(motor_out_flightgear,motor_out,sizeof(motor_out));
+
+
+	for(int i=0;i<4;i++)
+	{
+		//g._rc.output_ch_pwm(i,motor_out[i]);
+		//或者用下面的motors也是可以的
+		//motors.rc_write(i,motor_out[i]);
+		std::cout<<"motor_out_flightgear["<<i<<"]="<<motor_out_flightgear[i]<<std::endl;
+		//sleep(1);
+	}
 
 
 
 
 	for(int i=0;i<4;i++)
 	{
-		g._rc.output_ch_pwm(i,motor_out[i]);
+		//g._rc.output_ch_pwm(i,motor_out[i]);
 		//或者用下面的motors也是可以的
-		motors.rc_write(i,motor_out[i]);
+		//motors.rc_write(i,motor_out[i]);
 		std::cout<<"motor_out["<<i<<"]="<<motor_out[i]<<std::endl;
 		//sleep(1);
 	}

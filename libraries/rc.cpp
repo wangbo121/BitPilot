@@ -79,6 +79,7 @@ AP_RC::input_ch(uint8_t ch)
 	switch(ch)
 	{
 	case CH_1:
+		//return 1500;
 		return 1500;
 		return hal.rcin->read(CH_1);
 		break;
@@ -91,7 +92,8 @@ AP_RC::input_ch(uint8_t ch)
 		return hal.rcin->read(CH_3);
 		break;
 	case CH_4:
-		return 1600;//1700;
+		//return 1800;//1700;
+		return 1500;
 		return hal.rcin->read(CH_4);
 		break;
 	case CH_5:

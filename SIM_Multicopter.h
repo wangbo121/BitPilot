@@ -64,7 +64,7 @@ public:
     MultiCopter(const char *home_str, const char *frame_str);
 
     /* update model by one time step */
-    void update(const struct sitl_input &input);
+    void update(const struct sitl_input &input);//一定注意这个函数中的input是四个电机的1000～2000的值，不是rc的输入aileron elevator throttle rudder
 
     /* static object creator */
     static Aircraft *create(const char *home_str, const char *frame_str) {

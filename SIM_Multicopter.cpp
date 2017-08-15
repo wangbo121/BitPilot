@@ -122,6 +122,8 @@ MultiCopter::MultiCopter(const char *home_str, const char *frame_str) :
         printf("Frame '%s' not found", frame_str);
         exit(1);
     }
+    //frame->num_motors=4;
+
     /*
        scaling from total motor power to Newtons. Allows the copter
        to hover against gravity when each motor is at hover_throttle
@@ -130,6 +132,7 @@ MultiCopter::MultiCopter(const char *home_str, const char *frame_str) :
     thrust_scale = (mass * GRAVITY_MSS) / (frame->num_motors * hover_throttle);
 
     frame_height = 0.1;
+
 }
 
 /*
@@ -139,13 +142,18 @@ void MultiCopter::update(const struct sitl_input &input)
 {
     float motor_speed[frame->num_motors];
 
-    for (uint8_t i=0; i<frame->num_motors; i++) {
+    //std::cout<<"num_motors="<<frame->num_motors<<std::endl;
+
+    //for (uint8_t i=0; i<frame->num_motors; i++) {
+    for (uint8_t i=0; i<4; i++) {
         uint16_t servo = input.servos[frame->motors[i].servo-1];
         // assume 1000 to 2000 PWM range
         if (servo <= 1000) {
-            motor_speed[i] = 0;
+            //motor_speed[i] = 0;
+        	motor_speed[i] = 0.23;//本来应该是=0.0的
         } else if(servo >= 2000) {
-        	motor_speed[i] = 1;
+        	//motor_speed[i] = 1;
+        	motor_speed[i] = 0.9865;
         }else{
         	motor_speed[i] = (servo-1000) / 1000.0f;
         }
@@ -153,6 +161,7 @@ void MultiCopter::update(const struct sitl_input &input)
 
     // how much time has passed?
     float delta_time = frame_time_us * 1.0e-6f;
+   // float delta_time = 1;
 
     std::cout<<"delta_time="<<delta_time<<std::endl;
 

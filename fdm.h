@@ -138,6 +138,9 @@ typedef struct FGNetFDM
 }T_FDM;
 
 extern T_FDM fdm;
+extern T_FDM fdm_send;
+extern T_FDM fdm_feed_back;
+
 
 
 
