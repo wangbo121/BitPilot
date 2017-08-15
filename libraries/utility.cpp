@@ -177,7 +177,7 @@ float clock_gettime_ms()
 
     time_s=clock_gettime_s();
 
-    return time_s*10e3;
+    return time_s*1e3;
 }
 
 struct timespec diff_clock(struct timespec start, struct timespec end)

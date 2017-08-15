@@ -10,6 +10,7 @@
 /******************************************************/
 /*****************/
 #define MAINTASK_TICK_TIME_MS 20
+//#define MAINTASK_TICK_TIME_MS 2
 struct tm *global_time_val;//全局时间变量，其它的时间都从这里取
 time_t timep;
 
@@ -71,69 +72,80 @@ void Copter::setup()
 	//init_motor();
 	//init_mpu6050();
 
+	init_ardupilot();
+
+	//第一级pid参数设置
+	g.pi_stabilize_roll.set_kP(2.0);
+	g.pi_stabilize_roll.set_kI(0.0);
+	g.pi_stabilize_roll.set_kD(0.0);
+
+	g.pi_stabilize_pitch.set_kP(2.0);
+	g.pi_stabilize_pitch.set_kI(0.0);
+	g.pi_stabilize_pitch.set_kD(0.0);
+
+	g.pi_stabilize_yaw.set_kP(2.0);
+	g.pi_stabilize_yaw.set_kI(0.0);
+	g.pi_stabilize_yaw.set_kD(0.0);
+
+
+	//第2级pid参数设置
+
+
+	g.pid_rate_roll.set_kP(1.2);
+	g.pid_rate_roll.set_kI(0.0);
+	g.pid_rate_roll.set_kD(0.0);
+
+	g.pid_rate_pitch.set_kP(1.2);
+	g.pid_rate_pitch.set_kI(0.0);
+	g.pid_rate_pitch.set_kD(0.0);
+
+	g.pid_rate_yaw.set_kP(1.2);
+	g.pid_rate_yaw.set_kI(0.0);
+	g.pid_rate_yaw.set_kD(0.0);
+
+
 	/*
 	 * 下面这些初始化，其实应该放在跟地面站连接时
 	 * 地面站的setup按钮里，设置遥控器的最大最小值
 	 * 但是我这里先直接赋值
 	 */
 
-	/*
-	 * 1RC_Channel对象的内部变量的初始化
-	 * 这个在angle_to_pwm,pwm_to_angle等中都有用
-	 */
-	g.channel_roll.radio_min = 1000;
-	g.channel_pitch.radio_min = 1000;
-	g.channel_throttle.radio_min = 1000;
-	g.channel_rudder.radio_min = 1000;
-	g.rc_5.radio_min = 1000;
-	g.rc_6.radio_min = 1000;
-	g.rc_7.radio_min = 1000;
-	g.rc_8.radio_min = 1000;
+	init_rc_in();
 
-	g.channel_roll.radio_max = 2000;
-	g.channel_pitch.radio_max = 2000;
-	g.channel_throttle.radio_max = 2000;
-	g.channel_rudder.radio_max = 2000;
-	g.rc_5.radio_max = 2000;
-	g.rc_6.radio_max = 2000;
-	g.rc_7.radio_max = 2000;
-	g.rc_8.radio_max = 2000;
+	fast_loopTimer=clock_gettime_ms();//必须有这个初始化，否则第一次G_Dt的值会非常大
 
-	g.channel_roll.radio_trim = 1500;
-	g.channel_pitch.radio_trim = 1500;
-	g.channel_throttle.radio_trim = 1500;
-	g.channel_rudder.radio_trim = 1500;
-	// 3 is not trimed  这里arducopter中注释说，throttle是没有trim的，但是没有的话，我的运行就有错误，到底是有没有呢
-	g.rc_5.radio_trim = 1500;
-	g.rc_6.radio_trim = 1500;
-	g.rc_7.radio_trim = 1500;
-	g.rc_8.radio_trim = 1500;
+	roll_pitch_mode=ROLL_PITCH_STABLE;
+	yaw_mode=YAW_STABILE;
 
-	g.channel_roll.set_angle(4500);//这个是设置舵机能单侧摆动的最大值，45度
-	g.channel_pitch.set_angle(4500);
-	g.channel_throttle.set_angle(4500);
-	g.channel_rudder.set_angle(4500);
-	g.rc_5.set_angle(4500);
-
-	g.channel_roll.dead_zone=0;
-	g.channel_pitch.dead_zone=0;
-	g.channel_rudder.dead_zone=0;
-	g.channel_throttle.dead_zone=0;
-	g.rc_5.dead_zone=0;
-
-	g.channel_roll.set_reverse(0);//不取反
-	g.channel_pitch.set_reverse(0);
-	g.channel_rudder.set_reverse(0);
-	g.channel_throttle.set_reverse(0);
-	g.rc_5.set_reverse(0);
-}
+	}
 
 void Copter::loop()
 {
+	maintask_tick.tv_sec = seconds;
+	//maintask_tick.tv_usec = mseconds*50;
+	maintask_tick.tv_usec = mseconds;
+
+	maintask_tick.tv_sec = 1;
+	maintask_tick.tv_usec = 0;
+	select(0, NULL, NULL, NULL, &maintask_tick);
+	maintask_cnt++;
+
+	if(maintask_cnt>50)
+	{
+		std::cout<<"******************************************************************"<<std::endl;
+		float system_time_s=0;
+		system_time_s=clock_gettime_ms();
+		std::cout<<"system_time_s="<<system_time_s/1000<<std::endl;
+		maintask_cnt=0;
+	}
+
 #ifdef TEST
 	std::cout<<"hello wangbo loop"<<std::endl;
 	sleep(1);
 #else
+
+
+
 	loop_fast();
 #endif
 }
@@ -151,9 +163,19 @@ void Copter::loop_fast()
 	 * 4--control根据飞行模式 control_mode的选项，选择不同的控制方式
 	 * 5--set_servos
 	 */
+	float timer;
+	timer=clock_gettime_ms();
+	//std::cout<<"timer="<<timer/1000<<std::endl;
 
-	std::cout<<"Hello loopfast"<<std::endl;
-	sleep(1);
+
+
+	G_Dt=(timer-fast_loopTimer)/1000.0;//单位是秒[s]
+	std::cout<<"G_Dt="<<G_Dt<<std::endl;
+
+	fast_loopTimer=timer;
+#if 1
+	//std::cout<<"Hello loopfast"<<std::endl;
+	//sleep(1);
 
 	/* 1--读取接收机的信号，获取遥控器各个通道 */
 	read_radio();
@@ -161,7 +183,7 @@ void Copter::loop_fast()
 	/* 2--更新姿态，获取飞机现在的姿态角 */
 	compass.read();
 	gps.read();
-	//imu.update();
+	imu.update();
 	/*
 	 * 因为下面的ahrs中需要imu gps compass的数据，
 	 * 所以需要先读取那些传感器的数据
@@ -183,8 +205,12 @@ void Copter::loop_fast()
 		* 在motors_output时再把这些计算的值真正输出
 		*/
 		update_roll_pitch_mode();
-		update_yaw_mode();
-		run_rate_controllers();
+		update_yaw_mode();//上面这两个函数有问题呀，上面两个函数赋值给的是EARTH_FRAME，但是下面的run_rate_controllers是用的BODY_FRAME，所以还需要仔细再看一下apm
+
+	    // update targets to rate controllers
+	    update_rate_contoller_targets();//这个步骤很重要，是把上面的earth坐标系下的转为机体坐标系
+
+		run_rate_controllers();//这个是执行了角速度的控制器，需要从ahrs或者imu获取角速度的大小，扩大了100倍，这个函数还得看一下
 
 		update_throttle_mode();//计算油门量的输出值
 		break;
@@ -204,22 +230,10 @@ void Copter::loop_fast()
 
 	/* 5--把计算所得控制量输出给电机 */
 	motors_output();
-
+#endif
 }
 
-void Copter::read_radio()
-{
-	/*
-	 * //set_pwm做两件事，
-	 * 1是给radion_in赋值，作为从rc_channel读取回来的数
-	 * 2是把control_in = pwm_to_angle(radio)，也就是把读取回来的pwm转为-4500～+4500角度控制值
-	 */
-	g.channel_roll.set_pwm(ap_rc.input_ch(CH_1));
-	g.channel_pitch.set_pwm(ap_rc.input_ch(CH_2));
-	g.channel_throttle.set_pwm(ap_rc.input_ch(CH_3));
-	g.channel_rudder.set_pwm(ap_rc.input_ch(CH_4));
-	g.rc_5.set_pwm(ap_rc.input_ch(CH_5));
-}
+
 
 void Copter::update_current_flight_mode(void)
 {
@@ -230,6 +244,7 @@ void Copter::update_current_flight_mode(void)
 	else if(g.rc_5.radio_in>1500)
 	{
 		control_mode=STABILIZE;
+		std::cout<<"飞控模式是增稳模式:"<<std::endl;
 	}
 }
 
@@ -251,8 +266,11 @@ void Copter::motors_output()
     int8_t              _num_motors; // not a very useful variable as you really need to check the motor_enabled array to see which motors are enabled
     float               _roll_factor[AP_MOTORS_MAX_NUM_MOTORS]; // each motors contribution to roll
     float               _pitch_factor[AP_MOTORS_MAX_NUM_MOTORS]; // each motors contribution to pitch
+    float              _throttle_factor[AP_MOTORS_MAX_NUM_MOTORS];
     float               _yaw_factor[AP_MOTORS_MAX_NUM_MOTORS];  // each motors contribution to yaw (normally 1 or -1)
 
+#if 0
+    //这个是x型的
     /*
      * 这里给factor赋值-1 0 或者1
      */
@@ -260,6 +278,15 @@ void Copter::motors_output()
     _roll_factor[1]  =  -1;  _pitch_factor[1]  =  -1;  _yaw_factor[1]  =  -1;
     _roll_factor[2]  = +1;  _pitch_factor[2]  =  -1;  _yaw_factor[2]  = +1;
     _roll_factor[3]  = +1;  _pitch_factor[3]  = +1;  _yaw_factor[3]  =  -1;
+#else
+
+    //这个是针对+型机架的系数
+	_roll_factor[0]  =  -1;  _pitch_factor[0]  =  0; _throttle_factor[0]=+1; _yaw_factor[0]  = +1;
+	_roll_factor[1]  =   +1;  _pitch_factor[1]  =  0; _throttle_factor[1]=+1; _yaw_factor[1]  =  +1;
+	_roll_factor[2]  = 0;  _pitch_factor[2]  =  +1;  _throttle_factor[2]=+1;_yaw_factor[2]  = -1;
+	_roll_factor[3]  =  0;  _pitch_factor[3]  = -1;  _throttle_factor[3]=+1;_yaw_factor[3]  =  -1;
+#endif
+
 
 	g.channel_roll.calc_pwm();
 	g.channel_pitch.calc_pwm();
@@ -293,13 +320,18 @@ void Copter::motors_output()
 				                 g.channel_pitch.pwm_out* _pitch_factor[i]+\
 				                 g.channel_rudder.pwm_out * _yaw_factor[i];
 	}
+
+
+
+
+
 	for(int i=0;i<4;i++)
 	{
 		g._rc.output_ch_pwm(i,motor_out[i]);
 		//或者用下面的motors也是可以的
 		motors.rc_write(i,motor_out[i]);
 		std::cout<<"motor_out["<<i<<"]="<<motor_out[i]<<std::endl;
-		sleep(1);
+		//sleep(1);
 	}
 }
 
@@ -317,7 +349,10 @@ void Copter::init_mpu6050()
 }
 
 
+void Copter:: init_ardupilot()
+{
 
+}
 
 
 

@@ -12,10 +12,17 @@ void
 Copter::get_stabilize_roll(int32_t target_angle)
 {
 	   // angle error
-	    target_angle            = wrap_180(target_angle - ahrs.roll_sensor);
+	    //target_angle            = wrap_180(target_angle - ahrs.roll_sensor);
+	target_angle            = wrap_180(target_angle - ahrs.roll_sensor,100);//20170814这里应该unimode=100
+
+	    std::cout<<"target_angle="<<target_angle<<std::endl;
 
 	    // convert to desired Rate:
+	    /*
+	     * 外环，也就是从角度误差经过pid控制器，把控制器的输出作为角速度环的输入，但是外环其实只用了p比例控制，没有用id
+	     */
 	    int32_t target_rate = g.pi_stabilize_roll.get_p(target_angle);
+	    std::cout<<"target_rate="<<target_rate<<std::endl;
 
 	    int16_t i_stab;
 	    if(labs(ahrs.roll_sensor) < 500)
@@ -29,6 +36,9 @@ Copter::get_stabilize_roll(int32_t target_angle)
 	    }
 
 	    // set targets for rate controller
+	    /*
+	     * 这个用EARTH_FRAME还是其他的，有讲究，得注意
+	     */
 	    set_roll_rate_target(target_rate+i_stab, EARTH_FRAME);
 }
 
@@ -37,7 +47,7 @@ void
 Copter::get_stabilize_pitch(int32_t target_angle)
 {
 	 // angle error
-	    target_angle            = wrap_180(target_angle - ahrs.pitch_sensor);
+	    target_angle            = wrap_180(target_angle - ahrs.pitch_sensor,100);
 
 
 	    // convert to desired Rate:
@@ -137,6 +147,7 @@ Copter::set_roll_rate_target( int32_t desired_rate, uint8_t earth_or_body_frame 
 	    }
 	    else
 	    {
+	    	//20170814 我用的是earth_frame，这个要注意，因为后面是要用到的
 	        roll_rate_target_ef = desired_rate;
 	    }
 
@@ -179,6 +190,11 @@ Copter::update_rate_contoller_targets()
 {
 	Vector2f yawvector;
 	Matrix3f temp   = ahrs.get_dcm_matrix();
+
+
+	std::cout<<"temp.a.x="<<temp.a.x<<"  temp.a.y="<<temp.a.y<<"  temp.a.z="<<temp.a.z<<std::endl;
+	std::cout<<"temp.b.x="<<temp.b.x<<"  temp.b.y="<<temp.b.y<<"  temp.b.z="<<temp.b.z<<std::endl;
+	std::cout<<"temp.c.x="<<temp.c.x<<"  temp.c.y="<<temp.c.y<<"  temp.c.z="<<temp.c.z<<std::endl;
 
 	yawvector.x     = temp.a.x;     // sin
 	yawvector.y     = temp.b.x;         // cos
@@ -251,6 +267,9 @@ Copter::get_rate_roll(int32_t target_rate)
 	d                       = g.pid_rate_roll.get_d(rate_error, G_Dt);
 	output          = p + i + d;
 
+	std::cout<<"rate roll   :    rate_error="<<rate_error<<std::endl;
+	std::cout<<"rate roll   :    pid out="<<output<<std::endl;
+
 
 	// constrain output
 	output = constrain_value(output, -5000, 5000);
@@ -292,6 +311,8 @@ Copter::get_rate_pitch(int32_t target_rate)
 	    d                       = g.pid_rate_pitch.get_d(rate_error, G_Dt);
 	    output          = p + i + d;
 
+		std::cout<<"rate pitch   :    rate_error="<<rate_error<<std::endl;
+		std::cout<<"rate pitch   :    pid out="<<output<<std::endl;
 
 
 	    // constrain output
@@ -326,7 +347,8 @@ Copter::get_rate_yaw(int32_t target_rate)
 		    output  = p+i+d;
 		    output = constrain_value(output, -4500, 4500);
 
-
+			std::cout<<"rate yaw   :    rate_error="<<rate_error<<std::endl;
+			std::cout<<"rate yaw   :    pid out="<<output<<std::endl;
 
 
 		    return  output;
@@ -398,11 +420,13 @@ Copter::reset_stability_I(void)
 void
 Copter::update_yaw_mode(void)
 {
-	yaw_mode=YAW_MANUAL;
+	//yaw_mode=YAW_MANUAL;
 	switch(yaw_mode)
 	{
 	case YAW_STABILE:
+
 		get_stabilize_yaw(g.channel_rudder.control_in);
+		//get_stabilize_yaw(4500);
 		break;
 	case YAW_ACRO:
 		break;
@@ -420,6 +444,7 @@ Copter::update_roll_pitch_mode(void)
 	case ROLL_PITCH_STABLE:
 		control_roll            = g.channel_roll.control_in;
 		control_pitch           = g.channel_roll.control_in;
+		//control_roll=4000;
 		get_stabilize_roll(control_roll);
 		get_stabilize_pitch(control_pitch);
 		break;

@@ -83,19 +83,20 @@ AP_RC::input_ch(uint8_t ch)
 		return hal.rcin->read(CH_1);
 		break;
 	case CH_2:
-		return 1600;//1200;
+		return 1500;//1200;
 		return hal.rcin->read(CH_2);
 		break;
 	case CH_3:
-		return 1200;//1300;
+		return 1500;//1300;
 		return hal.rcin->read(CH_3);
 		break;
 	case CH_4:
-		return 1500;//1700;
+		return 1600;//1700;
 		return hal.rcin->read(CH_4);
 		break;
 	case CH_5:
-		return 1400;
+		//return 1400;//特技，完全手控模式
+		return 1700;//增稳
 		return hal.rcin->read(CH_5);
 		break;
 	case CH_6:

@@ -30,7 +30,7 @@ public:
 	/// attempts to parse NMEA data and updates internal state
 	/// accordingly.
 	///
-	virtual bool	read();
+	 bool	read();
 
 private:
 	/// Coding for the GPS sentences that the parser handles

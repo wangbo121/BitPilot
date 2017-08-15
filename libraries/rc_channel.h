@@ -55,10 +55,17 @@ class AP_RC_Channel{
 	bool		get_reverse(void);
 
 	// read input from APM_RC - create a control_in value
+	//这个是设置两种
+	//1是把1000～2000设置为-4500～4500
+	//2是把1000～2000设置微0～1000
 	void 		set_pwm(int pwm);
 
 	// pwm is stored here
-	int16_t		radio_in;//这个是从rc_channel类读取过来的数值，范围是1000～2000
+	int16_t		radio_in;//这个是从rc_channel类读取过来的数值，范围是1000～2000，radio_in和radio_out是一对，radio_in是从接收机那里获得的信号，radio_out是要输出给电调的信号
+	int16_t 	radio_out;//这个范围是1000～2000，radio指的是遥控信号或者说接收机或者说给电调的信号
+
+
+
 
 	// call after first set_pwm
 	void 		trim();
@@ -67,22 +74,26 @@ class AP_RC_Channel{
 	bool		get_failsafe(void);
 
 	// value generated from PWM
-	int16_t 	control_in;//这个把radio_in这个变量，通过pwm_to_angle转为角度值的控制量输入
+	int16_t 	control_in;//有两种，1是-4500～4500,2是油门范围0～1000  control_in 对应的是servo_out范围都是-4500～4500 和0～1000两种
+	// current values to the servos - degrees * 100 (approx assuming servo is -45 to 45 degrees except [3] is 0 to 100
+	int16_t 	servo_out;//这个范围有2种，1是-4500～+4500，2是0～1000
+
+	// PWM is without the offset from radio_min
+	int16_t 	pwm_out;//  pwm_out其实值得是脉宽范围，有两种1是-500～500， 2是0～1000，是作为计算radio的中间量
+
 	int16_t 	dead_zone; // used to keep noise down and create a dead zone.
 
 	int			control_mix(float value);
 
-	// current values to the servos - degrees * 100 (approx assuming servo is -45 to 45 degrees except [3] is 0 to 100
-	int16_t 	servo_out;//这个是最终输出给舵机的角度值-45～45
 
 	// generate PWM from servo_out value
+	//这个计算两种，1是把-4500～+4500转为1000～2000
+	//2是把0～1000转为1000～2000
+	//转换后的值给到了radio_out
 	void 		calc_pwm(void);
 
 	float constrain(float m,float a,float b);
 
-	// PWM is without the offset from radio_min
-	int16_t 	pwm_out;//这个的范围是-500～500
-	int16_t 	radio_out;//这个范围是1000～2000
 
 	int16_t		radio_min;
 	int16_t		radio_trim;

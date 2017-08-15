@@ -12,10 +12,10 @@ const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 /*
  * 构造函数是没有返回值的
  */
-Copter::Copter(void)
-{
-
-}
+//Copter::Copter(void)
+//{
+//
+//}
 
 void Copter::set_radio_passthrough(float roll_input, float pitch_input, float throttle_input, float yaw_input)
 {

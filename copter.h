@@ -63,7 +63,13 @@ using namespace std;
 class Copter :public AP_HAL::HAL::Callbacks{
 public:
 
-    Copter(void);
+    Copter(void)
+	{
+    	/*
+    	 * 在构造函数的开始就初始化一些内部变量
+    	 */
+    	control_mode            = STABILIZE;
+	}
 
 
 
@@ -202,7 +208,8 @@ private:
     // System Timers
     // --------------
     // Time in microseconds of main control loop
-    uint32_t fast_loopTimer;
+    //uint32_t fast_loopTimer;
+    float fast_loopTimer;
     // Counter of main loop executions.  Used for performance monitoring and failsafe processing
     uint16_t mainLoop_count;
     // Loiter timer - Records how long we have been in loiter
@@ -449,9 +456,9 @@ private:
     float command_rx_pitch_diff;
     float command_rx_yaw=0;
     float command_rx_yaw_diff;
-    int control_roll;           // PID control results
-    int control_pitch;
-    int control_yaw;
+    int control_roll;           // PID control results 这个在完全手控情况下直接就是rc_channel的rc_in，所以范围有两种1是-4500～4500 2是0～1000
+    int control_pitch; // PID control results 这个在完全手控情况下直接就是rc_channel的rc_in，所以范围有两种1是-4500～4500 2是0～1000
+    int control_yaw; // PID control results 这个在完全手控情况下直接就是rc_channel的rc_in，所以范围有两种1是-4500～4500 2是0～1000
     //float K_aux;
 
 	  ////////////////////////////////////////////////////////////////////////////////
@@ -1019,6 +1026,10 @@ private:
     void update_throttle_mode();
 
     int16_t get_angle_boost(int16_t value);
+
+    void trim_radio();
+
+
 
 
 };

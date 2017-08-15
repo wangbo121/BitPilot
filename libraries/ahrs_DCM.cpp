@@ -36,14 +36,14 @@ AP_DCM::update_DCM(float _G_Dt)
 	_accel_vector 	= _imu.get_accel();			// Get current values for IMU sensors
 
 
-	std::cout<<"_gyro_vector.x="<<_gyro_vector.x<<std::endl;
-	std::cout<<"_gyro_vector.y="<<_gyro_vector.y<<std::endl;
-	std::cout<<"_gyro_vector.z="<<_gyro_vector.z<<std::endl;
-
-
-	std::cout<<"_accel_vector.x="<<_accel_vector.x<<std::endl;
-	std::cout<<"_accel_vector.y="<<_accel_vector.y<<std::endl;
-	std::cout<<"_accel_vector.z="<<_accel_vector.z<<std::endl;
+//	std::cout<<"_gyro_vector.x="<<_gyro_vector.x<<std::endl;
+//	std::cout<<"_gyro_vector.y="<<_gyro_vector.y<<std::endl;
+//	std::cout<<"_gyro_vector.z="<<_gyro_vector.z<<std::endl;
+//
+//
+//	std::cout<<"_accel_vector.x="<<_accel_vector.x<<std::endl;
+//	std::cout<<"_accel_vector.y="<<_accel_vector.y<<std::endl;
+//	std::cout<<"_accel_vector.z="<<_accel_vector.z<<std::endl;
 
 
 
@@ -77,6 +77,15 @@ AP_DCM::matrix_update(float _G_Dt)
 {
 	Matrix3f	update_matrix;
 	Matrix3f	temp_matrix;
+
+	std::cout<<"wangbo _gyro_vector.x="<<_gyro_vector.x<<std::endl;
+	std::cout<<"_gyro_vector.y="<<_gyro_vector.y<<std::endl;
+	std::cout<<"_gyro_vector.z="<<_gyro_vector.z<<std::endl;
+
+
+	std::cout<<"_accel_vector.x="<<_accel_vector.x<<std::endl;
+	std::cout<<"_accel_vector.y="<<_accel_vector.y<<std::endl;
+	std::cout<<"_accel_vector.z="<<_accel_vector.z<<std::endl;
 
 	//Record when you saturate any of the gyros.
 	if((fabs(_gyro_vector.x) >= radians(300)) ||
