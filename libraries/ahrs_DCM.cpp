@@ -319,15 +319,16 @@ AP_DCM::drift_correction(void)
 void
 AP_DCM::euler_angles(void)
 {
-	#if (OUTPUTMODE == 2)				 // Only accelerometer info (debugging purposes)
+	//#if (OUTPUTMODE == 2)				 // Only accelerometer info (debugging purposes)
+#if 1				 // Only accelerometer info (debugging purposes)
 	roll 		= atan2(_accel_vector.y, -_accel_vector.z);		// atan2(acc_y, acc_z)
 	pitch 		= asin((_accel_vector.x) / (double)9.81); // asin(acc_x)
 	yaw 			= 0;
-	#else
+#else
 	pitch 		= -asin(_dcm_matrix.c.x);
 	roll 		= atan2(_dcm_matrix.c.y, _dcm_matrix.c.z);
 	yaw 		= atan2(_dcm_matrix.b.x, _dcm_matrix.a.x);
-	#endif
+#endif
 
 	roll_sensor 	= degrees(roll)  * 100;
 	pitch_sensor 	= degrees(pitch) * 100;
@@ -343,9 +344,9 @@ AP_DCM::euler_angles(void)
 
 	std::cout<<"fdm_feed_back yaw radian="<<fdm_feed_back.psi<<std::endl;
 
-	std::cout<<"fdm_feed_back roll="<<degrees(fdm_feed_back.phi)*100.0<<std::endl;
-	std::cout<<"fdm_feed_back pitch="<<degrees(fdm_feed_back.theta)*100.0<<std::endl;
-	std::cout<<"fdm_feed_back yaw="<<degrees(fdm_feed_back.psi)*100.0<<std::endl;
+	std::cout<<"fdm_feed_back roll_cd="<<degrees(fdm_feed_back.phi)*100.0<<std::endl;
+	std::cout<<"fdm_feed_back pitch_cd="<<degrees(fdm_feed_back.theta)*100.0<<std::endl;
+	std::cout<<"fdm_feed_back yaw_cd="<<degrees(fdm_feed_back.psi)*100.0<<std::endl;
 
 	roll_sensor=(int)(degrees(fdm_feed_back.phi))*100;
 	pitch_sensor=(int)(degrees(fdm_feed_back.theta))*100;

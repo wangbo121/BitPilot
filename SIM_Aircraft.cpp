@@ -316,21 +316,17 @@ void Aircraft::fill_fdm_flightgear( T_FDM &fdm) const
 {
 
 
-	   std::cout<<"location.longitude="<<location.lng<<std::endl;
-	    std::cout<<"location.latitude="<<location.lat<<std::endl;
-
-
+//	std::cout<<"location.longitude="<<location.lng<<std::endl;
+//	std::cout<<"location.latitude="<<location.lat<<std::endl;
 
 	fdm.version=24;
 	fdm.longitude=radians(location.lng * 1.0e-7);
 	fdm.latitude=radians(location.lat * 1.0e-7);
-
+	fdm.altitude=location.alt * 1.0e-2;
 
 	std::cout<<"fdm.longitude wangbo="<<fdm.longitude<<std::endl;
 	std::cout<<"fdm.latitude wangbo="<<fdm.latitude<<std::endl;
-
-
-	fdm.altitude=location.alt * 1.0e-2;
+	std::cout<<"fdm.altitude wangbo="<<fdm.altitude<<std::endl;
 
 	 float r, p, y;
 	dcm.to_euler(&r, &p, &y);
@@ -342,9 +338,12 @@ void Aircraft::fill_fdm_flightgear( T_FDM &fdm) const
 	fdm.thetadot=gyro.y;
 	fdm.psidot=gyro.z;
 
-	fdm.v_north=velocity_ef.x;
-	fdm.v_east=velocity_ef.y;
-	fdm.v_down=velocity_ef.z;
+//	fdm.v_north=velocity_ef.x;
+//	fdm.v_east=velocity_ef.y;
+//	fdm.v_down=velocity_ef.z;
+	fdm.v_north=velocity_air_bf.x;
+	fdm.v_east=velocity_air_bf.y;
+	fdm.v_down=velocity_air_bf.z;
 
 	fdm.A_X_pilot=accel_body.x;
 	fdm.A_Y_pilot=accel_body.y;
@@ -354,10 +353,10 @@ void Aircraft::fill_fdm_flightgear( T_FDM &fdm) const
 
 	fdm.visibility=5000.0; // meters 可见范围
 
+	std::cout<<"fdm.cur_time="<<fdm.cur_time<<std::endl;
 	std::cout<<"fdm.phi="<<fdm.phi<<std::endl;
 	std::cout<<"fdm.theta="<<fdm.theta<<std::endl;
 	std::cout<<"fdm.psi="<<fdm.psi<<std::endl;
-	std::cout<<"fdm.altitude="<<fdm.altitude<<std::endl;
 
 
 #if 0

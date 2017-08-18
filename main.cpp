@@ -91,6 +91,8 @@ T_GLOBAL  gblState;
 T_AP2FG  ap2fg;
 T_FG2AP fg2ap;
 T_AP2FG  ap2fg_send;
+T_AP2FG  ap2fg_send_test;
+T_AP2FG  ap2fg_send_test_send;
 
 
 T_AP2FG  ap2fg_recv;
@@ -237,8 +239,15 @@ void Copter::setup()
 	ap2fg.throttle2 = 0.4;
 	ap2fg.throttle3 = 0.5;
 
+	ap2fg_send_test.throttle0=0;
+	ap2fg_send_test.throttle1=0;
+	ap2fg_send_test.throttle2=0;
+	ap2fg_send_test.throttle3=0;
+
 	//int fd_socket_generic;
 	open_socket_udp_dev(&fd_socket_generic,"127.0.0.1",5056);
+
+	ap2fg_send_test.throttle0=0.60;
 
 
 	}
@@ -429,35 +438,54 @@ void Copter::loop_fast()
 
 	memcpy(&ap2fg_send,&ap2fg,sizeof(ap2fg));
 
-	if(ap2fg_send.throttle0<0.2)
+	if(ap2fg_send.throttle0<0.6)
 	{
-		ap2fg_send.throttle0=0.2;
+		ap2fg_send.throttle0=0.6;
 	}else if(ap2fg_send.throttle0>0.96)
 	{
 		ap2fg_send.throttle0=0.96;
 	}
-	if(ap2fg_send.throttle1<0.2)
+	if(ap2fg_send.throttle1<0.6)
 	{
-		ap2fg_send.throttle1=0.2;
+		ap2fg_send.throttle1=0.6;
 	}else if(ap2fg_send.throttle1>0.96)
 	{
 		ap2fg_send.throttle1=0.96;
 	}
 
+
+
+
 	if(ap2fg_send.throttle2<0.2)
 	{
 		ap2fg_send.throttle2=0.2;
-	}else if(ap2fg_send.throttle2>0.96)
+	}else if(ap2fg_send.throttle2>0.46)
 	{
-		ap2fg_send.throttle2=0.96;
+		ap2fg_send.throttle2=0.46;
 	}
 	if(ap2fg_send.throttle3<0.2)
 	{
 		ap2fg_send.throttle3=0.2;
-	}else if(ap2fg_send.throttle3>0.96)
+	}else if(ap2fg_send.throttle3>0.46)
 	{
-		ap2fg_send.throttle3=0.96;
+		ap2fg_send.throttle3=0.46;
 	}
+
+//	ap2fg_send.throttle0+=0.0123;
+//	ap2fg_send.throttle1+=0.0123;
+//	ap2fg_send.throttle2+=0.0123;
+//	ap2fg_send.throttle3+=0.0123;
+
+	//ap2fg_send.throttle0=0.00123;//0.00123是刚好能启动的临界点，顺时针转动
+	//ap2fg_send.throttle0=0.98923;//这个0.98923是能看出来的逆时针转的临界点
+	//ap2fg_send.throttle0=0.49400;//这个是能看清的逆时针转的，然后从现在到0.5一直是逆时针转，但是速度越来越慢 0.5的时候就停止了
+	//ap2fg_send.throttle0=0.5009;//从0.5009开始顺时针转了
+	//ap2fg_send.throttle0=0.219900;
+#if 0
+	ap2fg_send.throttle1=0.0;
+	ap2fg_send.throttle1=0.0;
+	ap2fg_send.throttle2=0.0;
+	ap2fg_send.throttle3=0.0;
 
 
 	ap2fg_send.throttle0=hton_double(ap2fg_send.throttle0);
@@ -477,7 +505,98 @@ void Copter::loop_fast()
 	unsigned char socket_udp_send[2000];
 	memcpy(socket_udp_send,&ap2fg_send,sizeof(ap2fg_send));
 	send_socket_udp_data(fd_socket_generic, socket_udp_send, sizeof(ap2fg_send),"127.0.0.1",5506 );
+#else
 
+
+
+//	for(int i=0;i<100;i++)
+//	{
+	//ap2fg_send_test.throttle0+=0.0001;
+	//ap2fg_send_test.throttle0-=0.125;//每次加上0.125则螺旋桨就基本不转了，在0.125之前是顺时针，在0.125之后是逆时针
+	//ap2fg_send_test.throttle0=0.0625;
+	//ap2fg_send_test.throttle0=0.456;
+
+//	if(ap2fg_send_test.throttle0<1.0)
+//	{
+//		ap2fg_send_test.throttle0+=0.122;
+//	}else
+//	{
+//		ap2fg_send_test.throttle0=0;
+//	}
+
+//	//double send_tem=0.001;
+//	double send_tem=0.001;
+//	if(ap2fg_send_test.throttle0<1)
+//	{
+//		ap2fg_send_test.throttle0+=send_tem;
+//	}else
+//	{
+//		ap2fg_send_test.throttle0=0;
+//	}
+//
+//	if(ap2fg_send_test.throttle1<1)
+//	{
+//		ap2fg_send_test.throttle1+=send_tem;
+//	}else
+//	{
+//		ap2fg_send_test.throttle1=0;
+//	}
+//
+//	if(ap2fg_send_test.throttle2<1)
+//	{
+//		ap2fg_send_test.throttle2+=send_tem;
+//	}else
+//	{
+//		ap2fg_send_test.throttle2=0;
+//	}
+//
+//	if(ap2fg_send_test.throttle3<1)
+//	{
+//		ap2fg_send_test.throttle3+=send_tem;
+//	}else
+//	{
+//		ap2fg_send_test.throttle3=0;
+//	}
+
+
+
+
+
+	ap2fg_send_test.rpm0=1000;
+	ap2fg_send_test.rpm1=800;
+	ap2fg_send_test.rpm2=500;
+	ap2fg_send_test.rpm3=300;
+
+
+
+	/*
+	 * 固定发送给flightgear的油门速度，能够看出旋转的方向来
+	 * 因为不知道为什么arducopter这个模型，在1500转左侧是逆时针转动
+	 * 在1500转右侧hi顺时针转动，所以这里就是让看个螺旋桨转动的趋势
+	 * 具体的数值换别的控制量来显示
+	 */
+	ap2fg_send_test.throttle0=0.1420;
+	ap2fg_send_test.throttle1=0.1420;
+	ap2fg_send_test.throttle2=0.1580;
+	ap2fg_send_test.throttle3=0.1580;
+
+
+
+	std::cout<< "ap2fg_send_test.throttle0="<<ap2fg_send_test.throttle0<<std::endl;
+
+	ap2fg_send_test_send.throttle0=hton_double(ap2fg_send_test.throttle0);
+	ap2fg_send_test_send.throttle1=hton_double(ap2fg_send_test.throttle1);
+	ap2fg_send_test_send.throttle2=hton_double(ap2fg_send_test.throttle2);
+	ap2fg_send_test_send.throttle3=hton_double(ap2fg_send_test.throttle3);
+
+		unsigned char socket_udp_send[2000];
+		memcpy(socket_udp_send,&ap2fg_send_test_send,sizeof(ap2fg_send_test_send));
+		send_socket_udp_data(fd_socket_generic, socket_udp_send, sizeof(ap2fg_send_test_send),"127.0.0.1",5506 );
+
+//	}
+
+
+#endif
 
 
 	/*

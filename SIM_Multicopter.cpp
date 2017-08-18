@@ -223,6 +223,8 @@ void MultiCopter::update(const struct sitl_input &input)
     // new velocity vector
     velocity_ef += accel_earth * delta_time;
 
+    velocity_air_bf = dcm.transposed() * velocity_ef;//20170817增加集体的速度
+
     // new position vector
     Vector3f old_position = position;
     position += velocity_ef * delta_time;

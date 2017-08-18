@@ -129,6 +129,9 @@ protected:
     const char *autotest_dir;
     const char *frame;
 
+    //20170817增加 机体坐标系下的加速度
+    Vector3f velocity_air_bf;
+
     bool on_ground(const Vector3f &pos) const;
 
     /* update location from position */

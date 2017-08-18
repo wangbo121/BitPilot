@@ -300,10 +300,17 @@ typedef struct tagGLOBAL
 
 typedef struct tagAP2FG
 {
-  double throttle0;//[0..1], 0-3为四个电机的控制量
-  double throttle1;
-  double throttle2;
-  double throttle3;
+	double throttle0;//[0..1], 0-3为四个电机的控制量
+	double throttle1;
+	double throttle2;
+	double throttle3;
+
+	double rpm0;//[0..1], 0-3为四个电机的控制量
+	double rpm1;
+	double rpm2;
+	double rpm3;
+
+
 #if 0
   double latitude_deg;//[deg],飞行器当前纬度坐标
   double longitude_deg;//[deg],飞行器当前经度坐标
