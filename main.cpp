@@ -589,6 +589,12 @@ void Copter::loop_fast()
 	ap2fg_send_test_send.throttle2=hton_double(ap2fg_send_test.throttle2);
 	ap2fg_send_test_send.throttle3=hton_double(ap2fg_send_test.throttle3);
 
+
+	ap2fg_send_test_send.rpm0=hton_double(ap2fg_send_test.rpm0);
+	ap2fg_send_test_send.rpm1=hton_double(ap2fg_send_test.rpm1);
+	ap2fg_send_test_send.rpm2=hton_double(ap2fg_send_test.rpm2);
+	ap2fg_send_test_send.rpm3=hton_double(ap2fg_send_test.rpm3);
+
 		unsigned char socket_udp_send[2000];
 		memcpy(socket_udp_send,&ap2fg_send_test_send,sizeof(ap2fg_send_test_send));
 		send_socket_udp_data(fd_socket_generic, socket_udp_send, sizeof(ap2fg_send_test_send),"127.0.0.1",5506 );

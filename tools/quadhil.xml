@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+<!-- quadcopter HIL protocol definition
+     Andrew Tridgell
+     July 2011
+-->
+
+<PropertyList>
+ <generic>
+
+   <!-- inputs, sent from quad_hil.py to FlightGear -->
+   <input>
+     <binary_mode>true</binary_mode>
+<!--     <binary_footer>magic,0xc465414d</binary_footer>-->
+
+     <!-- motors, in range 0.0 to 1.0 -->
+     <chunk>
+       <name>throttle0</name>
+       <type>double</type>
+       <node>/controls/engines/engine[0]/throttle</node>
+     </chunk> 
+     <chunk>
+       <name>throttle1</name>
+       <type>double</type>
+       <node>/controls/engines/engine[1]/throttle</node>
+     </chunk> 
+     <chunk>
+       <name>throttle2</name>
+       <type>double</type>
+       <node>/controls/engines/engine[2]/throttle</node>
+     </chunk> 
+     <chunk>
+       <name>throttle3</name>
+       <type>double</type>
+       <node>/controls/engines/engine[3]/throttle</node>
+     </chunk>
+
+<!-- 下面的我作为显示输送的油门，为了显示逆时针和顺时针旋转，我不改变转速了
+-->
+     <chunk>
+       <name>throttle_display0</name>
+       <type>double</type>
+       <node>/engines/engine[0]/rpm</node>
+     </chunk> 
+     <chunk>
+       <name>throttle_display1</name>
+       <type>double</type>
+       <node>/engines/engine[1]/rpm</node>
+     </chunk> 
+     <chunk>
+       <name>throttle_display2</name>
+       <type>double</type>
+       <node>/engines/engine[2]/rpm</node>
+     </chunk> 
+     <chunk>
+       <name>throttle_display3</name>
+       <type>double</type>
+       <node>/engines/engine[3]/rpm</node>
+     </chunk>
+
+
+
+
+
+
+
+
+
+
+    
+   </input>
+   
+   <!-- outputs, sent from FlightGear to quad_hil.py -->
+   <output>
+     <!-- binary_mode置为true，说明下面的数据是二进制的 -->
+     <binary_mode>true</binary_mode>
+     <!-- binary_footer其实就是帧尾，可以用来作为校验，也可以什么都不做 -->
+     <binary_footer>magic,0x12345678</binary_footer>
+
+     <!-- the rest we only need once at startup, to know where 
+	  we are taking off from -->
+     <chunk>
+       <name>latitude-deg</name>
+       <type>double</type>
+       <node>/position/latitude-deg</node>
+     </chunk>
+     
+     <chunk>
+       <name>longitude-deg</name>
+       <type>double</type>
+       <node>/position/longitude-deg</node>
+     </chunk>
+
+     <chunk>
+       <name>pitch-deg</name>
+       <type>double</type>
+       <node>/orientation/pitch-deg</node>
+     </chunk>
+     
+     <chunk>
+       <name>heading-deg</name>
+       <type>double</type>
+       <node>/orientation/heading-deg</node>
+     </chunk>
+
+   </output>
+
+ </generic>
+
+</PropertyList>
