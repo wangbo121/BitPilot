@@ -174,19 +174,19 @@ void MultiCopter::update(const struct sitl_input &input)
 
     for (uint8_t i=0; i<frame->num_motors; i++) {
     	//std::cout<<"motors_speed[i]="<<motor_speed[i]<<std::endl;
-    	std::cout<<"sinf(radians(frame->motors[i].angle))="<<sinf(radians(frame->motors[i].angle))<<std::endl;//如果是0度的话，发现并不是0，而是一个极小数8.74228e-08
+    	//std::cout<<"sinf(radians(frame->motors[i].angle))="<<sinf(radians(frame->motors[i].angle))<<std::endl;//如果是0度的话，发现并不是0，而是一个极小数8.74228e-08
 //        rot_accel.x  += -radians(5000.0) * sinf(radians(frame->motors[i].angle)) * motor_speed[i];
 //        rot_accel.y  +=  radians(5000.0) * cosf(radians(frame->motors[i].angle)) * motor_speed[i];
         rot_accel.x  += -radians(5000.0) * sin(radians(frame->motors[i].angle)) * motor_speed[i];
          rot_accel.y  +=  radians(5000.0) * cos(radians(frame->motors[i].angle)) * motor_speed[i];
 
-        std::cout<<"motors_speed[i]="<<motor_speed[i]<<std::endl;
+        //std::cout<<"motors_speed[i]="<<motor_speed[i]<<std::endl;//20170818已测试
         if (frame->motors[i].clockwise) {
             rot_accel.z -= motor_speed[i] * radians(400.0);
         } else {
             rot_accel.z += motor_speed[i] * radians(400.0);
         }
-        std::cout<<"thrust_scale="<<thrust_scale<<std::endl;
+        //std::cout<<"thrust_scale="<<thrust_scale<<std::endl;
         thrust += motor_speed[i] * thrust_scale; // newtons
     }
 
@@ -231,9 +231,19 @@ void MultiCopter::update(const struct sitl_input &input)
     // update rotational rates in body frame
     gyro += rot_accel * delta_time;//这个delta_time就显得很重要了，初始化是0.01秒，应该是更新的速率
 
+    std::cout<<"20170818 gyro.x="<<gyro.x<<std::endl;
+     std::cout<<"20170818 gyro.y="<<gyro.y<<std::endl;
+     std::cout<<"20170818 gyro.z="<<gyro.z<<std::endl;
+
+
     // update attitude
     dcm.rotate(gyro * delta_time);//这个rotate函数其实就是旋转矩阵的一阶增量算法，cnb(t+1)=cnb(t)+cnb(t)*S(gyro)，这个S函数是叉乘向量的意思，20170818经过公式推导没有问题
+    std::cout<<"fdm dcm rotation="<<dcm.c.x<<std::endl;
+
+
     dcm.normalize();
+
+    std::cout<<"fdm  0818  dcm.c.x="<<dcm.c.x<<std::endl;
 
     // air resistance
     //Vector3f air_resistance = -velocity_ef * (GRAVITY_MSS/terminal_velocity);

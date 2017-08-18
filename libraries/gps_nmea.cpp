@@ -136,14 +136,14 @@ bool AP_GPS_NMEA::read(void)
 	latitude=(fdm_feed_back.latitude *RAD_TO_DEG)*1e7;
 	altitude=(fdm_feed_back.altitude )*1e2;
 	ground_speed=sqrt(pow(fdm_feed_back.v_north,2)+pow(fdm_feed_back.v_east,2)+pow(fdm_feed_back.v_down,2));
-	ground_course=90;
+	//ground_course=90;
 
 
 	std::cout<<"gps nmea longitude="<<longitude*1e-7<<std::endl;
 	std::cout<<"gps nmea latitude="<<latitude*1e-7<<std::endl;
 	std::cout<<"gps nmea altitude="<<altitude*1e-2<<std::endl;
 	std::cout<<"gps nmea ground_speed="<<ground_speed<<std::endl;
-	std::cout<<"gps nmea ground_course="<<ground_course<<std::endl;
+	//std::cout<<"gps nmea ground_course="<<ground_course<<std::endl;
 
 
 	return parsed;

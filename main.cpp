@@ -251,8 +251,8 @@ void Copter::loop()
 	//maintask_tick.tv_usec = mseconds*50;
 	maintask_tick.tv_usec = mseconds;
 
-	maintask_tick.tv_sec = 1;
-	maintask_tick.tv_usec = 0;
+	maintask_tick.tv_sec = 0;
+	maintask_tick.tv_usec = 10000;
 	select(0, NULL, NULL, NULL, &maintask_tick);
 	maintask_cnt++;
 
@@ -286,7 +286,8 @@ void Copter::loop_fast()
 	//std::cout<<"timer="<<timer/1000<<std::endl;
 
 	G_Dt=(timer-fast_loopTimer)/1000.0;//单位是秒[s]
-	//std::cout<<"G_Dt="<<G_Dt<<std::endl;
+	G_Dt=0.01;
+	std::cout<<"G_Dt="<<G_Dt<<std::endl;
 
 	fast_loopTimer=timer;
 
@@ -294,7 +295,7 @@ void Copter::loop_fast()
 	read_radio();
 
 //	g.channel_rudder.set_pwm(1600);//这个set_pwm参数的范围是1000～2000
-	g.channel_pitch.set_pwm(1600);//这个set_pwm参数的范围是1000～2000，把pitch一直设置为1600，看能不能稳定在9度左右
+	//g.channel_pitch.set_pwm(1600);//这个set_pwm参数的范围是1000～2000，把pitch一直设置为1600，看能不能稳定在9度左右
 	g.rc_5.set_pwm(1400);//rc_5大于1500时，是增稳控制状态
 	//g.rc_5.set_pwm(1600);//rc_5大于1500时，是增稳控制状态
 
@@ -380,6 +381,11 @@ void Copter::loop_fast()
 	multi_copter.fill_fdm_flightgear(fdm);
 
 	memcpy(&fdm_feed_back,&fdm,sizeof(fdm));
+
+	std::cout<<"fdm_feed_back.phidot="<<fdm_feed_back.phidot<<std::endl;
+	std::cout<<"fdm_feed_back.thetadot="<<fdm_feed_back.thetadot<<std::endl;
+	std::cout<<"fdm_feed_back.psidot="<<fdm_feed_back.psidot<<std::endl;
+
 	memcpy(&fdm_send,&fdm,sizeof(fdm));
 
 	fdm_send.version = htonl(FG_NET_FDM_VERSION);

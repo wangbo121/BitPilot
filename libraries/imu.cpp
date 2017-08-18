@@ -114,7 +114,7 @@ IMU::update(void)
 	int tc_temp =0;
 	//int tc_temp = _adc->Ch(_gyro_temp_ch);
 	//上面这句话是读取imu的数据，然后下面赋值
-
+#if 0
 	// convert corrected gyro readings to delta acceleration
 	//
 	_gyro.x = ToRad(_gyro_gain_x) * _sensor_in(0, tc_temp);
@@ -139,7 +139,7 @@ IMU::update(void)
 	_accel.x = 0.0 ;
 	_accel.y = 0.0 ;
 	_accel.z = _accel_scale * 423.0 ;
-
+#endif
 	/*
 	 * 总之，这个函数是必须不断获取acc gyro的数据，把数据给到_gyro，_accel这个三维向量里
 	 * 然后才能把数据给到ahrs
@@ -154,16 +154,6 @@ IMU::update(void)
 	_accel.x = fdm_feed_back.A_X_pilot;
 	_accel.y = fdm_feed_back.A_Y_pilot;
 	_accel.z = fdm_feed_back.A_Z_pilot;
-
-	//roll=fdm_feed_back.phi;
-
-
-
-
-
-
-
-
 
 	// always updated
 	return true;
