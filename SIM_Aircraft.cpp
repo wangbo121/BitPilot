@@ -85,6 +85,7 @@ Aircraft::Aircraft(const char *home_str, const char *frame_str) :
     accel_noise(0.3),
    // rate_hz(400),
     rate_hz(100),
+   // rate_hz(1),
     autotest_dir(NULL),
     frame(frame_str),
 #ifdef __CYGWIN__
@@ -105,10 +106,11 @@ Aircraft::Aircraft(const char *home_str, const char *frame_str) :
     home.lng = atof(lon_s) * 1.0e7;
     home.alt = atof(alt_s) * 1.0e2;
     location = home;
-    ground_level = home.alt*0.01;
+    ground_level = home.alt*0.01;//20170818已测试，当home.alt=0.0时，ground_level也是0，所以on_ground函数，只需要判断position.z是不是大于0，大于0则是到地下了
 
-    std::cout<<"location.lng="<<location.lng<<std::endl;
-    std::cout<<"location.lat="<<location.lat<<std::endl;
+    //std::cout<<"location.lng="<<location.lng<<std::endl;
+    //std::cout<<"location.lat="<<location.lat<<std::endl;
+    //std::cout<<" ground_level="<< ground_level<<std::endl;//20170818已测试
 
     dcm.from_euler(0, 0, radians(atof(yaw_s)));
     free(s);
@@ -124,6 +126,8 @@ Aircraft::Aircraft(const char *home_str, const char *frame_str) :
 */
 bool Aircraft::on_ground(const Vector3f &pos) const
 {
+	//20170818
+	return 0;
     return (-pos.z) + home.alt*0.01f <= ground_level + frame_height;
 }
 
@@ -405,6 +409,8 @@ uint64_t Aircraft::get_wall_time_us() const
 #else
     struct timeval tp;
     gettimeofday(&tp,NULL);
+
+    //std::cout<<"frame time="<<tp.tv_sec*1.0e6 + tp.tv_usec<<std::endl;//20170818已测试
     return tp.tv_sec*1.0e6 + tp.tv_usec;
 #endif
 }

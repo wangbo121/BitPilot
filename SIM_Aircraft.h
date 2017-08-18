@@ -107,7 +107,7 @@ protected:
 
     float ground_level;
     float frame_height;
-    Matrix3f dcm;  // rotation matrix, APM conventions, from body to earth
+    Matrix3f dcm;  // rotation matrix, APM conventions, from body to earth//20170818 这个dcm是cbn也就是从机体坐标系转到参考坐标系的矩阵
     Vector3f gyro; // rad/s
     Vector3f velocity_ef; // m/s, earth frame
     Vector3f position; // meters, NED from origin

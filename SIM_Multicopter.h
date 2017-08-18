@@ -20,7 +20,10 @@
 #ifndef _SIM_MULTICOPTER_H
 #define _SIM_MULTICOPTER_H
 
+#include <stdint.h>
+#include <stdio.h>
 #include "SIM_Aircraft.h"
+#include <iostream>
 
 /*
   class to describe a motor position
@@ -52,7 +55,10 @@ public:
           const Motor *_motors) :
         name(_name),
         num_motors(_num_motors),
-        motors(_motors) {}
+        motors(_motors) {
+    	//printf("num_motors=%d  ##\n",num_motors);//20170818已测试
+    	//std::cout<<"num_motors="<<num_motors<<"name="<<name<<std::endl;//uint_8不要用std打印，因为是unsigned char的所以会打印出符号来，而不是数字
+    }
 };
 
 /*

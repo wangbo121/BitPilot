@@ -25,7 +25,8 @@
 //MultiCopter multi_copter("-122.357,37.6136,100,10","x");
 //MultiCopter multi_copter("-122.357,37.6136,100,0","x");
 //MultiCopter multi_copter("-122.357,37.6136,100,10","+");
-MultiCopter multi_copter("-122.357,37.6136,100,0","+");
+//MultiCopter multi_copter("-122.357,37.6136,100,0","+");
+MultiCopter multi_copter("-122.357,37.6136,10,0","+");//起始高度为0
 //MultiCopter multi_copter("-122.357192862,37.6135553166,100,0","+");
 
 //MultiCopter multi_copter;
@@ -171,16 +172,17 @@ void Copter::setup()
 
 	init_ardupilot();
 
+	float pid_p_1=1.0;
 	//第一级pid参数设置
-	g.pi_stabilize_roll.set_kP(2.0);
+	g.pi_stabilize_roll.set_kP(pid_p_1);
 	g.pi_stabilize_roll.set_kI(0.0);
 	g.pi_stabilize_roll.set_kD(0.0);
 
-	g.pi_stabilize_pitch.set_kP(2.0);
+	g.pi_stabilize_pitch.set_kP(pid_p_1);
 	g.pi_stabilize_pitch.set_kI(0.0);
 	g.pi_stabilize_pitch.set_kD(0.0);
 
-	g.pi_stabilize_yaw.set_kP(2.0);
+	g.pi_stabilize_yaw.set_kP(pid_p_1);
 	g.pi_stabilize_yaw.set_kI(0.0);
 	g.pi_stabilize_yaw.set_kD(0.0);
 
@@ -188,15 +190,17 @@ void Copter::setup()
 	//第2级pid参数设置
 
 
-	g.pid_rate_roll.set_kP(1.2);
+	float pid_p_2=1.0;
+
+	g.pid_rate_roll.set_kP(pid_p_2);
 	g.pid_rate_roll.set_kI(0.0);
 	g.pid_rate_roll.set_kD(0.0);
 
-	g.pid_rate_pitch.set_kP(1.2);
+	g.pid_rate_pitch.set_kP(pid_p_2);
 	g.pid_rate_pitch.set_kI(0.0);
 	g.pid_rate_pitch.set_kD(0.0);
 
-	g.pid_rate_yaw.set_kP(1.2);
+	g.pid_rate_yaw.set_kP(pid_p_2);
 	g.pid_rate_yaw.set_kI(0.0);
 	g.pid_rate_yaw.set_kD(0.0);
 
