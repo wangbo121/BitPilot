@@ -73,6 +73,7 @@ class AP_RC_Channel{
 	// did our read come in 50µs below the min?
 	bool		get_failsafe(void);
 
+	//由radio_in[1000~2000]-->control_in[-4500~4500,0~1000]-->servo_out[-4500~4500,0~1000]-->radio_out[1000~2000]
 	// value generated from PWM
 	int16_t 	control_in;//有两种，1是-4500～4500,2是油门范围0～1000  control_in 对应的是servo_out范围都是-4500～4500 和0～1000两种
 	// current values to the servos - degrees * 100 (approx assuming servo is -45 to 45 degrees except [3] is 0 to 100
@@ -89,7 +90,7 @@ class AP_RC_Channel{
 	// generate PWM from servo_out value
 	//这个计算两种，1是把-4500～+4500转为1000～2000
 	//2是把0～1000转为1000～2000
-	//转换后的值给到了radio_out
+	//转换后的值给到了pwm_out和radio_out，pwm_out只是中间量，radio_out才是需要的给到电调的量
 	void 		calc_pwm(void);
 
 	float constrain(float m,float a,float b);

@@ -66,9 +66,7 @@ AP_RC_Channel::trim()
 void
 AP_RC_Channel::set_pwm(int pwm)
 {
-	//std::cout<<"pwm="<<pwm<<std::endl;
-	radio_in = pwm;
-
+	std::cout<<"radio in="<<pwm<<std::endl;
 	 radio_in = pwm;
 
 	 //

@@ -59,6 +59,11 @@ void Copter::init_rc_in()
 		g.channel_throttle.dead_zone = 6;
 		g.channel_rudder.dead_zone 	= 60;
 
+		g.channel_roll.dead_zone 	= 0;
+		g.channel_pitch.dead_zone 	= 0;
+		g.channel_throttle.dead_zone = 0;
+		g.channel_rudder.dead_zone 	= 0;
+
 
     // set rc channel ranges
     g.channel_roll.set_angle(4500);//set_angle做了两件事，一是把_high变量赋值，一是设置type是角度[-4500~+4500]还是范围[0~+1000]
@@ -114,17 +119,16 @@ void Copter::read_radio()
 	g.channel_rudder.set_pwm(ap_rc.input_ch(CH_4));
 	g.rc_5.set_pwm(ap_rc.input_ch(CH_5));
 
-
-
+	/*
+	 * 20170818已测试
+	 */
+	/*
 	std::cout<<"g.channel_roll.control_in="<<g.channel_roll.control_in<<std::endl;
 	std::cout<<"g.channel_pitch.control_in="<<g.channel_pitch.control_in<<std::endl;
 	std::cout<<"g.channel_throttle.control_in="<<g.channel_throttle.control_in<<std::endl;
 	std::cout<<"g.channel_rudder.control_in="<<g.channel_rudder.control_in<<std::endl;
 	std::cout<<"g.rc_5.control_in="<<g.rc_5.control_in<<std::endl;
-
-
-
-
+	*/
 }
 
 
