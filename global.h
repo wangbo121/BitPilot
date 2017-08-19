@@ -79,6 +79,16 @@
 #define YAW_RATE 2
 
 #define YAW_MANUAL 3
+// Flight modes
+// ------------
+#define YAW_HOLD                        0
+#define YAW_ACRO                        1
+#define YAW_AUTO                        2
+#define YAW_LOOK_AT_HOME    		    3
+#define YAW_TOY                         4       // THOR This is the Yaw mode
+
+
+
 
 
 #define ROLL_PITCH_STABLE       0
@@ -94,6 +104,25 @@
 #define THROTTLE_MANUAL         0
 #define THROTTLE_HOLD           1
 #define THROTTLE_AUTO           2
+
+
+
+
+#define LOITER_MODE 1
+#define WP_MODE 2
+#define CIRCLE_MODE 3
+#define NO_NAV_MODE 4
+#define TOY_MODE 5                      // THOR This mode defines the Virtual
+                                        // WP following mode
+
+#define	MAV_ROI_NONE 0 /* No region of interest. | */
+	#define MAV_ROI_WPNEXT    1 /* Point toward next MISSION. | */
+	#define MAV_ROI_WPINDEX   2 /* Point toward given MISSION. | */
+	#define MAV_ROI_LOCATION   3 /* Point toward fixed location. | */
+	#define MAV_ROI_TARGET   4 /* Point toward of given id. | */
+	#define MAV_ROI_ENUM_END  5 /*  | */
+
+
 
 // definitions for earth frame and body frame
 // used to specify frame to rate controllers
@@ -162,6 +191,12 @@
 
 
 
+#define min(a,b) ((a)<(b)?(a):(b))
+#define max(a,b) ((a)>(b)?(a):(b))
+
+#ifndef WAYPOINT_SPEED_MIN
+ # define WAYPOINT_SPEED_MIN             150                    // 1m/s
+#endif
 
 
 
@@ -199,6 +234,20 @@ public:
 	int8_t     waypoint_index;
 	int8_t     waypoint_radius;
 	int8_t     loiter_radius;
+
+// Waypoints
+//
+//int8_t         waypoint_mode;
+int8_t         command_total;
+int8_t         command_index;
+int8_t         command_nav_index;
+//int16_t        waypoint_radius;
+//int16_t        loiter_radius;
+int16_t        waypoint_speed_max;
+//float        crosstrack_gain;
+int32_t        auto_land_timeout;
+
+int8_t         tilt_comp;
 
 	// Fly-by-wire
 	//
@@ -281,6 +330,7 @@ public:
 	  AP_PID                  pi_alt_hold;
 
 
+	  int16_t        auto_slew_rate;
 
       uint8_t     junk;
 };

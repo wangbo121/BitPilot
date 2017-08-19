@@ -612,6 +612,68 @@ private:
 	   uint8_t command_yaw_relative;
 	  // Yaw will point at this location if yaw_tracking is set to MAV_ROI_LOCATION
 	   struct   Location target_WP;
+	   uint8_t wp_control;
+	   //uint8_t   yaw_tracking = MAV_ROI_WPNEXT;
+	   uint8_t   yaw_tracking ;
+
+
+	   ////////////////////////////////////////////////////////////////////////////////
+	   // Crosstrack
+	   ////////////////////////////////////////////////////////////////////////////////
+	   // deg * 100, The original angle to the next_WP when the next_WP was set
+	   // Also used to check when we pass a WP
+	   int32_t original_target_bearing;
+	   // The amount of angle correction applied to target_bearing to bring the copter back on its optimum path
+	   //static int16_t crosstrack_error;
+	   // should we take the waypoint quickly or slow down?
+	   uint8_t fast_corner;
+	   ////////////////////////////////////////////////////////////////////////////////
+	   // The GPS based velocity calculated by offsetting the Latitude and Longitude
+	   // updated after GPS read - 5-10hz
+	   int16_t x_actual_speed;
+	   int16_t y_actual_speed;
+
+
+	   ////////////////////////////////////////////////////////////////////////////////
+	   // Location & Navigation
+	   ////////////////////////////////////////////////////////////////////////////////
+	   // Status flag indicating we have data that can be used to navigate
+	   // Set by a GPS read with 3D fix, or an optical flow read
+	    uint8_t nav_ok;
+	   // This is the angle from the copter to the "next_WP" location in degrees * 100
+	    //int32_t target_bearing;
+	   // Status of the Waypoint tracking mode. Options include:
+	   // NO_NAV_MODE, WP_MODE, LOITER_MODE, CIRCLE_MODE
+	    //uint8_t wp_control;
+	   // Register containing the index of the current navigation command in the mission script
+	    int16_t command_nav_index;
+	   // Register containing the index of the previous navigation command in the mission script
+	   // Used to manage the execution of conditional commands
+	    uint8_t prev_nav_index;
+	   // Register containing the index of the current conditional command in the mission script
+	    uint8_t command_cond_index;
+	   // Used to track the required WP navigation information
+	   // options include
+	   // NAV_ALTITUDE - have we reached the desired altitude?
+	   // NAV_LOCATION - have we reached the desired location?
+	   // NAV_DELAY    - have we waited at the waypoint the desired time?
+	    uint8_t wp_verify_byte;                                                  // used for tracking state of navigating waypoints
+	   // used to limit the speed ramp up of WP navigation
+	   // Acceleration is limited to .5m/s/s
+	    int16_t waypoint_speed_gov;
+	   // Used to track how many cm we are from the "next_WP" location
+	    int32_t long_error, lat_error;
+	   // Are we navigating while holding a positon? This is set to false once the speed drops below 1m/s
+	    uint8_t loiter_override;
+	    int16_t waypoint_radius;
+
+
+
+
+	    // The difference between the desired rate of travel and the actual rate of travel
+	    // updated after GPS read - 5-10hz
+	     int16_t x_rate_error;
+	     int16_t y_rate_error;
 
 
 
@@ -1152,6 +1214,23 @@ private:
     int16_t get_angle_boost(int16_t value);
 
     void trim_radio();
+
+
+
+    /*
+     * 20170819为了自动驾驶增加的函数
+     */
+
+    void update_auto_yaw();
+    void update_nav_wp();
+    uint8_t check_missed_wp();
+    void calc_XY_velocity();
+    void calc_location_error(struct Location *next_loc);
+
+    int16_t get_desired_speed(int16_t max_speed, bool _slow);
+    int16_t get_desired_climb_rate();
+    void calc_nav_rate(int16_t max_speed);
+    void update_crosstrack(void);
 
 
 

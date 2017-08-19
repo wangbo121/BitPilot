@@ -663,12 +663,39 @@ void Copter::one_second_loop()
 //
 //}
 
+// called after a GPS read
 void Copter::update_navigation()
 {
 	// wp_distance is in ACTUAL meters, not the *100 meters we get from the GPS
-	// ------------------------------------------------------------------------
+		// ------------------------------------------------------------------------
 
-}
+
+
+    // wp_distance is in CM
+    // --------------------
+    switch(control_mode) {
+    case AUTO:
+        // note: wp_control is handled by commands_logic
+       // verify_commands();
+
+        // calculates desired Yaw
+        update_auto_yaw();
+
+        // calculates the desired Roll and Pitch
+        update_nav_wp();
+        break;
+
+
+    case STABILIZE:
+        update_nav_wp();
+        break;
+    }
+
+ }
+
+
+
+
 
 // run_nav_updates - top level call for the autopilot
 // ensures calculations such as "distance to waypoint" are calculated before autopilot makes decisions
@@ -695,11 +722,58 @@ void Copter::calc_bearing_error()
 }
 
 
+void Copter::update_auto_yaw()
+{
+    if(wp_control == CIRCLE_MODE) {
+       // auto_yaw = get_bearing_cd(&current_loc, &circle_WP);
+
+    }else if(wp_control == LOITER_MODE) {
+        // just hold nav_yaw
+
+    }else if(yaw_tracking == MAV_ROI_LOCATION) {
+        auto_yaw = get_bearing_cd(&current_loc, &target_WP);
+
+    }else if(yaw_tracking == MAV_ROI_WPNEXT) {
+        // Point towards next WP
+        auto_yaw = original_target_bearing;
+    }
+}
 
 
 
+// Outputs Nav_Pitch and Nav_Roll
+void Copter::update_nav_wp()
+{
+    if(wp_control == LOITER_MODE) {
 
+        // calc error to target
+        //calc_location_error(&next_WP);
 
+        // use error as the desired rate towards the target
+        //calc_loiter(long_error, lat_error);
+
+    }else if(wp_control == CIRCLE_MODE) {
+
+   }else if(wp_control == WP_MODE) {
+        // calc error to target
+        calc_location_error(&next_WP);
+
+        int16_t speed = get_desired_speed(g.waypoint_speed_max, slow_wp);
+        // use error as the desired rate towards the target
+        calc_nav_rate(speed);
+
+    }else if(wp_control == NO_NAV_MODE) {
+        // clear out our nav so we can do things like land straight down
+        // or change Loiter position
+
+        // We bring copy over our Iterms for wind control, but we don't navigate
+        nav_lon = g.pid_loiter_rate_lon.get_integrator();
+        nav_lat = g.pid_loiter_rate_lon.get_integrator();
+
+   //     nav_lon                 = constrain(nav_lon, -2000, 2000);                              // 20°
+      //  nav_lat                 = constrain(nav_lat, -2000, 2000);                              // 20°
+    }
+}
 
 
 

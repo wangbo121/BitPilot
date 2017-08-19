@@ -9,7 +9,7 @@
 #include "copter.h"
 #include "location.h"
 
-
+#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 //****************************************************************
 // Function that will calculate the desired direction to fly and distance
 //****************************************************************
@@ -25,8 +25,9 @@ void Copter::navigate()
     target_bearing                  = get_bearing_cd(&filtered_loc, &next_WP);
     home_to_copter_bearing  = get_bearing_cd(&home, &current_loc);
 }
-#if 0
-static bool check_missed_wp()
+
+//static bool check_missed_wp()
+uint8_t Copter::check_missed_wp()
 {
     int32_t temp;
     temp = target_bearing - original_target_bearing;
@@ -35,7 +36,7 @@ static bool check_missed_wp()
 }
 
 // ------------------------------
-static void calc_XY_velocity(){
+void Copter::calc_XY_velocity(){
     static int32_t last_longitude = 0;
     static int32_t last_latitude  = 0;
 
@@ -47,31 +48,35 @@ static void calc_XY_velocity(){
 
     // initialise last_longitude and last_latitude
     if( last_longitude == 0 && last_latitude == 0 ) {
-        last_longitude = g_gps->longitude;
-        last_latitude = g_gps->latitude;
+        last_longitude = gps.longitude;
+        last_latitude = gps.latitude;
     }
 
     // this speed is ~ in cm because we are using 10^7 numbers from GPS
     float tmp = 1.0/dTnav;
 
-    x_actual_speed  = (float)(g_gps->longitude - last_longitude)  * scaleLongDown * tmp;
-    y_actual_speed  = (float)(g_gps->latitude  - last_latitude)  * tmp;
+    x_actual_speed  = (float)(gps.longitude - last_longitude)  * scaleLongDown * tmp;
+    y_actual_speed  = (float)(gps.latitude  - last_latitude)  * tmp;
 
-    last_longitude  = g_gps->longitude;
-    last_latitude   = g_gps->latitude;
+    last_longitude  = gps.longitude;
+    last_latitude   = gps.latitude;
 
-#if INERTIAL_NAV == ENABLED
+//#if INERTIAL_NAV == ENABLED
+#if 0
     // inertial_nav
     xy_error_correction();
     filtered_loc.lng = xLeadFilter.get_position(g_gps->longitude, accels_velocity.x);
     filtered_loc.lat = yLeadFilter.get_position(g_gps->latitude,  accels_velocity.y);
 #else
-    filtered_loc.lng = xLeadFilter.get_position(g_gps->longitude, x_actual_speed, g_gps->get_lag());
-    filtered_loc.lat = yLeadFilter.get_position(g_gps->latitude,  y_actual_speed, g_gps->get_lag());
+//    filtered_loc.lng = xLeadFilter.get_position(g_gps->longitude, x_actual_speed, gps.get_lag());
+//    filtered_loc.lat = yLeadFilter.get_position(g_gps->latitude,  y_actual_speed, g_gps->get_lag());
+
+    filtered_loc.lng = gps.longitude;
+       filtered_loc.lat = gps.latitude;
 #endif
 }
 
-static void calc_location_error(struct Location *next_loc)
+void Copter::calc_location_error(struct Location *next_loc)
 {
     /*
      *  Becuase we are using lat and lon to do our distance errors here's a quick chart:
@@ -88,6 +93,9 @@ static void calc_location_error(struct Location *next_loc)
     // Y Error
     lat_error       = next_loc->lat - current_loc.lat;                                                          // 500 - 0 = 500 Go North
 }
+
+#if 0
+
 
 #define NAV_ERR_MAX 600
 #define NAV_RATE_ERR_MAX 250
@@ -177,8 +185,8 @@ static void calc_loiter(int16_t x_error, int16_t y_error)
     g.pid_nav_lon.set_integrator(g.pid_loiter_rate_lon.get_integrator());
     g.pid_nav_lat.set_integrator(g.pid_loiter_rate_lat.get_integrator());
 }
-
-static void calc_nav_rate(int16_t max_speed)
+#endif
+void Copter::calc_nav_rate(int16_t max_speed)
 {
     float temp, temp_x, temp_y;
 
@@ -199,7 +207,8 @@ static void calc_nav_rate(int16_t max_speed)
 
     // East / West
     // calculate rate error
-#if INERTIAL_NAV == ENABLED
+//#if INERTIAL_NAV == ENABLED
+#if 0
     x_rate_error    = x_target_speed - accels_velocity.x;
 #else
     x_rate_error    = x_target_speed - x_actual_speed;
@@ -216,7 +225,8 @@ static void calc_nav_rate(int16_t max_speed)
 
     // North / South
     // calculate rate error
-#if INERTIAL_NAV == ENABLED
+//#if INERTIAL_NAV == ENABLED
+#if 0
     y_rate_error    = y_target_speed - accels_velocity.y;
 #else
     y_rate_error    = y_target_speed - y_actual_speed;
@@ -235,7 +245,7 @@ static void calc_nav_rate(int16_t max_speed)
     g.pid_loiter_rate_lat.set_integrator(g.pid_nav_lat.get_integrator());
 }
 
-
+#if 0
 // this calculation rotates our World frame of reference to the copter's frame of reference
 // We use the DCM's matrix to precalculate these trig values at 50hz
 static void calc_loiter_pitch_roll()
@@ -248,8 +258,8 @@ static void calc_loiter_pitch_roll()
     // flip pitch because forward is negative
     auto_pitch = -auto_pitch;
 }
-
-static int16_t get_desired_speed(int16_t max_speed, bool _slow)
+#endif
+int16_t Copter::get_desired_speed(int16_t max_speed, bool _slow)
 {
     /*
      * |< WP Radius
@@ -278,8 +288,8 @@ static int16_t get_desired_speed(int16_t max_speed, bool _slow)
 
     return max_speed;
 }
-
-static int16_t get_desired_climb_rate()
+#if 0
+int16_t Copter::get_desired_climb_rate()
 {
     if(alt_change_flag == ASCENDING) {
         return constrain(altitude_error / 4, 100, 180);         // 180cm /s up, minimum is 100cm/s
@@ -291,8 +301,8 @@ static int16_t get_desired_climb_rate()
         return 0;
     }
 }
-
-static void update_crosstrack(void)
+#endif
+void Copter::update_crosstrack(void)
 {
     // Crosstrack Error
     // ----------------
@@ -300,7 +310,7 @@ static void update_crosstrack(void)
     float temp = (target_bearing - original_target_bearing) * RADX100;
     crosstrack_error = sin(temp) * wp_distance;          // Meters we are off track line
 }
-
+#if 0
 static int32_t get_altitude_error()
 {
     // Next_WP alt is our target alt
@@ -366,6 +376,4 @@ static int32_t wrap_180(int32_t error)
     if (error < -18000) error += 36000;
     return error;
 }
-
-
 #endif

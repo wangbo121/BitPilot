@@ -44,6 +44,9 @@ public:
 	float	get_kI()			{ return _ki; }
 	float	get_kD()			{ return _kd; }
 	float	get_imax()			{ return _imax; }
+    void        set_integrator(float i) {
+        _integrator = i;
+    }
 
 	float	get_integrator() const	{ return _integrator; }
 

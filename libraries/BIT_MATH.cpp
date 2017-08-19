@@ -76,6 +76,7 @@ float wrap_180(const T angle, float unit_mod)
 
 
 template float wrap_180<int>(const int angle, float unit_mod);
+template float wrap_180<long>(const long angle, float unit_mod);
 template float wrap_180<short>(const short angle, float unit_mod);
 template float wrap_180<float>(const float angle, float unit_mod);
 template float wrap_180<double>(const double angle, float unit_mod);

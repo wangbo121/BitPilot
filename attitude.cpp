@@ -7,6 +7,15 @@
 
 #include "copter.h"
 
+//static int32_t wrap_180(int32_t error)
+//{
+//    if (error > 18000) error -= 36000;
+//    if (error < -18000) error += 36000;
+//    return error;
+//}
+
+#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
+
 //get_yaw_rate_stabilized_ef(g.rc_4.control_in);
 void
 Copter::get_stabilize_roll(int32_t target_angle)
@@ -445,6 +454,12 @@ Copter::update_yaw_mode(void)
 		break;
 	case YAW_ACRO:
 		break;
+	 case YAW_AUTO:
+	        nav_yaw += constrain(wrap_180(auto_yaw - nav_yaw), -60, 60);                 // 40 deg a second
+	        //Serial.printf("nav_yaw %d ", nav_yaw);
+	        nav_yaw  = wrap_360(nav_yaw);
+	        get_stabilize_yaw(nav_yaw);
+	        break;
 
 	default:
 		break;
@@ -474,6 +489,22 @@ Copter::update_roll_pitch_mode(void)
 		//get_acro_roll(g.rc_1.control_in);
 		//get_acro_pitch(g.rc_2.control_in);
 		break;
+
+	 case ROLL_PITCH_AUTO:
+//	        // apply SIMPLE mode transform
+//	        if(do_simple && new_radio_frame) {
+//	            update_simple_mode();
+//	        }
+	        // mix in user control with Nav control
+	        nav_roll                += constrain(wrap_180(auto_roll  - nav_roll,100),  -g.auto_slew_rate, g.auto_slew_rate);                 // 40 deg a second
+	        nav_pitch               += constrain(wrap_180(auto_pitch - nav_pitch,100), -g.auto_slew_rate, g.auto_slew_rate);                 // 40 deg a second
+
+	        control_roll            = g.channel_roll.control_mix(nav_roll);
+	        control_pitch           = g.channel_pitch.control_mix(nav_pitch);
+
+	        get_stabilize_roll(control_roll);
+	        get_stabilize_pitch(control_pitch);
+	        break;
 
 	default:
 		break;
