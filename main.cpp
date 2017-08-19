@@ -528,6 +528,48 @@ void Copter::update_current_flight_mode(void)
 		control_mode=STABILIZE;
 		std::cout<<"飞控模式是增稳模式:"<<std::endl;
 	}
+
+	/*
+	 * 什么时候是航点飞行模式呢
+	 */
+
+	switch(control_mode)
+	{
+	case ACRO:
+		yaw_mode                = YAW_ACRO;
+		roll_pitch_mode = ROLL_PITCH_ACRO;
+		throttle_mode   = THROTTLE_MANUAL;
+		break;
+
+	case STABILIZE:
+		yaw_mode                = YAW_HOLD;
+		roll_pitch_mode = ROLL_PITCH_STABLE;
+		throttle_mode   = THROTTLE_MANUAL;
+		break;
+
+	case AUTO:
+		yaw_mode                = YAW_AUTO;
+		roll_pitch_mode = ROLL_PITCH_AUTO;
+		throttle_mode   = THROTTLE_AUTO;
+
+		// loads the commands from where we left off
+		//init_commands();
+		break;
+
+	case LOITER:
+//		yaw_mode                = LOITER_YAW;
+//		roll_pitch_mode = LOITER_RP;
+//		throttle_mode   = LOITER_THR;
+//		set_next_WP(&current_loc);
+		break;
+
+	default:
+		break;
+	}
+
+
+
+
 }
 
 void Copter::stabilize()
