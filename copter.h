@@ -17,6 +17,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+#include "location.h"
+
 
 
 // Common dependencies
@@ -501,6 +503,128 @@ private:
 	  float roll_scale_d, pitch_scale_d;
 
 
+	  /*
+	   * 20170819为了实现航点飞行 添加的变量
+	   */
+
+	  ////////////////////////////////////////////////////////////////////////////////
+	  // Navigation general
+	  ////////////////////////////////////////////////////////////////////////////////
+	  // The location of the copter in relation to home, updated every GPS read
+	   int32_t home_to_copter_bearing;
+	  // distance between plane and home in cm
+	   //int32_t home_distance;
+	  // distance between plane and next_WP in cm
+	  // is not  because AP_Camera uses it
+	  //int32_t wp_distance;
+
+	  ////////////////////////////////////////////////////////////////////////////////
+	  // 3D Location vectors
+	  ////////////////////////////////////////////////////////////////////////////////
+	  // home location is stored when we have a good GPS lock and arm the copter
+	  // Can be reset each the copter is re-armed
+	   struct   Location home;
+	  // Flag for if we have g_gps lock and have set the home location
+	   uint8_t home_is_set;
+	  // Current location of the copter
+	   struct   Location current_loc;
+	  // lead filtered loc
+	   struct   Location filtered_loc;
+	  // Next WP is the desired location of the copter - the next waypoint or loiter location
+	   struct   Location next_WP;
+	  // Prev WP is used to get the optimum path from one WP to the next
+	   struct   Location prev_WP;
+	  // Holds the current loaded command from the EEPROM for navigation
+	   struct   Location command_nav_queue;
+	  // Holds the current loaded command from the EEPROM for conditional scripts
+	   struct   Location command_cond_queue;
+	  // Holds the current loaded command from the EEPROM for guided mode
+	   struct   Location guided_WP;
+
+
+
+	  ////////////////////////////////////////////////////////////////////////////////
+	  // Navigation Roll/Pitch functions
+	  ////////////////////////////////////////////////////////////////////////////////
+	  // all angles are deg * 100 : target yaw angle
+	  // The Commanded ROll from the autopilot.
+	   //int32_t nav_roll;
+	  // The Commanded pitch from the autopilot. negative Pitch means go forward.
+	   //int32_t nav_pitch;
+	  // The desired bank towards North (Positive) or South (Negative)
+	   int32_t auto_roll;
+	   int32_t auto_pitch;
+
+	  // Don't be fooled by the fact that Pitch is reversed from Roll in its sign!
+	   int16_t nav_lat;
+	  // The desired bank towards East (Positive) or West (Negative)
+	   int16_t nav_lon;
+	  // The Commanded ROll from the autopilot based on optical flow sensor.
+	   int32_t of_roll;
+	  // The Commanded pitch from the autopilot based on optical flow sensor. negative Pitch means go forward.
+	   int32_t of_pitch;
+	   bool slow_wp = false;
+
+
+	  ////////////////////////////////////////////////////////////////////////////////
+	  // Navigation Throttle control
+	  ////////////////////////////////////////////////////////////////////////////////
+	  // The Commanded Throttle from the autopilot.
+	   int16_t nav_throttle;                                            // 0-1000 for throttle control
+	  // This is a simple counter to track the amount of throttle used during flight
+	  // This could be useful later in determining and debuging current usage and predicting battery life
+	   uint32_t throttle_integrator;
+
+	  ////////////////////////////////////////////////////////////////////////////////
+	  // Climb rate control
+	  ////////////////////////////////////////////////////////////////////////////////
+	  // Time when we intiated command in millis - used for controlling decent rate
+	  // Used to track the altitude offset for climbrate control
+	   int8_t alt_change_flag;
+
+	  ////////////////////////////////////////////////////////////////////////////////
+	  // Navigation Yaw control
+	  ////////////////////////////////////////////////////////////////////////////////
+	  // The Commanded Yaw from the autopilot.
+	   int32_t nav_yaw;
+	  // A speed governer for Yaw control - limits the rate the quad can be turned by the autopilot
+	   int32_t auto_yaw;
+	  // Used to manage the Yaw hold capabilities -
+	   bool yaw_stopped;
+	   uint8_t yaw_timer;
+	  // Options include: no tracking, point at next wp, or at a target
+	//   byte yaw_tracking = MAV_ROI_WPNEXT;
+	  // In AP Mission scripting we have a fine level of control for Yaw
+	  // This is our initial angle for relative Yaw movements
+	   int32_t command_yaw_start;
+	  // Timer values used to control the speed of Yaw movements
+	   uint32_t command_yaw_start_time;
+	   uint16_t command_yaw_time;                                       // how long we are turning
+	   int32_t command_yaw_end;                                         // what angle are we trying to be
+	  // how many degrees will we turn
+	   int32_t command_yaw_delta;
+	  // Deg/s we should turn
+	   int16_t command_yaw_speed;
+	  // Direction we will turn –  1 = CW, 0 or -1 = CCW
+	   //byte command_yaw_dir;
+	   uint8_t command_yaw_dir;
+	  // Direction we will turn – 1 = relative, 0 = Absolute
+	   uint8_t command_yaw_relative;
+	  // Yaw will point at this location if yaw_tracking is set to MAV_ROI_LOCATION
+	   struct   Location target_WP;
+
+
+
+
+
+
+
+
+
+
+
+
+
     void compass_accumulate(void);
     void compass_cal_update(void);
     void barometer_accumulate(void);
@@ -522,7 +646,7 @@ private:
     void update_super_simple_bearing(bool force_update);
     void read_AHRS(void);
     void update_altitude();
-    bool home_is_set();
+   // bool home_is_set();
     void set_auto_armed(bool b);
     void set_simple_mode(uint8_t b);
     void set_failsafe_radio(bool b);

@@ -252,7 +252,7 @@ void Copter::loop()
 	maintask_tick.tv_usec = mseconds;
 
 	maintask_tick.tv_sec = 0;
-	maintask_tick.tv_usec = 10000;
+	maintask_tick.tv_usec = 10000;//10ms  100hz
 	select(0, NULL, NULL, NULL, &maintask_tick);
 	maintask_cnt++;
 
@@ -266,6 +266,19 @@ void Copter::loop()
 	}
 
 	loop_fast();
+
+	if(maintask_cnt%10)
+	{
+		//100ms  10hz 的循环
+
+		  // calculate distance, angles to target
+			navigate();
+
+			// update flight control system
+			update_navigation();
+
+	}
+
 }
 
 void Copter::loop_fast()
@@ -295,9 +308,9 @@ void Copter::loop_fast()
 	read_radio();
 
 //	g.channel_rudder.set_pwm(1600);//这个set_pwm参数的范围是1000～2000
-	//g.channel_pitch.set_pwm(1600);//这个set_pwm参数的范围是1000～2000，把pitch一直设置为1600，看能不能稳定在9度左右
-	g.rc_5.set_pwm(1400);//rc_5大于1500时，是增稳控制状态
-	//g.rc_5.set_pwm(1600);//rc_5大于1500时，是增稳控制状态
+	g.channel_pitch.set_pwm(1600);//这个set_pwm参数的范围是1000～2000，把pitch一直设置为1600，看能不能稳定在9度左右
+	//g.rc_5.set_pwm(1400);//rc_5大于1500时，是增稳控制状态
+	g.rc_5.set_pwm(1600);//rc_5大于1500时，是增稳控制状态
 
 	/* 2--更新姿态，获取飞机现在的姿态角 */
 	compass.read();
@@ -642,10 +655,26 @@ void Copter::one_second_loop()
 }
 
 
+
+//void Copter::navigate()
+//{
+//	// wp_distance is in ACTUAL meters, not the *100 meters we get from the GPS
+//	// ------------------------------------------------------------------------
+//
+//}
+
 void Copter::update_navigation()
 {
 	// wp_distance is in ACTUAL meters, not the *100 meters we get from the GPS
 	// ------------------------------------------------------------------------
+
+}
+
+// run_nav_updates - top level call for the autopilot
+// ensures calculations such as "distance to waypoint" are calculated before autopilot makes decisions
+// To-Do - rename and move this function to make it's purpose more clear
+void Copter::run_nav_updates(void)
+{
 
 }
 
@@ -664,6 +693,48 @@ void Copter::calc_bearing_error()
 {
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #if 0
 //不要删除这个，还有参考价值
