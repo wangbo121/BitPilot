@@ -798,16 +798,16 @@ private:
 
     void set_system_time_from_GPS();
     void exit_mission();
-    void do_RTL(void);
-    bool verify_takeoff();
+    //void do_RTL(void);
+   // bool verify_takeoff();
     bool verify_land();
     bool verify_payload_place();
     bool verify_loiter_unlimited();
-    bool verify_loiter_time();
-    bool verify_RTL();
-    bool verify_wait_delay();
-    bool verify_within_distance();
-    bool verify_yaw();
+  //  bool verify_loiter_time();
+    //bool verify_RTL();
+    //bool verify_wait_delay();
+   // bool verify_within_distance();
+   // bool verify_yaw();
     void do_take_picture();
     void log_picture();
 
@@ -1231,6 +1231,93 @@ private:
     int16_t get_desired_climb_rate();
     void calc_nav_rate(int16_t max_speed);
     void update_crosstrack(void);
+
+
+
+
+    /*
+     * commands.cpp
+     */
+    void init_commands();
+    struct Location get_cmd_with_index(int i);
+    void set_cmd_with_index(struct Location temp, int i);
+    int32_t read_alt_to_hold();
+    void set_next_WP(struct Location *wp);
+    void init_home();
+
+    /*
+     * commands_logic.cpp
+     */
+	void  process_nav_command();
+	void  process_cond_command();
+	void  process_now_command();
+	bool verify_must();
+	bool verify_may();
+	void  do_RTL(void);
+	void  do_takeoff();
+	void  do_nav_wp();
+	void  do_land();
+	void  do_loiter_unlimited();
+	void  do_loiter_turns();
+	void  do_loiter_time();
+	bool verify_takeoff();
+	bool verify_land_sonar();
+	bool verify_land_baro();
+	bool verify_nav_wp();
+	bool verify_loiter_time();
+	bool verify_loiter_turns();
+	bool verify_RTL();
+	void  do_wait_delay();
+
+	/********************************************************************************/
+	//	Condition (May) commands
+	/********************************************************************************/
+	//void  do_wait_delay();
+	void  do_change_alt();
+	void  do_within_distance();
+	void  do_yaw();
+
+	/********************************************************************************/
+	// Verify Condition (May) commands
+	/********************************************************************************/
+
+	bool  verify_wait_delay();
+	bool  verify_change_alt();
+	bool  verify_within_distance();
+	bool  verify_yaw();
+
+	/********************************************************************************/
+	//	Do (Now) commands
+	/********************************************************************************/
+
+	void  do_change_speed();
+	void  do_target_yaw();
+	void  do_loiter_at_location();
+	void  do_jump();
+	void  do_set_home();
+	void  do_set_servo();
+	void  do_set_relay();
+
+	void  do_repeat_servo();
+	void  do_repeat_relay();
+
+
+
+
+    /*
+     * commands_process.cpp
+     */
+
+	// For changing active command mid-mission
+	//----------------------------------------
+	 void change_command(uint8_t cmd_index);
+	// called by 10 Hz loop
+	// --------------------
+	 void update_commands();
+	 void execute_nav_command(void);
+
+	// called with GPS navigation update - not constantly
+	 void verify_commands(void);
 
 
 
