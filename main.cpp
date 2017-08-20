@@ -271,12 +271,26 @@ void Copter::loop()
 	{
 		//100ms  10hz 的循环
 
+		/*
+		 * 其实fast_loop应该就是仅仅包括radio ahrs update_rate_control servo_out就可以了，不需要知道高度，gps等
+		 * 但是ahrs为了更加准确，加入了gps作为融合，所以把gps的读取放到了fastloop里，但其实gps更新速率应该是
+		 * 没有那么快的，10hz的gps是比较常规的，fastloop是50hz的
+		 */
+
+
 		  // calculate distance, angles to target
 			navigate();
 
 			// update flight control system
 			update_navigation();
 
+			if(control_mode == AUTO)
+			{
+				if(home_is_set == true && g.command_total > 1)
+				{
+					update_commands();
+				}
+			}
 	}
 
 }
