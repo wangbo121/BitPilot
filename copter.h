@@ -247,7 +247,7 @@ private:
 
 
 
-    //AP_DCM *dcm;
+   // AP_DCM dcm;
 	AP_DCM ahrs{imu,gps,compass};
 	//AP_DCM ahrs(&imu,&gps,&compass);
 #if 0
@@ -674,6 +674,26 @@ private:
 	    // updated after GPS read - 5-10hz
 	     int16_t x_rate_error;
 	     int16_t y_rate_error;
+
+
+	     ////////////////////////////////////////////////////////////////////////////////
+	     // Orientation
+	     ////////////////////////////////////////////////////////////////////////////////
+	     // Convienience accessors for commonly used trig functions. These values are generated
+	     // by the DCM through a few simple equations. They are used throughout the code where cos and sin
+	     // would normally be used.
+	     // The cos values are defaulted to 1 to get a decent initial value for a level state
+//	    float cos_roll_x ;
+//	    float cos_pitch_x 	;
+//	    float cos_yaw_x 		;
+	    float sin_pitch_y;
+	    //float sin_yaw_y,
+	    float sin_roll_y;
+
+
+
+
+
 
 
 
@@ -1318,8 +1338,8 @@ private:
 
 	// called with GPS navigation update - not constantly
 	 void verify_commands(void);
-
-
+	 void calc_loiter_pitch_roll();
+	 void update_trig(void);
 
 
 };

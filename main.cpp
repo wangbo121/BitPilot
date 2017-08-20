@@ -243,6 +243,14 @@ void Copter::setup()
 	ap2fg_send_test.throttle1=0;
 	ap2fg_send_test.throttle2=0;
 	ap2fg_send_test.throttle3=0;
+
+
+
+
+ cos_roll_x 	= 1;
+		    cos_pitch_x 	= 1;
+		   cos_yaw_x 		= 1;
+		sin_pitch_y, sin_yaw_y, sin_roll_y;
 }
 
 void Copter::loop()
@@ -266,6 +274,8 @@ void Copter::loop()
 	}
 
 	loop_fast();
+
+	update_trig();
 
 	if(maintask_cnt%10)
 	{
@@ -791,7 +801,11 @@ void Copter::update_auto_yaw()
 
     }else if(yaw_tracking == MAV_ROI_WPNEXT) {
         // Point towards next WP
-        auto_yaw = original_target_bearing;
+    	/*
+    	 * 朝着航点飞行就是这个了
+    	 */
+        auto_yaw = original_target_bearing;//original_target_bearing是在set_wp_next的时候的目标航点的方位bearing
+        //auto_yaw = target_bearing;//这个是2.3版本的
     }
 }
 
@@ -806,17 +820,22 @@ void Copter::update_nav_wp()
         //calc_location_error(&next_WP);
 
         // use error as the desired rate towards the target
-        //calc_loiter(long_error, lat_error);
+   //     calc_loiter(long_error, lat_error);
 
     }else if(wp_control == CIRCLE_MODE) {
 
    }else if(wp_control == WP_MODE) {
+	   /*
+	    * 这个是我们需要的航点飞行时，把误差转换为
+	    */
+
         // calc error to target
         calc_location_error(&next_WP);
 
         int16_t speed = get_desired_speed(g.waypoint_speed_max, slow_wp);
         // use error as the desired rate towards the target
         calc_nav_rate(speed);
+        calc_loiter_pitch_roll();//这个函数可能还有点问题20170820
 
     }else if(wp_control == NO_NAV_MODE) {
         // clear out our nav so we can do things like land straight down
@@ -831,6 +850,31 @@ void Copter::update_nav_wp()
     }
 }
 
+void Copter::update_trig(void){
+	Vector2f yawvector;
+	//Matrix3f temp 	= dcm.get_dcm_matrix();
+	Matrix3f temp 	= ahrs.get_dcm_matrix();
+
+	yawvector.x 	= temp.a.x; // sin
+	yawvector.y 	= temp.b.x;	// cos
+	yawvector.normalize();
+
+
+	sin_pitch_y 	= -temp.c.x;						// level = 0
+	cos_pitch_x 	= sqrt(1 - (temp.c.x * temp.c.x));	// level = 1
+
+	sin_roll_y 		= temp.c.y / cos_pitch_x;			// level = 0
+	cos_roll_x 		= temp.c.z / cos_pitch_x;			// level = 1
+
+	sin_yaw_y 		= yawvector.x;						// 1y = north
+	cos_yaw_x 		= yawvector.y;						// 0x = north
+
+	//flat:
+	// 0 ° = cos_yaw:  0.00, sin_yaw:  1.00,
+	// 90° = cos_yaw:  1.00, sin_yaw:  0.00,
+	// 180 = cos_yaw:  0.00, sin_yaw: -1.00,
+	// 270 = cos_yaw: -1.00, sin_yaw:  0.00,
+}
 
 
 

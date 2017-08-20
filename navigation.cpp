@@ -20,6 +20,7 @@ void Copter::navigate()
     wp_distance     = get_distance_cm(&filtered_loc, &next_WP);
     home_distance   = get_distance_cm(&filtered_loc, &home);
 
+
     // target_bearing is where we should be heading
     // --------------------------------------------
     target_bearing                  = get_bearing_cd(&filtered_loc, &next_WP);
@@ -245,10 +246,10 @@ void Copter::calc_nav_rate(int16_t max_speed)
     g.pid_loiter_rate_lat.set_integrator(g.pid_nav_lat.get_integrator());
 }
 
-#if 0
+#if 1
 // this calculation rotates our World frame of reference to the copter's frame of reference
 // We use the DCM's matrix to precalculate these trig values at 50hz
-static void calc_loiter_pitch_roll()
+void Copter::calc_loiter_pitch_roll()
 {
     //Serial.printf("ys %ld, cx %1.4f, _cx %1.4f | sy %1.4f, _sy %1.4f\n", dcm.yaw_sensor, cos_yaw_x, _cos_yaw_x, sin_yaw_y, _sin_yaw_y);
     // rotate the vector
