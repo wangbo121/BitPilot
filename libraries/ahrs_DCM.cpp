@@ -79,14 +79,14 @@ AP_DCM::matrix_update(float _G_Dt)
 	Matrix3f	update_matrix;
 	Matrix3f	temp_matrix;
 
-	std::cout<<"_gyro_vector.x="<<_gyro_vector.x<<std::endl;
-	std::cout<<"_gyro_vector.y="<<_gyro_vector.y<<std::endl;
-	std::cout<<"_gyro_vector.z="<<_gyro_vector.z<<std::endl;
-
-
-	std::cout<<"_accel_vector.x="<<_accel_vector.x<<std::endl;
-	std::cout<<"_accel_vector.y="<<_accel_vector.y<<std::endl;
-	std::cout<<"_accel_vector.z="<<_accel_vector.z<<std::endl;
+//	std::cout<<"_gyro_vector.x="<<_gyro_vector.x<<std::endl;
+//	std::cout<<"_gyro_vector.y="<<_gyro_vector.y<<std::endl;
+//	std::cout<<"_gyro_vector.z="<<_gyro_vector.z<<std::endl;
+//
+//
+//	std::cout<<"_accel_vector.x="<<_accel_vector.x<<std::endl;
+//	std::cout<<"_accel_vector.y="<<_accel_vector.y<<std::endl;
+//	std::cout<<"_accel_vector.z="<<_accel_vector.z<<std::endl;
 
 #if 0
 	//Record when you saturate any of the gyros.
@@ -137,7 +137,7 @@ AP_DCM::matrix_update(float _G_Dt)
 #endif
 
 
-	std::cout<<"apm !!!_dcm_matrix.c.x="<<_dcm_matrix.c.x<<std::endl;
+//	std::cout<<"apm !!!_dcm_matrix.c.x="<<_dcm_matrix.c.x<<std::endl;
 
 
 
@@ -369,17 +369,17 @@ AP_DCM::euler_angles(void)
 		yaw_sensor += 36000;
 
 
-	std::cout<<"roll_sensor_cd="<<roll_sensor<<std::endl;
-	std::cout<<"pitch_sensor_cd="<<pitch_sensor<<std::endl;
-	std::cout<<"yaw_sensor_cd="<<yaw_sensor<<std::endl;
+//	std::cout<<"roll_sensor_cd="<<roll_sensor<<std::endl;
+//	std::cout<<"pitch_sensor_cd="<<pitch_sensor<<std::endl;
+//	std::cout<<"yaw_sensor_cd="<<yaw_sensor<<std::endl;
+//
+//	std::cout<<"fdm_feed_back roll_cd="<<degrees(fdm_feed_back.phi)*100.0<<std::endl;
+//	std::cout<<"fdm_feed_back pitch_cd="<<degrees(fdm_feed_back.theta)*100.0<<std::endl;
+//	std::cout<<"fdm_feed_back yaw_cd="<<degrees(fdm_feed_back.psi)*100.0<<std::endl;
 
-	std::cout<<"fdm_feed_back roll_cd="<<degrees(fdm_feed_back.phi)*100.0<<std::endl;
-	std::cout<<"fdm_feed_back pitch_cd="<<degrees(fdm_feed_back.theta)*100.0<<std::endl;
-	std::cout<<"fdm_feed_back yaw_cd="<<degrees(fdm_feed_back.psi)*100.0<<std::endl;
-
-	roll_sensor=(int)(degrees(fdm_feed_back.phi))*100;
-	pitch_sensor=(int)(degrees(fdm_feed_back.theta))*100;
-	yaw_sensor=(int)(degrees(fdm_feed_back.psi))*100;
+//	roll_sensor=(int)(degrees(fdm_feed_back.phi))*100;
+//	pitch_sensor=(int)(degrees(fdm_feed_back.theta))*100;
+//	yaw_sensor=(int)(degrees(fdm_feed_back.psi))*100;
 }
 
 /**************************************************/

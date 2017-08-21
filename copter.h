@@ -298,7 +298,7 @@ private:
     const	float radius_of_earth 	= 6378100;	// meters
     const	float gravity 			= 9.81;		// meters/ sec^2
     long	nav_bearing;						// deg * 100 : 0 to 360 current desired bearing to navigate
-    long	target_bearing;						// deg * 100 : 0 to 360 location of the plane to the target
+    int32_t	target_bearing;						// deg * 100 : 0 to 360 location of the plane to the target
     long	crosstrack_bearing;					// deg * 100 : 0 to 360 desired angle of plane to target
     float	nav_gain_scaler 		= 1;		// Gain scaling for headwind/tailwind TODO: why does this variable need to be initialized to 1?
     long    hold_course       	 	= -1;		// deg * 100 dir of plane

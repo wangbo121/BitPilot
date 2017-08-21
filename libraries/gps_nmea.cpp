@@ -139,11 +139,13 @@ bool AP_GPS_NMEA::read(void)
 	//ground_course=90;
 
 
-	std::cout<<"gps nmea longitude="<<longitude*1e-7<<std::endl;
-	std::cout<<"gps nmea latitude="<<latitude*1e-7<<std::endl;
-	std::cout<<"gps nmea altitude="<<altitude*1e-2<<std::endl;
-	std::cout<<"gps nmea ground_speed="<<ground_speed<<std::endl;
-	//std::cout<<"gps nmea ground_course="<<ground_course<<std::endl;
+//	std::cout<<"gps nmea longitude="<<longitude*1e-7<<std::endl;
+//	std::cout<<"gps nmea latitude="<<latitude*1e-7<<std::endl;
+//	std::cout<<"gps nmea altitude="<<altitude*1e-2<<std::endl;
+//	std::cout<<"gps nmea ground_speed="<<ground_speed<<std::endl;
+//	std::cout<<"gps nmea ground_course="<<ground_course<<std::endl;
+
+
 
 
 	return parsed;

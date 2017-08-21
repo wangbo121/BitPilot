@@ -26,14 +26,14 @@ Copter::get_stabilize_roll(int32_t target_angle)
 
 	target_angle             = constrain_value(target_angle, -2000, 2000);
 
-	    std::cout<<"roll target_angle="<<target_angle<<std::endl;
+	    //std::cout<<"roll target_angle="<<target_angle<<std::endl;
 
 	    // convert to desired Rate:
 	    /*
 	     * 外环，也就是从角度误差经过pid控制器，把控制器的输出作为角速度环的输入，但是外环其实只用了p比例控制，没有用id
 	     */
 	    int32_t target_rate = g.pi_stabilize_roll.get_p(target_angle);
-	    std::cout<<"target_rate="<<target_rate<<std::endl;
+	   // std::cout<<"target_rate="<<target_rate<<std::endl;
 
 	    int16_t i_stab;
 	    if(labs(ahrs.roll_sensor) < 500)
@@ -57,7 +57,7 @@ Copter::get_stabilize_roll(int32_t target_angle)
 void
 Copter::get_stabilize_pitch(int32_t target_angle)
 {
-	std::cout<<"pitch target_angle="<<target_angle<<std::endl;
+	std::cout<<"get_stabilize_pitch     pitch target_angle="<<target_angle<<std::endl;
 	 // angle error
 	    target_angle            = wrap_180(target_angle - ahrs.pitch_sensor,100);
 
@@ -68,6 +68,8 @@ Copter::get_stabilize_pitch(int32_t target_angle)
 
 	    // convert to desired Rate:
 	    int32_t target_rate = g.pi_stabilize_pitch.get_p(target_angle);
+
+	    std::cout<<"get_stabilize_pitch    target_rate="<<target_rate<<std::endl;
 
 	    int16_t i_stab;
 	    if(labs(ahrs.pitch_sensor) < 500) {
@@ -90,8 +92,8 @@ Copter::get_stabilize_yaw(int32_t target_angle)
 	int32_t angle_error;
 	//int32_t output = 0;
 
-	std::cout<<"%%%%%%target_angle="<<target_angle<<std::endl;
-	std::cout<<"ahrs.yaw_sensor="<<ahrs.yaw_sensor<<std::endl;
+//	std::cout<<"%%%%%%target_angle="<<target_angle<<std::endl;
+//	std::cout<<"ahrs.yaw_sensor="<<ahrs.yaw_sensor<<std::endl;
 
 	// angle error
 	angle_error             = wrap_180(target_angle - ahrs.yaw_sensor,100.0);
@@ -211,9 +213,9 @@ Copter::update_rate_contoller_targets()
 	Matrix3f temp   = ahrs.get_dcm_matrix();
 
 
-	std::cout<<"temp.a.x="<<temp.a.x<<"  temp.a.y="<<temp.a.y<<"  temp.a.z="<<temp.a.z<<std::endl;
-	std::cout<<"temp.b.x="<<temp.b.x<<"  temp.b.y="<<temp.b.y<<"  temp.b.z="<<temp.b.z<<std::endl;
-	std::cout<<"temp.c.x="<<temp.c.x<<"  temp.c.y="<<temp.c.y<<"  temp.c.z="<<temp.c.z<<std::endl;
+//	std::cout<<"temp.a.x="<<temp.a.x<<"  temp.a.y="<<temp.a.y<<"  temp.a.z="<<temp.a.z<<std::endl;
+//	std::cout<<"temp.b.x="<<temp.b.x<<"  temp.b.y="<<temp.b.y<<"  temp.b.z="<<temp.b.z<<std::endl;
+//	std::cout<<"temp.c.x="<<temp.c.x<<"  temp.c.y="<<temp.c.y<<"  temp.c.z="<<temp.c.z<<std::endl;
 
 	yawvector.x     = temp.a.x;     // sin
 	yawvector.y     = temp.b.x;         // cos
@@ -241,8 +243,8 @@ Copter::update_rate_contoller_targets()
 	        pitch_rate_target_bf = cos_roll_x * pitch_rate_target_ef + sin_roll * cos_pitch_x * yaw_rate_target_ef;
 	        yaw_rate_target_bf = cos_pitch_x * cos_roll_x * yaw_rate_target_ef - sin_roll * pitch_rate_target_ef;
 
-	        std::cout<<"roll_rate_target_bf="<<roll_rate_target_bf<<std::endl;
-	        std::cout<<"pitch_rate_target_bf="<<pitch_rate_target_bf<<std::endl;
+//	        std::cout<<"roll_rate_target_bf="<<roll_rate_target_bf<<std::endl;
+//	        std::cout<<"pitch_rate_target_bf="<<pitch_rate_target_bf<<std::endl;
 	    }
 
 }
@@ -287,8 +289,8 @@ Copter::get_rate_roll(int32_t target_rate)
 	d                       = g.pid_rate_roll.get_d(rate_error, G_Dt);
 	output          = p + i + d;
 
-	std::cout<<"rate roll   :    rate_error="<<rate_error<<std::endl;
-	std::cout<<"rate roll   :    pid out="<<output<<std::endl;
+//	std::cout<<"rate roll   :    rate_error="<<rate_error<<std::endl;
+//	std::cout<<"rate roll   :    pid out="<<output<<std::endl;
 
 
 	// constrain output
@@ -312,8 +314,8 @@ Copter::get_rate_pitch(int32_t target_rate)
 	    int32_t output;                                                                     // output from pid controller
 	    //int32_t rate_d_dampener;                                                    // value to dampen output based on acceleration
 
-	    std::cout<<"pitch rate target_rate="<<target_rate<<std::endl;
-	    std::cout<<"pitch rate omega.y ="<<omega.y <<std::endl;
+//	    std::cout<<"pitch rate target_rate="<<target_rate<<std::endl;
+//	    std::cout<<"pitch rate omega.y ="<<omega.y <<std::endl;
 
 	    // get current rate
 	    current_rate    = (omega.y * DEGX100);
@@ -334,8 +336,8 @@ Copter::get_rate_pitch(int32_t target_rate)
 	    d                       = g.pid_rate_pitch.get_d(rate_error, G_Dt);
 	    output          = p + i + d;
 
-		std::cout<<"rate pitch   :    rate_error="<<rate_error<<std::endl;
-		std::cout<<"rate pitch   :    pid out="<<output<<std::endl;
+//		std::cout<<"rate pitch   :    rate_error="<<rate_error<<std::endl;
+//		std::cout<<"rate pitch   :    pid out="<<output<<std::endl;
 
 
 	    // constrain output
@@ -370,8 +372,8 @@ Copter::get_rate_yaw(int32_t target_rate)
 		    output  = p+i+d;
 		    output = constrain_value(output, -4500, 4500);
 
-			std::cout<<"rate yaw   :    rate_error="<<rate_error<<std::endl;
-			std::cout<<"rate yaw   :    pid out="<<output<<std::endl;
+//			std::cout<<"rate yaw   :    rate_error="<<rate_error<<std::endl;
+//			std::cout<<"rate yaw   :    pid out="<<output<<std::endl;
 
 
 		    return  output;
@@ -448,7 +450,7 @@ Copter::update_yaw_mode(void)
 	{
 	case YAW_STABILE:
 
-		std::cout<<"g.channel_rudder.control_in="<<g.channel_rudder.control_in<<std::endl;
+		//std::cout<<"g.channel_rudder.control_in="<<g.channel_rudder.control_in<<std::endl;
 		get_stabilize_yaw(g.channel_rudder.control_in);
 		//get_stabilize_yaw(4500);
 		break;
@@ -469,8 +471,8 @@ Copter::update_yaw_mode(void)
 void
 Copter::update_roll_pitch_mode(void)
 {
-	std::cout<<"g.channel_roll.control_in="<<g.channel_roll.control_in<<std::endl;
-	std::cout<<"g.channel_pitch.control_in="<<g.channel_pitch.control_in<<std::endl;
+//	std::cout<<"g.channel_roll.control_in="<<g.channel_roll.control_in<<std::endl;
+//	std::cout<<"g.channel_pitch.control_in="<<g.channel_pitch.control_in<<std::endl;
 
 
 	switch(roll_pitch_mode)
@@ -499,8 +501,21 @@ Copter::update_roll_pitch_mode(void)
 	        nav_roll                += constrain(wrap_180(auto_roll  - nav_roll,100),  -g.auto_slew_rate, g.auto_slew_rate);                 // 40 deg a second
 	        nav_pitch               += constrain(wrap_180(auto_pitch - nav_pitch,100), -g.auto_slew_rate, g.auto_slew_rate);                 // 40 deg a second
 
+	        std::cout<<"update_roll_pitch_mode    auto_roll="<<auto_roll<<std::endl;
+	        std::cout<<"update_roll_pitch_mode    nav_roll="<<nav_roll<<std::endl;
+
+	        std::cout<<"update_roll_pitch_mode    auto_pitch="<<auto_pitch<<std::endl;
+			std::cout<<"update_roll_pitch_mode    nav_pitch="<<nav_pitch<<std::endl;
+
+
+
+	        //std::cout<<"g.channel_roll="<<g.channel_roll.control_in<<std::endl;
+
 	        control_roll            = g.channel_roll.control_mix(nav_roll);
 	        control_pitch           = g.channel_pitch.control_mix(nav_pitch);
+
+	        std::cout<<"update_roll_pitch_mode    control_roll="<<control_roll<<std::endl;
+	        std::cout<<"update_roll_pitch_mode    control_pitch="<<control_pitch<<std::endl;
 
 	        get_stabilize_roll(control_roll);
 	        get_stabilize_pitch(control_pitch);
@@ -566,7 +581,8 @@ Copter::update_throttle_mode()
 
 
 
-	g.channel_throttle.servo_out = 500;
+	//g.channel_throttle.servo_out = 1000;
+	g.channel_throttle.servo_out = 600;
 	break;
 
 	default:

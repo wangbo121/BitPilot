@@ -110,7 +110,7 @@ int open_socket_udp_dev(int *ptr_fd_socket, char* ip, unsigned int port)
     //udp_sendto_addr.sin_addr.s_addr = INADDR_ANY;//INADDR_ANY是任意地址
 
     socket_udp_addr.sin_port = htons(port);
-    printf("port_sendto=%d\n",port);
+//    printf("port_sendto=%d\n",port);
 
     /*建立“发送”套接字*/
     fd_socket = socket(AF_INET, SOCK_DGRAM, 0);
@@ -156,7 +156,7 @@ int send_socket_udp_data(int fd_socket, unsigned char *buf, unsigned int len, ch
     inet_pton(AF_INET, target_ip, &udp_sendto_addr.sin_addr);
 
     udp_sendto_addr.sin_port = htons(target_port);
-    printf("port_sendto=%d\n",target_port);
+//    printf("port_sendto=%d\n",target_port);
 
 	int send_len;
 	unsigned char send_buf[2000];
@@ -164,7 +164,7 @@ int send_socket_udp_data(int fd_socket, unsigned char *buf, unsigned int len, ch
 	memcpy(send_buf, buf, len);
 	send_len=len;
 
-	printf("send len=%d\n",send_len);
+//	printf("send len=%d\n",send_len);
 
 	sendto(fd_sock_send, send_buf, send_len, 0, (struct sockaddr *)&udp_sendto_addr, sizeof(struct sockaddr_in));
 

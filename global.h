@@ -248,7 +248,33 @@ enum MAV_CMD
 //#define WP_OPTION_					64
 #define WP_OPTION_NEXT_CMD                              128
 
+#ifndef WAYPOINT_SPEED_MAX
+# define WAYPOINT_SPEED_MAX		600			// 6m/s error = 13mph
+#endif
 
+
+
+#ifndef AUTO_SLEW_RATE
+ # define AUTO_SLEW_RATE         30                     // degrees
+#endif
+
+
+#ifndef WAYPOINT_SPEED_MAX
+ # define WAYPOINT_SPEED_MAX             500                    // 6m/s error = 13mph
+#endif
+
+#ifndef WAYPOINT_SPEED_MIN
+ # define WAYPOINT_SPEED_MIN             150                    // 1m/s
+#endif
+
+
+
+
+// nav byte mask
+// -------------
+#define NAV_LOCATION 1
+#define NAV_ALTITUDE 2
+#define NAV_DELAY    4
 
 
 
@@ -395,6 +421,14 @@ int8_t         tilt_comp;
 	  AP_PID                  pi_stabilize_pitch;
 	  AP_PID                  pi_stabilize_yaw;
 	  AP_PID                  pi_alt_hold;
+
+//		// PI/D controllers
+//		AP_PID		pid_rate_roll;
+//		AP_PID		pid_rate_pitch;
+//		AP_PID		pid_rate_yaw;
+//		AP_PID		pid_nav_lat;
+//		AP_PID		pid_nav_lon;
+
 
 
 	  int16_t        auto_slew_rate;

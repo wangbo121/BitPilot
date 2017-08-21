@@ -17,14 +17,38 @@ void Copter::navigate()
 {
     // waypoint distance from plane in cm
     // ---------------------------------------
+
+	std::cout<<"next_WP.lng="<<next_WP.lng<<std::endl;
+	std::cout<<"next_WP.lat="<<next_WP.lat<<std::endl;
+	//std::cout<<"next_WP.id"<<next_WP.id<<std::endl;
+	//printf("next_WP.id=%d\n",next_WP.id);
+
+	std::cout<<"home.lng="<<home.lng<<std::endl;
+	std::cout<<"home.lat="<<home.lat<<std::endl;
+
+	std::cout<<"filtered_loc.lng="<<filtered_loc.lng<<std::endl;
+	std::cout<<"filtered_loc.lat="<<filtered_loc.lat<<std::endl;
+
     wp_distance     = get_distance_cm(&filtered_loc, &next_WP);
     home_distance   = get_distance_cm(&filtered_loc, &home);
+
+    std::cout<<"wp_distance    ="<<wp_distance    <<std::endl;
+    std::cout<<"home_distance     ="<<home_distance     <<std::endl;
 
 
     // target_bearing is where we should be heading
     // --------------------------------------------
     target_bearing                  = get_bearing_cd(&filtered_loc, &next_WP);
     home_to_copter_bearing  = get_bearing_cd(&home, &current_loc);
+
+    std::cout<<"target_bearing="<<target_bearing<<std::endl;//0821测试没有问题，显示的9000，也就是正东，我设置的经度是这样的
+    std::cout<<"home_to_copter_bearing="<<home_to_copter_bearing<<std::endl;
+
+	// nav_bearing will includes xtrac correction
+	// ------------------------------------------
+	nav_bearing = target_bearing;
+
+
 }
 
 //static bool check_missed_wp()
@@ -59,6 +83,9 @@ void Copter::calc_XY_velocity(){
     x_actual_speed  = (float)(gps.longitude - last_longitude)  * scaleLongDown * tmp;
     y_actual_speed  = (float)(gps.latitude  - last_latitude)  * tmp;
 
+    std::cout<<"x_actual_speed="<<x_actual_speed<<std::endl;
+    std::cout<<"y_actual_speed="<<y_actual_speed<<std::endl;
+
     last_longitude  = gps.longitude;
     last_latitude   = gps.latitude;
 
@@ -77,6 +104,9 @@ void Copter::calc_XY_velocity(){
 
     filtered_loc.lng = gps.longitude;
        filtered_loc.lat = gps.latitude;
+
+       std::cout<<"filtered_loc.lng ="<<filtered_loc.lng <<std::endl;
+       std::cout<<"filtered_loc.lat = "<<filtered_loc.lat  <<std::endl;
 #endif
 }
 
@@ -96,6 +126,9 @@ void Copter::calc_location_error(struct Location *next_loc)
 
     // Y Error
     lat_error       = next_loc->lat - current_loc.lat;                                                          // 500 - 0 = 500 Go North
+
+    std::cout<<"long_error="<<long_error<<std::endl;
+    std::cout<<"lat_error   ="<<lat_error   <<std::endl;
 }
 
 #if 0
@@ -194,15 +227,19 @@ void Copter::calc_nav_rate(int16_t max_speed)
 {
     float temp, temp_x, temp_y;
 
+    std::cout<<"calc_nav_rate  original_target_bearing="<<original_target_bearing<<std::endl;
+
     // push us towards the original track
-    update_crosstrack();
+    update_crosstrack();//这个函数需要original_target_bearing的，这个角度还是很重要呀
 
     int16_t cross_speed = crosstrack_error * -g.crosstrack_gain;     // scale down crosstrack_error in cm
-    cross_speed     = constrain(cross_speed, -150, 150);
+    cross_speed     = constrain(cross_speed, -150, 150);//这里限制了位置环的速度
+
+    std::cout<<"calc_nav_rate  target_bearing="<<target_bearing<<std::endl;
 
     // rotate by 90 to deal with trig functions
-    temp                    = (9000l - target_bearing) * RADX100;
-    temp_x                  = cos(temp);
+    temp                    = (9000l - target_bearing) * RADX100;//这里temp的单位是弧度
+    temp_x                  = cos(temp);//这里的x指的是经度方向
     temp_y                  = sin(temp);
 
     // rotate desired spped vector:
@@ -218,10 +255,14 @@ void Copter::calc_nav_rate(int16_t max_speed)
     x_rate_error    = x_target_speed - x_actual_speed;//20170821这个应该是gps计算得到的
 #endif
 
+    std::cout<<"x_actual_speed="<<x_actual_speed<<std::endl;//150 0821
+    std::cout<<"x_target_speed="<<x_target_speed<<std::endl;//150 0821
+
     x_rate_error    = constrain(x_rate_error, -500, 500);
-    nav_lon                 = g.pid_nav_lon.get_pid(x_rate_error, dTnav);
+    nav_lon                 = g.pid_nav_lon.get_pid(x_rate_error, dTnav);//这个是位置环的2级pid，把速率给到pid控制器
     int32_t tilt    = (x_target_speed * x_target_speed * (int32_t)g.tilt_comp) / 10000;
 
+    tilt=0;//20170821添加 测试
     if(x_target_speed < 0) tilt = -tilt;
     nav_lon                 += tilt;
     nav_lon                 = constrain(nav_lon, -3200, 3200);
@@ -236,13 +277,20 @@ void Copter::calc_nav_rate(int16_t max_speed)
     y_rate_error    = y_target_speed - y_actual_speed;
 #endif
 
+    std::cout<<"y_actual_speed="<<y_actual_speed<<std::endl;
+    std::cout<<"y_target_speed="<<y_target_speed<<std::endl;
+
     y_rate_error    = constrain(y_rate_error, -500, 500);       // added a rate error limit to keep pitching down to a minimum
     nav_lat                 = g.pid_nav_lat.get_pid(y_rate_error, dTnav);
     tilt                    = (y_target_speed * y_target_speed * (int32_t)g.tilt_comp) / 10000;
 
+    tilt=0;//20170821添加 测试
     if(y_target_speed < 0) tilt = -tilt;
     nav_lat                 += tilt;
     nav_lat                 = constrain(nav_lat, -3200, 3200);
+
+    std::cout<<"nav_lng="<<nav_lon<<std::endl;
+    std::cout<<"nav_lat="<<nav_lat<<std::endl;
 
     // copy over I term to Loiter_Rate
     g.pid_loiter_rate_lon.set_integrator(g.pid_nav_lon.get_integrator());
@@ -261,6 +309,10 @@ void Copter::calc_loiter_pitch_roll()
 
     // flip pitch because forward is negative
     auto_pitch = -auto_pitch;
+
+
+    std::cout<<"calc_loiter_pitch_roll   auto_roll="<<auto_roll<<std::endl;
+    std::cout<<"calc_loiter_pitch_roll   auto_pitch="<<auto_pitch<<std::endl;
 }
 #endif
 int16_t Copter::get_desired_speed(int16_t max_speed, bool _slow)
@@ -290,7 +342,9 @@ int16_t Copter::get_desired_speed(int16_t max_speed, bool _slow)
         max_speed = waypoint_speed_gov;
     }
 
-    return max_speed;
+    std::cout<<"max_speed="<<max_speed<<std::endl;
+
+    return max_speed;//=150
 }
 #if 0
 int16_t Copter::get_desired_climb_rate()
@@ -313,6 +367,8 @@ void Copter::update_crosstrack(void)
     // If we are too far off or too close we don't do track following
     float temp = (target_bearing - original_target_bearing) * RADX100;
     crosstrack_error = sin(temp) * wp_distance;          // Meters we are off track line
+
+    std::cout<<"target_bearing - original_target_bearing="<<target_bearing - original_target_bearing<<std::endl;
 }
 #if 0
 static int32_t get_altitude_error()

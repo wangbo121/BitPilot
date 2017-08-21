@@ -26,8 +26,13 @@
 //MultiCopter multi_copter("-122.357,37.6136,100,0","x");
 //MultiCopter multi_copter("-122.357,37.6136,100,10","+");
 //MultiCopter multi_copter("-122.357,37.6136,100,0","+");
-MultiCopter multi_copter("-122.357,37.6136,10,0","+");//起始高度为0
+//MultiCopter multi_copter("-122.357,37.6136,10,0","+");//起始高度为0
 //MultiCopter multi_copter("-122.357192862,37.6135553166,100,0","+");
+
+/*
+ * 20180821发现初始化的纬度在先
+ */
+MultiCopter multi_copter("37.6136,-122.357,10,0","+");//起始高度为0
 
 //MultiCopter multi_copter;
 T_FDM fdm;
@@ -190,7 +195,7 @@ void Copter::setup()
 	//第2级pid参数设置
 
 
-	float pid_p_2=1.0;
+	float pid_p_2=2.0;
 
 	g.pid_rate_roll.set_kP(pid_p_2);
 	g.pid_rate_roll.set_kI(0.0);
@@ -203,6 +208,20 @@ void Copter::setup()
 	g.pid_rate_yaw.set_kP(pid_p_2);
 	g.pid_rate_yaw.set_kI(0.0);
 	g.pid_rate_yaw.set_kD(0.0);
+
+
+	/*
+	 * 导航用的pid
+	 */
+	float pid_p_3=50.0;
+	g.pid_nav_lon.set_kP(pid_p_3);
+	g.pid_nav_lon.set_kI(0.0);
+	g.pid_nav_lon.set_kD(0.0);
+
+
+	g.pid_nav_lat.set_kP(pid_p_3);
+	g.pid_nav_lat.set_kP(0.0);
+	g.pid_nav_lat.set_kP(0.0);
 
 
 	/*
@@ -244,7 +263,7 @@ void Copter::setup()
 	ap2fg_send_test.throttle2=0;
 	ap2fg_send_test.throttle3=0;
 
-
+	g.auto_slew_rate=AUTO_SLEW_RATE;
 
 
  cos_roll_x 	= 1;
@@ -260,14 +279,30 @@ void Copter::setup()
 
 		wp_total_array[0].id=0;
 
+		g.waypoint_speed_max=WAYPOINT_SPEED_MAX;
+
 		/*
 		 * 为了自行测试绕航点飞行，我先自行设置了初始的经度纬度如下
 		 */
 		long start_longtitude=-1223571928;
 		long start_latitude=376135531;
-		long delta_lon=10012;
-		long delta_lat=10001;//大概有100米？
+//		long delta_lon=10012;
+//		long delta_lat=10001;//大概有100米？
+//
+//		long delta_lon=10000000;
+//		long delta_lat=10000000;
 
+
+
+		int wp_num=10;
+
+		long delta_lon=0;//111米
+		long delta_lat=5000;
+//		long delta_lon=9000;//111米
+//		long delta_lat=9000;
+
+//		long delta_lon=100000;//111米
+//		long delta_lat=100000;
 
 		wp_total_array[0].id 	= MAV_CMD_NAV_WAYPOINT;
 		wp_total_array[0].lng 	= start_longtitude;				// Lon * 10**7
@@ -275,18 +310,90 @@ void Copter::setup()
 		wp_total_array[0].alt 	= 0;							// Home is always 0
 
 
-		for(int i=1;i<4;i++)
+//		for(int i=1;i<4;i++)
+//		{
+//			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
+//			wp_total_array[i].lng 	= start_longtitude+delta_lon;				// Lon * 10**7
+//			//wp_total_array[i].lng 	= start_longtitude;				// Lon * 10**7
+//			wp_total_array[i].lat 	= start_latitude+delta_lat;				// Lat * 10**7
+//			wp_total_array[i].alt 	= 0;							// Home is always 0
+//
+//
+//		}
+
+		for(int i=1;i<5;i++)
 		{
 			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
-			wp_total_array[i].lng 	= start_longtitude+delta_lon;				// Lon * 10**7
-			wp_total_array[i].lat 	= start_latitude;				// Lat * 10**7
-			wp_total_array[i].alt 	= 0;							// Home is always 0
+			wp_total_array[i].lng 	= start_longtitude+delta_lon*i;				// Lon * 10**7
+			//wp_total_array[i].lng 	= start_longtitude;				// Lon * 10**7
+			wp_total_array[i].lat 	= start_latitude+delta_lat*i;				// Lat * 10**7
+			wp_total_array[i].alt 	= 10;							// Home is always 0
+		}
+
+		for(int i=0;i<5;i++)
+		{
+			wp_total_array[5+i].id 	= MAV_CMD_NAV_WAYPOINT;
+			wp_total_array[5+i].lng 	= start_longtitude-delta_lon*i;				// Lon * 10**7
+			//wp_total_array[i].lng 	= start_longtitude;				// Lon * 10**7
+			wp_total_array[5+i].lat 	= wp_total_array[4].lat-delta_lat*i;				// Lat * 10**7
+			wp_total_array[5+i].alt 	= 10;							// Home is always 0
+		}
+
+		for(int i=0;i<wp_num;i++)
+		{
+			std::cout<<"wp_total_array["<<i<<"].lng="<<wp_total_array[i].lng<<std::endl;
+			std::cout<<"wp_total_array["<<i<<"].lat="<<wp_total_array[i].lat<<std::endl;
 		}
 
 
-		gps.longitude=-1223571928;				// Lon * 10**7
-		gps.latitude=376135531;				// Lat * 10**7
+//		for(int i=1;i<wp_num;i++)
+//		{
+//			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
+//
+//			wp_total_array[i].alt 	= 100;							// Home is always 0
+//
+//
+//		}
+//		wp_total_array[1].lng 	= start_longtitude+delta_lon;				// Lon * 10**7
+//		wp_total_array[1].lat 	= start_latitude;				// Lat * 10**7
+//
+//		wp_total_array[2].lng 	= start_longtitude+delta_lon;				// Lon * 10**7
+//		wp_total_array[2].lat 	= start_latitude+delta_lat;				// Lat * 10**7
+//
+//		wp_total_array[3].lng 	= start_longtitude;				// Lon * 10**7
+//		wp_total_array[3].lat 	= start_latitude+delta_lat;				// Lat * 10**7
+//
+//		wp_total_array[4].lng 	= start_longtitude;				// Lon * 10**7
+//		wp_total_array[4].lat 	= start_latitude;				// Lat * 10**7
+
+
+
+//
+//		gps.longitude=-1223571928;				// Lon * 10**7
+//		gps.latitude=376135531;				// Lat * 10**7
+//
+//		gps.longitude=-1223570059;			// Lon * 10**7
+//		gps.latitude=376135956;
 		init_home();
+
+		std::cout<<"home.lng="<<home.lng<<std::endl;
+		std::cout<<"home.lat="<<home.lat<<std::endl;
+
+		g.waypoint_total=wp_num;
+		next_WP.id=MAV_CMD_NAV_WAYPOINT;
+
+		init_commands();
+		g.command_total=wp_num;
+
+		command_nav_queue.id = NO_COMMAND;
+		//command_nav_index=0;
+		command_nav_index=0;
+
+		g.waypoint_radius=100;
+
+		g.crosstrack_gain=1;
+
+
 }
 
 void Copter::loop()
@@ -334,11 +441,15 @@ void Copter::loop()
 
 			// update flight control system
 			update_navigation();
+			std::cout<<"update_navigation    original_target_bearing="<<original_target_bearing<<std::endl;
 
 			if(control_mode == AUTO)
 			{
 				if(home_is_set == true && g.command_total > 1)
 				{
+					//std::cout<<"update_commands()"<<std::endl;
+					//command_nav_queue.id = NO_COMMAND;
+					printf("home is set     command_nav_queue.id=%d\n",command_nav_queue.id);
 					update_commands();
 				}
 			}
@@ -365,22 +476,23 @@ void Copter::loop_fast()
 
 	G_Dt=(timer-fast_loopTimer)/1000.0;//单位是秒[s]
 	G_Dt=0.01;
-	std::cout<<"G_Dt="<<G_Dt<<std::endl;
+	//std::cout<<"G_Dt="<<G_Dt<<std::endl;
 
 	fast_loopTimer=timer;
 
 	/* 1--读取接收机的信号，获取遥控器各个通道 */
 	read_radio();
 
-//	g.channel_rudder.set_pwm(1600);//这个set_pwm参数的范围是1000～2000
-	g.channel_pitch.set_pwm(1600);//这个set_pwm参数的范围是1000～2000，把pitch一直设置为1600，看能不能稳定在9度左右
+	g.channel_rudder.set_pwm(1600);//这个set_pwm参数的范围是1000～2000
+	//g.channel_pitch.set_pwm(1600);//这个set_pwm参数的范围是1000～2000，把pitch一直设置为1600，看能不能稳定在9度左右
 	//g.rc_5.set_pwm(1400);//rc_5大于1500时，是增稳控制状态
-	g.rc_5.set_pwm(1600);//rc_5大于1500时，是增稳控制状态
+	//g.rc_5.set_pwm(1600);//rc_5大于1500时，是增稳控制状态
 	g.rc_5.set_pwm(1990);//rc_5大于1900时，是绕航点飞行状态
 
 	/* 2--更新姿态，获取飞机现在的姿态角 */
 	compass.read();
-	gps.read();
+	//gps.read();
+	update_GPS();//gps read只是读取数据 update_GPS里面还需要给current_loc赋值
 	imu.update();
 	/*
 	 * 因为下面的ahrs中需要imu gps compass的数据，
@@ -395,7 +507,7 @@ void Copter::loop_fast()
 	switch(control_mode)
 	{
 	case STABILIZE:
-		std::cout<<"Hello STABILIZE MODE"<<std::endl;
+//		std::cout<<"Hello STABILIZE MODE"<<std::endl;
 		/*
 		* 先是roll pitch yaw的2级pid控制
 		* 再是油门throttle的2级pid控制
@@ -416,7 +528,7 @@ void Copter::loop_fast()
 		update_throttle_mode();//计算油门量的输出值
 		break;
 	case ACRO:
-		std::cout<<"Hello ACRO MODE"<<std::endl;
+//		std::cout<<"Hello ACRO MODE"<<std::endl;
 		// call rate controllers
 		g.channel_roll.servo_out = g.channel_roll.control_in;
 		g.channel_pitch.servo_out = g.channel_pitch.control_in;
@@ -456,10 +568,10 @@ void Copter::loop_fast()
 	/* 5--把计算所得控制量输出给电机 */
 	motors_output();
 
-	std::cout<<"g.channel_roll.radio_out="<<g.channel_roll.radio_out<<std::endl;
-	std::cout<<"g.channel_pitch.radio_out="<<g.channel_pitch.radio_out<<std::endl;
-	std::cout<<"g.channel_throttle.radio_out="<<g.channel_throttle.radio_out<<std::endl;
-	std::cout<<"g.channel_rudder.radio_out="<<g.channel_rudder.radio_out<<std::endl;
+//	std::cout<<"g.channel_roll.radio_out="<<g.channel_roll.radio_out<<std::endl;
+//	std::cout<<"g.channel_pitch.radio_out="<<g.channel_pitch.radio_out<<std::endl;
+//	std::cout<<"g.channel_throttle.radio_out="<<g.channel_throttle.radio_out<<std::endl;
+//	std::cout<<"g.channel_rudder.radio_out="<<g.channel_rudder.radio_out<<std::endl;
 
 	/*
 	 * motors_output()函数中把motor_out[]，也就是每个电机的1000～2000的值赋值给了
@@ -471,7 +583,7 @@ void Copter::loop_fast()
 
 	for(int i=0;i<4;i++)
 	{
-		std::cout<<"servos_set_out"<<"["<<i<<"]="<<servos_set_out[i]<<std::endl;
+		//std::cout<<"servos_set_out"<<"["<<i<<"]="<<servos_set_out[i]<<std::endl;
 	}
 
 	/*
@@ -485,9 +597,9 @@ void Copter::loop_fast()
 
 	memcpy(&fdm_feed_back,&fdm,sizeof(fdm));
 
-	std::cout<<"fdm_feed_back.phidot="<<fdm_feed_back.phidot<<std::endl;
-	std::cout<<"fdm_feed_back.thetadot="<<fdm_feed_back.thetadot<<std::endl;
-	std::cout<<"fdm_feed_back.psidot="<<fdm_feed_back.psidot<<std::endl;
+//	std::cout<<"fdm_feed_back.phidot="<<fdm_feed_back.phidot<<std::endl;
+//	std::cout<<"fdm_feed_back.thetadot="<<fdm_feed_back.thetadot<<std::endl;
+//	std::cout<<"fdm_feed_back.psidot="<<fdm_feed_back.psidot<<std::endl;
 
 	memcpy(&fdm_send,&fdm,sizeof(fdm));
 
@@ -616,12 +728,12 @@ void Copter::update_current_flight_mode(void)
 	else if(g.rc_5.radio_in>1500 && g.rc_5.radio_in<1900)
 	{
 		control_mode=STABILIZE;
-		std::cout<<"飞控模式是增稳模式:"<<std::endl;
+	//	std::cout<<"飞控模式是增稳模式:"<<std::endl;
 	}
 	else if(g.rc_5.radio_in>1900)
 	{
 		control_mode=AUTO;
-		std::cout<<"飞控模式是绕航点飞行:"<<std::endl;
+		//std::cout<<"飞控模式是绕航点飞行:"<<std::endl;
 	}
 
 
@@ -717,14 +829,14 @@ void Copter::motors_output()
 	std::cout<<"g.channel_pitch.servo_out="<<g.channel_pitch.servo_out<<std::endl;
 	std::cout<<"g.channel_rudder.servo_out="<<g.channel_rudder.servo_out<<std::endl;
 	std::cout<<"g.channel_throttle.servo_out="<<g.channel_throttle.servo_out<<std::endl;
+//
+//	std::cout<<"********准备输出pwm脉宽给电调***********"<<std::endl;
 
-	std::cout<<"********准备输出pwm脉宽给电调***********"<<std::endl;
-
-	std::cout<<"g.channel_roll.pwm_out="<<g.channel_roll.pwm_out<<std::endl;
-	std::cout<<"g.channel_pitch.pwm_out="<<g.channel_pitch.pwm_out<<std::endl;
-	std::cout<<"g.channel_rudder.pwm_out="<<g.channel_rudder.pwm_out<<std::endl;
-
-	std::cout<<"g.channel_throttle.radio_out="<<g.channel_throttle.radio_out<<std::endl;
+//	std::cout<<"g.channel_roll.pwm_out="<<g.channel_roll.pwm_out<<std::endl;
+//	std::cout<<"g.channel_pitch.pwm_out="<<g.channel_pitch.pwm_out<<std::endl;
+//	std::cout<<"g.channel_rudder.pwm_out="<<g.channel_rudder.pwm_out<<std::endl;
+//
+//	std::cout<<"g.channel_throttle.radio_out="<<g.channel_throttle.radio_out<<std::endl;
 
 	for(int i=0;i<4;i++)
 	{
@@ -745,7 +857,7 @@ void Copter::motors_output()
 		//g._rc.output_ch_pwm(i,motor_out[i]);
 		//或者用下面的motors也是可以的
 		//motors.rc_write(i,motor_out[i]);
-		std::cout<<"motor_out["<<i<<"]="<<motor_out[i]<<std::endl;
+//		std::cout<<"motor_out["<<i<<"]="<<motor_out[i]<<std::endl;
 		//sleep(1);
 	}
 
@@ -756,7 +868,7 @@ void Copter::motors_output()
 		//g._rc.output_ch_pwm(i,motor_out[i]);
 		//或者用下面的motors也是可以的
 		//motors.rc_write(i,motor_out[i]);
-		std::cout<<"motor_out_flightgear["<<i<<"]="<<motor_out_flightgear[i]<<std::endl;
+//		std::cout<<"motor_out_flightgear["<<i<<"]="<<motor_out_flightgear[i]<<std::endl;
 		//sleep(1);
 	}
 }
@@ -814,13 +926,19 @@ void Copter::update_navigation()
     switch(control_mode) {
     case AUTO:
         // note: wp_control is handled by commands_logic
-       // verify_commands();
+    	std::cout<<"verify_commands();"<<std::endl;
+       verify_commands();
 
         // calculates desired Yaw
-        update_auto_yaw();
+        update_auto_yaw();//直接得到auto_yaw,顺便有经纬度经过左边转换计算，得到nav_roll nav_pitch，这个就是经纬度转为期望roll 和 pitch的函数，要记得很重要
 
         // calculates the desired Roll and Pitch
-        update_nav_wp();
+        update_nav_wp();//由update_auto_yaw计算得到的nav_roll nav_pitch，在经过该函数的计算，得到auto_roll auto_pitch
+
+        std::cout<<"update_navigation  auto_yaw="<<auto_yaw<<std::endl;
+        std::cout<<"update_navigation  auto_roll="<<auto_roll<<std::endl;
+        std::cout<<"update_navigation  auto_pitch="<<auto_pitch<<std::endl;
+
         break;
 
 
@@ -850,6 +968,10 @@ void Copter::update_alt()
 
 void Copter::update_GPS(void)
 {
+	gps.read();
+
+	current_loc.lng = gps.longitude;	// Lon * 10 * *7
+	current_loc.lat = gps.latitude;	// Lat * 10 * *7
 
 }
 
@@ -876,8 +998,10 @@ void Copter::update_auto_yaw()
     	/*
     	 * 朝着航点飞行就是这个了
     	 */
-        auto_yaw = original_target_bearing;//original_target_bearing是在set_wp_next的时候的目标航点的方位bearing
-        //auto_yaw = target_bearing;//这个是2.3版本的
+    	//std::cout<<"original_target_bearing="<<original_target_bearing<<std::endl;
+        //auto_yaw = original_target_bearing;//original_target_bearing是在set_wp_next的时候的目标航点的方位bearing
+        auto_yaw = target_bearing;//这个是2.3版本的
+        std::cout<<"auto_yaw="<<auto_yaw<<std::endl;
     }
 }
 
@@ -902,13 +1026,15 @@ void Copter::update_nav_wp()
 	    * 20170821
 	    */
 
+	   std::cout<<"wp_control == WP_MODE"<<std::endl;
+
         // calc error to target
         calc_location_error(&next_WP);
 
         int16_t speed = get_desired_speed(g.waypoint_speed_max, slow_wp);
         // use error as the desired rate towards the target
-        calc_nav_rate(speed);
-        calc_loiter_pitch_roll();//这个函数可能还有点问题20170820
+        calc_nav_rate(speed);//这个是位置环的2级pid控制
+        calc_loiter_pitch_roll();//这个函数可能还有点问题20170820,这个函数是由nav_roll nav_pitch得到auto_roll auto_pitch
 
     }else if(wp_control == NO_NAV_MODE) {
         // clear out our nav so we can do things like land straight down

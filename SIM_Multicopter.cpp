@@ -166,7 +166,7 @@ void MultiCopter::update(const struct sitl_input &input)
     float delta_time = frame_time_us * 1.0e-6f;//rate_hz=100，初始化时，所以时间是0.01秒更新频率
    // float delta_time = 1;
 
-    std::cout<<"delta_time="<<delta_time<<std::endl;
+//    std::cout<<"delta_time="<<delta_time<<std::endl;
 
     // rotational acceleration, in rad/s/s, in body frame
     Vector3f rot_accel;
@@ -207,10 +207,10 @@ void MultiCopter::update(const struct sitl_input &input)
     {
     	rot_accel.z=0.0;
     }
-
-    std::cout<<"rot_accel.x="<<rot_accel.x<<std::endl;
-    std::cout<<"rot_accel.y="<<rot_accel.y<<std::endl;
-    std::cout<<"rot_accel.z="<<rot_accel.z<<std::endl;
+//
+//    std::cout<<"rot_accel.x="<<rot_accel.x<<std::endl;
+//    std::cout<<"rot_accel.y="<<rot_accel.y<<std::endl;
+//    std::cout<<"rot_accel.z="<<rot_accel.z<<std::endl;
 
 //
 //    // rotational air resistance
@@ -222,7 +222,7 @@ void MultiCopter::update(const struct sitl_input &input)
     rot_accel.x -= gyro.x * radians(5000.0) / terminal_rotation_rate;
     rot_accel.y -= gyro.y * radians(5000.0) / terminal_rotation_rate;
     rot_accel.z -= gyro.z * radians(400.0)  / terminal_rotation_rate;
-    std::cout<<"terminal_rotation_rate="<<terminal_rotation_rate<<std::endl;
+//    std::cout<<"terminal_rotation_rate="<<terminal_rotation_rate<<std::endl;
 //
 //    std::cout<<"rot_accel.x="<<rot_accel.x<<std::endl;
 //    std::cout<<"rot_accel.y="<<rot_accel.y<<std::endl;
@@ -231,19 +231,19 @@ void MultiCopter::update(const struct sitl_input &input)
     // update rotational rates in body frame
     gyro += rot_accel * delta_time;//这个delta_time就显得很重要了，初始化是0.01秒，应该是更新的速率
 
-    std::cout<<"20170818 gyro.x="<<gyro.x<<std::endl;
-     std::cout<<"20170818 gyro.y="<<gyro.y<<std::endl;
-     std::cout<<"20170818 gyro.z="<<gyro.z<<std::endl;
+//    std::cout<<"20170818 gyro.x="<<gyro.x<<std::endl;
+//     std::cout<<"20170818 gyro.y="<<gyro.y<<std::endl;
+//     std::cout<<"20170818 gyro.z="<<gyro.z<<std::endl;
 
 
     // update attitude
     dcm.rotate(gyro * delta_time);//这个rotate函数其实就是旋转矩阵的一阶增量算法，cnb(t+1)=cnb(t)+cnb(t)*S(gyro)，这个S函数是叉乘向量的意思，20170818经过公式推导没有问题
-    std::cout<<"fdm dcm rotation="<<dcm.c.x<<std::endl;
+//    std::cout<<"fdm dcm rotation="<<dcm.c.x<<std::endl;
 
 
     dcm.normalize();
 
-    std::cout<<"fdm  0818  dcm.c.x="<<dcm.c.x<<std::endl;
+//    std::cout<<"fdm  0818  dcm.c.x="<<dcm.c.x<<std::endl;
 
     // air resistance
     //Vector3f air_resistance = -velocity_ef * (GRAVITY_MSS/terminal_velocity);
@@ -254,9 +254,9 @@ void MultiCopter::update(const struct sitl_input &input)
 
     accel_body = Vector3f(0, 0, -thrust / mass);
     Vector3f accel_earth = dcm * accel_body;//得到参考坐标系下的加速度
-    std::cout<<"accel_earth.x="<<accel_earth.x<<std::endl;
-	std::cout<<"accel_earth.y="<<accel_earth.y<<std::endl;
-	std::cout<<"accel_earth.z="<<accel_earth.z<<std::endl;
+//    std::cout<<"accel_earth.x="<<accel_earth.x<<std::endl;
+//	std::cout<<"accel_earth.y="<<accel_earth.y<<std::endl;
+//	std::cout<<"accel_earth.z="<<accel_earth.z<<std::endl;
 
 
 
@@ -271,10 +271,10 @@ void MultiCopter::update(const struct sitl_input &input)
     // if we're on the ground, then our vertical acceleration is limited
     // to zero. This effectively adds the force of the ground on the aircraft
 
-    std::cout<<"position.z="<<position.z<<std::endl;
-    std::cout<<"home.alt="<<home.alt<<std::endl;
+//    std::cout<<"position.z="<<position.z<<std::endl;
+//    std::cout<<"home.alt="<<home.alt<<std::endl;
     if (on_ground(position) && accel_earth.z > 0) {
-    	std::cout<<"0818 on ground "<<std::endl;
+//    	std::cout<<"0818 on ground "<<std::endl;
         accel_earth.z = 0;
     }
 
@@ -282,7 +282,7 @@ void MultiCopter::update(const struct sitl_input &input)
     // acceleration (ie. real movement), plus gravity
     accel_body = dcm.transposed() * (accel_earth + Vector3f(0, 0, -GRAVITY_MSS));
 
-	std::cout<<"thrust_scale="<<thrust_scale<<std::endl;
+//	std::cout<<"thrust_scale="<<thrust_scale<<std::endl;
 	//std::cout<<"frame->num_motors="<<frame->num_motors<<std::endl;
     // add some noise
     add_noise(thrust / (thrust_scale * frame->num_motors));

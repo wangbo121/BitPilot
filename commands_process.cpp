@@ -47,19 +47,34 @@
 	//uint8_t tmp = g.command_index.get();
 	//Serial.printf("command_index %u \n", tmp);
 
+//	 std::cout<<"g.command_total ="<<g.command_total <<std::endl;
+//	 std::cout<<"g.command_index ="<<g.command_index <<std::endl;
+	 printf("g.command_total =%d\n",g.command_total);
+	 printf("g.command_index =%d\n",g.command_index);
+
 	if (g.command_total <= 1 || g.command_index >= 127)
 		return;
+
+	printf("update_commands   command_nav_queue.id  =%d\n",command_nav_queue.id );
+	printf("update_commands   command_nav_index =%d\n",command_nav_index );
+
 
 	if(command_nav_queue.id == NO_COMMAND){
 		// Our queue is empty
 		// fill command queue with a new command if available, or exit mission
 		// -------------------------------------------------------------------
+
+		//command_nav_index=0;//测试
+
 		if (command_nav_index < (g.command_total -1)) {
 
+			std::cout << "进入了command_nav_index < (g.command_total -1) "<<std::endl;
 			command_nav_index++;
 			command_nav_queue = get_cmd_with_index(command_nav_index);
 
+
 			if (command_nav_queue.id <= MAV_CMD_NAV_LAST ){
+				std::cout<<"execute_nav_command();"<<std::endl;
 				execute_nav_command();
 			} else{
 				// this is a conditional command so we skip it
@@ -67,7 +82,7 @@
 			}
 		}else{
 			// we are out of commands
-			g.command_index  = command_nav_index = 255;
+			g.command_index  = command_nav_index = 255;//255对应有符号是-1
 			// if we are on the ground, enter stabilize, else Land
 			if (land_complete == true){
 				// we will disarm the motors after landing.
@@ -145,12 +160,16 @@
 //
 //	// clear May indexes to force loading of more commands
 //	// existing May commands are tossed.
-	command_cond_index	= NO_COMMAND;
+	command_cond_index	= NO_COMMAND;//这个是cond index也就是条件命令，跟上面的nav_commands没有关系
 }
 
 // called with GPS navigation update - not constantly
  void Copter:: verify_commands(void)
 {
+	 /*
+	  * 这个函数就是确定有没有到达目标航点，确认是否完成command
+	  * 如果完成则把命令导航的队列清零，即command_nav_queue.id = NO_COMMAND;
+	  */
 	if(verify_must()){
 		//Serial.printf("verified must cmd %d\n" , command_nav_index);
 		command_nav_queue.id = NO_COMMAND;
@@ -158,16 +177,25 @@
 		// store our most recent executed nav command
 		prev_nav_index = command_nav_index;
 
+		/*
+		 * 下面几句是cond_queue的，跟导航没关系
+		 */
 		// Wipe existing conditionals
+#if 0
 		command_cond_index 		= NO_COMMAND;
 		command_cond_queue.id 	= NO_COMMAND;
 
+		printf("verify must  command_cond_queue.id=%d\n",command_cond_queue.id);
+		std::cout<<"verify must    original_target_bearing="<<original_target_bearing<<std::endl;
+#endif
+
 	}else{
 		//Serial.printf("verified must false %d\n" , command_nav_index);
+		std::cout<<"verify_must failed 也就是还没有到达目标航点"<<std::endl;
 	}
 
-	if(verify_may()){
-		//Serial.printf("verified may cmd %d\n" , command_cond_index);
-		command_cond_queue.id = NO_COMMAND;
-	}
+//	if(verify_may()){
+//		//Serial.printf("verified may cmd %d\n" , command_cond_index);
+//		command_cond_queue.id = NO_COMMAND;
+//	}
 }

@@ -162,13 +162,20 @@ It precalculates all the necessary stuff.
 	//SendDebug("MSG <set_next_wp> wp_index: ");
 	//SendDebugln(g.command_index, DEC);
 
+		std::cout<<"进入set next wp"<<std::endl;
+
 	// copy the current WP into the OldWP slot
 	// ---------------------------------------
 	if (next_WP.lat == 0 || command_nav_index <= 1){
+		std::cout<<"command_nav_index ="<<command_nav_index <<std::endl;
 		prev_WP = current_loc;
 	}else{
-		if (get_distance(&current_loc, &next_WP) < 10)
+		//if (get_distance(&current_loc, &next_WP) < 10)
+		if (get_distance(&current_loc, &next_WP) < 100)//改了100
+		{
+			std::cout<<"set next wp success"<<std::endl;
 			prev_WP = next_WP;
+		}
 		else
 			prev_WP = current_loc;
 	}
@@ -204,7 +211,11 @@ It precalculates all the necessary stuff.
 
 	// to check if we have missed the WP
 	// ---------------------------------
+
 	original_target_bearing = target_bearing;
+
+	std::cout<<"set_next_WP original_target_bearing="<<original_target_bearing<<std::endl;
+	std::cout<<"set_next_WP target_bearing="<<target_bearing<<std::endl;
 
 	// reset speed governer
 	// --------------------
@@ -218,8 +229,15 @@ It precalculates all the necessary stuff.
 {
 	home_is_set = true;
 	home.id 	= MAV_CMD_NAV_WAYPOINT;
-	home.lng 	= gps.longitude;				// Lon * 10**7
-	home.lat 	= gps.latitude;				// Lat * 10**7
+//	home.lng 	= gps.longitude;				// Lon * 10**7
+//	home.lat 	= gps.latitude;				// Lat * 10**7
+
+
+	home.lng 	= wp_total_array[0].lng;				// Lon * 10**7
+	home.lat 	= wp_total_array[0].lat;				// Lat * 10**7
+
+
+
 	home.alt 	= 0;							// Home is always 0
 
 	// to point yaw towards home until we set it with Mavlink

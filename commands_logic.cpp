@@ -21,6 +21,7 @@ void Copter:: process_nav_command()
 			break;
 
 		case MAV_CMD_NAV_WAYPOINT:	// 16  Navigate to Waypoint
+			std::cout<<"do_nav_wp();"<<std::endl;
 			do_nav_wp();
 			break;
 
@@ -131,6 +132,7 @@ void Copter:: process_now_command()
 
 bool Copter:: verify_must()
 {
+	std::cout<<"进入  verify_must"<<std::endl;
 	switch(command_nav_queue.id) {
 
 		case MAV_CMD_NAV_TAKEOFF:
@@ -146,6 +148,7 @@ bool Copter:: verify_must()
 			break;
 
 		case MAV_CMD_NAV_WAYPOINT:
+			std::cout<<"进入  verify_nav_wp"<<std::endl;
 			return verify_nav_wp();
 			break;
 
@@ -254,6 +257,8 @@ void Copter:: do_nav_wp()
 	if (command_nav_queue.options & MASK_OPTIONS_RELATIVE_ALT) {
 		command_nav_queue.alt	+= home.alt;
 	}
+
+
 	set_next_WP(&command_nav_queue);
 
 
@@ -442,44 +447,52 @@ bool Copter:: verify_nav_wp()
 //			wp_verify_byte |= NAV_ALTITUDE;
 //		}
 //	}
-//
-//	// Did we pass the WP?	// Distance checking
-//	if((wp_distance <= g.waypoint_radius) || check_missed_wp()){
-//
-//		// if we have a distance calc error, wp_distance may be less than 0
-//		if(wp_distance > 0){
-//			wp_verify_byte |= NAV_LOCATION;
-//
-//			if(loiter_time == 0){
-//				loiter_time = millis();
-//			}
-//		}
-//	}
-//
-//	// Hold at Waypoint checking, we cant move on until this is OK
-//	if(wp_verify_byte & NAV_LOCATION){
-//		// we have reached our goal
-//
-//		// loiter at the WP
-//		wp_control 	= LOITER_MODE;
+
+	// Did we pass the WP?	// Distance checking
+	//if((wp_distance <= g.waypoint_radius*100) || check_missed_wp())
+	if((wp_distance <= g.waypoint_radius*100) || check_missed_wp())
+	{
+
+		// if we have a distance calc error, wp_distance may be less than 0
+		if(wp_distance > 0){
+			wp_verify_byte |= NAV_LOCATION;
+
+			if(loiter_time == 0){
+				//loiter_time = millis();
+			}
+		}
+
+		return true;//到达航点了
+	}
+	else
+	{
+		return false;//没有到达
+	}
+
+	// Hold at Waypoint checking, we cant move on until this is OK
+	if(wp_verify_byte & NAV_LOCATION){
+		// we have reached our goal
+
+		// loiter at the WP
+		wp_control 	= LOITER_MODE;
 //
 //		if ((millis() - loiter_time) > loiter_time_max) {
 //			wp_verify_byte |= NAV_DELAY;
 //			//gcs_send_text_P(SEVERITY_LOW,PSTR("verify_must: LOITER time complete"));
 //			//Serial.println("vlt done");
 //		}
-//	}
-//
-//	if(wp_verify_byte >= 7){
-//	//if(wp_verify_byte & NAV_LOCATION){
-//		char message[30];
-//		sprintf(message,"Reached Command #%i",command_nav_index);
-//		gcs_send_text(SEVERITY_LOW,message);
-//		wp_verify_byte = 0;
-//		return true;
-//	}else{
-//		return false;
-//	}
+	}
+
+	if(wp_verify_byte >= 7){
+	//if(wp_verify_byte & NAV_LOCATION){
+		char message[30];
+		sprintf(message,"Reached Command #%i",command_nav_index);
+		//gcs_send_text(SEVERITY_LOW,message);
+		wp_verify_byte = 0;
+		return true;
+	}else{
+		return false;
+	}
 }
 
 //bool Copter:: verify_loiter_unlim()

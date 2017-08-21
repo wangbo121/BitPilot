@@ -307,10 +307,10 @@ void Aircraft::fill_fdm(struct sitl_fdm &fdm) const
 
 
 
-    std::cout<<"fdm.longitude="<<fdm.longitude<<std::endl;
-    std::cout<<"fdm.latitude="<<fdm.latitude<<std::endl;
-    std::cout<<"fdm.altitude="<<fdm.altitude<<std::endl;
-    std::cout<<"fdm.heading ="<<fdm.heading <<std::endl;
+//    std::cout<<"fdm.longitude="<<fdm.longitude<<std::endl;
+//    std::cout<<"fdm.latitude="<<fdm.latitude<<std::endl;
+//    std::cout<<"fdm.altitude="<<fdm.altitude<<std::endl;
+//    std::cout<<"fdm.heading ="<<fdm.heading <<std::endl;
 }
 
 /*
@@ -337,18 +337,18 @@ void Aircraft::fill_fdm_flightgear( T_FDM &fdm) const
 	fdm.phi=r;
 	fdm.theta=p;
 	fdm.psi=y;
-
-	std::cout<<"fdm.phi  cd="<<degrees(fdm.phi)*100<<std::endl;
-	std::cout<<"fdm.theta  cd="<<degrees(fdm.theta)*100<<std::endl;
-	std::cout<<"fdm.psi  cd="<<degrees(fdm.psi)*100<<std::endl;
+//
+//	std::cout<<"fdm.phi  cd="<<degrees(fdm.phi)*100<<std::endl;
+//	std::cout<<"fdm.theta  cd="<<degrees(fdm.theta)*100<<std::endl;
+//	std::cout<<"fdm.psi  cd="<<degrees(fdm.psi)*100<<std::endl;
 
 	fdm.phidot=gyro.x;
 	fdm.thetadot=gyro.y;
 	fdm.psidot=gyro.z;
 
-	std::cout<<"fdm.phidot="<<fdm.phidot<<std::endl;
-	std::cout<<"fdm.thetadot="<<fdm.thetadot<<std::endl;
-	std::cout<<"fdm.psidot="<<fdm.psidot<<std::endl;
+//	std::cout<<"fdm.phidot="<<fdm.phidot<<std::endl;
+//	std::cout<<"fdm.thetadot="<<fdm.thetadot<<std::endl;
+//	std::cout<<"fdm.psidot="<<fdm.psidot<<std::endl;
 
 //	fdm.v_north=velocity_ef.x;
 //	fdm.v_east=velocity_ef.y;
@@ -365,10 +365,10 @@ void Aircraft::fill_fdm_flightgear( T_FDM &fdm) const
 
 	fdm.visibility=5000.0; // meters 可见范围
 
-	std::cout<<"fdm.cur_time="<<fdm.cur_time<<std::endl;
-	std::cout<<"fdm.phi="<<fdm.phi<<std::endl;
-	std::cout<<"fdm.theta="<<fdm.theta<<std::endl;
-	std::cout<<"fdm.psi="<<fdm.psi<<std::endl;
+//	std::cout<<"fdm.cur_time="<<fdm.cur_time<<std::endl;
+//	std::cout<<"fdm.phi="<<fdm.phi<<std::endl;
+//	std::cout<<"fdm.theta="<<fdm.theta<<std::endl;
+//	std::cout<<"fdm.psi="<<fdm.psi<<std::endl;
 
 
 #if 0
