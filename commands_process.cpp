@@ -131,21 +131,21 @@
  void Copter:: execute_nav_command(void)
 {
 //	// This is what we report to MAVLINK
-//	g.command_index  = command_nav_index;
+	g.command_index  = command_nav_index;
 //
 //	// Save CMD to Log
 //	if (g.log_bitmask & MASK_LOG_CMD)
 //		Log_Write_Cmd(g.command_index, &command_nav_queue);
 //
 //	// clear navigation prameters
-//	reset_nav_params();
+	reset_nav_params();
 //
 //	// Act on the new command
-//	process_nav_command();
+	process_nav_command();
 //
 //	// clear May indexes to force loading of more commands
 //	// existing May commands are tossed.
-//	command_cond_index	= NO_COMMAND;
+	command_cond_index	= NO_COMMAND;
 }
 
 // called with GPS navigation update - not constantly

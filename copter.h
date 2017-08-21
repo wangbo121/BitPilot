@@ -695,7 +695,7 @@ private:
 
 
 
-
+	    struct Location wp_total_array[255];
 
 
 
@@ -1340,6 +1340,8 @@ private:
 	 void verify_commands(void);
 	 void calc_loiter_pitch_roll();
 	 void update_trig(void);
+
+	 void reset_nav_params(void);
 
 
 };

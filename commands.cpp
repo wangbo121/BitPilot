@@ -46,6 +46,9 @@
 		 * 下面这里是读取航点信息的程序片段
 		 * 20170820我把航点先放在数组里进行测试
 		 */
+
+		memcpy(&temp,&wp_total_array[i],sizeof(struct Location));
+
 #if  0
 
 
@@ -103,6 +106,8 @@
 	 * 20170820下面是把地面站发送过来的航点信息保存到flash中去，
 	 * 我还是把航点放在数组里
 	 */
+
+	memcpy(&wp_total_array[i],&temp,sizeof(struct Location));
 
 #if 0
 	uint32_t mem = WP_START_BYTE + (i * WP_SIZE);

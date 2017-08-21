@@ -532,6 +532,43 @@ Copter::update_throttle_mode()
 		g.channel_throttle.servo_out        = g.channel_throttle.control_in;
 		break;
 
+	case THROTTLE_AUTO:
+#if 0
+	if(motors.auto_armed() == true) {
+
+		// how far off are we
+		altitude_error = get_altitude_error();
+
+		int16_t desired_speed;
+		if(alt_change_flag == REACHED_ALT) {                    // we are at or above the target alt
+			desired_speed           = g.pi_alt_hold.get_p(altitude_error);                                          // calculate desired speed from lon error
+			update_throttle_cruise(g.pi_alt_hold.get_i(altitude_error, .02));
+			desired_speed           = constrain(desired_speed, -250, 250);
+			nav_throttle            = get_throttle_rate(desired_speed);
+		}else{
+			desired_speed           = get_desired_climb_rate();
+			nav_throttle            = get_throttle_rate(desired_speed);
+		}
+	}
+
+	// hack to remove the influence of the ground effect
+	if(g.sonar_enabled && current_loc.alt < 100 && landing_boost != 0) {
+		nav_throttle = min(nav_throttle, 0);
+	}
+
+#if FRAME_CONFIG == HELI_FRAME
+	throttle_out = heli_get_angle_boost(g.throttle_cruise + nav_throttle - landing_boost);
+#else
+	throttle_out = g.throttle_cruise + nav_throttle + angle_boost - landing_boost;
+#endif
+	g.channel_throttle.servo_out = throttle_out;
+#endif
+
+
+
+	g.channel_throttle.servo_out = 500;
+	break;
+
 	default:
 		break;
 	}
@@ -543,4 +580,36 @@ int16_t Copter::get_angle_boost(int16_t value)
 	 float temp = cos_pitch_x * cos_roll_x;
 	temp = constrain_value(temp, .75f, 1.0f);
 	return ((float)(value + 80) / temp) - (value + 80);
+}
+
+
+// Keeps old data out of our calculation / logs
+void Copter::reset_nav_params(void)
+{
+    nav_throttle                    = 0;
+
+    // always start Circle mode at same angle
+    //circle_angle                    = 0;
+
+    // We must be heading to a new WP, so XTrack must be 0
+    crosstrack_error                = 0;
+
+    // Will be set by new command
+    target_bearing                  = 0;
+
+    // Will be set by new command
+    wp_distance                     = 0;
+
+    // Will be set by new command, used by loiter
+    long_error                              = 0;
+    lat_error                               = 0;
+
+    // We want to by default pass WPs
+    slow_wp = false;
+
+    // make sure we stick to Nav yaw on takeoff
+    auto_yaw = nav_yaw;
+
+    // revert to smaller radius set in params
+    waypoint_radius = g.waypoint_radius;
 }

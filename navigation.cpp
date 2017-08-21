@@ -69,6 +69,9 @@ void Copter::calc_XY_velocity(){
     filtered_loc.lng = xLeadFilter.get_position(g_gps->longitude, accels_velocity.x);
     filtered_loc.lat = yLeadFilter.get_position(g_gps->latitude,  accels_velocity.y);
 #else
+    /*
+     * 20170821我把滤波删掉了，直接用了gps.longitude
+     */
 //    filtered_loc.lng = xLeadFilter.get_position(g_gps->longitude, x_actual_speed, gps.get_lag());
 //    filtered_loc.lat = yLeadFilter.get_position(g_gps->latitude,  y_actual_speed, g_gps->get_lag());
 
@@ -210,9 +213,9 @@ void Copter::calc_nav_rate(int16_t max_speed)
     // calculate rate error
 //#if INERTIAL_NAV == ENABLED
 #if 0
-    x_rate_error    = x_target_speed - accels_velocity.x;
+    x_rate_error    = x_target_speed - accels_velocity.x;//这个是惯性期间测量的但为什么是accels呢
 #else
-    x_rate_error    = x_target_speed - x_actual_speed;
+    x_rate_error    = x_target_speed - x_actual_speed;//20170821这个应该是gps计算得到的
 #endif
 
     x_rate_error    = constrain(x_rate_error, -500, 500);

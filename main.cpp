@@ -250,7 +250,43 @@ void Copter::setup()
  cos_roll_x 	= 1;
 		    cos_pitch_x 	= 1;
 		   cos_yaw_x 		= 1;
-		sin_pitch_y, sin_yaw_y, sin_roll_y;
+		sin_pitch_y=0;
+		sin_yaw_y=0;
+		sin_roll_y=0;
+
+		yaw_tracking = MAV_ROI_WPNEXT;
+		wp_control =WP_MODE;
+
+
+		wp_total_array[0].id=0;
+
+		/*
+		 * 为了自行测试绕航点飞行，我先自行设置了初始的经度纬度如下
+		 */
+		long start_longtitude=-1223571928;
+		long start_latitude=376135531;
+		long delta_lon=10012;
+		long delta_lat=10001;//大概有100米？
+
+
+		wp_total_array[0].id 	= MAV_CMD_NAV_WAYPOINT;
+		wp_total_array[0].lng 	= start_longtitude;				// Lon * 10**7
+		wp_total_array[0].lat 	= start_latitude;				// Lat * 10**7
+		wp_total_array[0].alt 	= 0;							// Home is always 0
+
+
+		for(int i=1;i<4;i++)
+		{
+			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
+			wp_total_array[i].lng 	= start_longtitude+delta_lon;				// Lon * 10**7
+			wp_total_array[i].lat 	= start_latitude;				// Lat * 10**7
+			wp_total_array[i].alt 	= 0;							// Home is always 0
+		}
+
+
+		gps.longitude=-1223571928;				// Lon * 10**7
+		gps.latitude=376135531;				// Lat * 10**7
+		init_home();
 }
 
 void Copter::loop()
@@ -290,6 +326,11 @@ void Copter::loop()
 
 		  // calculate distance, angles to target
 			navigate();
+
+			// this calculates the velocity for Loiter
+			// only called when there is new data
+			// ----------------------------------
+			calc_XY_velocity();
 
 			// update flight control system
 			update_navigation();
@@ -335,6 +376,7 @@ void Copter::loop_fast()
 	g.channel_pitch.set_pwm(1600);//这个set_pwm参数的范围是1000～2000，把pitch一直设置为1600，看能不能稳定在9度左右
 	//g.rc_5.set_pwm(1400);//rc_5大于1500时，是增稳控制状态
 	g.rc_5.set_pwm(1600);//rc_5大于1500时，是增稳控制状态
+	g.rc_5.set_pwm(1990);//rc_5大于1900时，是绕航点飞行状态
 
 	/* 2--更新姿态，获取飞机现在的姿态角 */
 	compass.read();
@@ -381,6 +423,30 @@ void Copter::loop_fast()
 		g.channel_rudder.servo_out = g.channel_rudder.control_in;
 
 		g.channel_throttle.servo_out=g.channel_throttle.control_in;
+		break;
+
+	case AUTO:
+		std::cout<<"Hello AUTO MODE 绕航点航行"<<std::endl;
+		/*
+		* 先是roll pitch yaw的2级pid控制
+		* 再是油门throttle的2级pid控制
+		* 都是只是计算得出g.channel.servo_out的值
+		* 在motors_output时再把这些计算的值真正输出
+		* update_roll_pitch_mode和update_yaw_mode都是只有p控制器，计算得到目标姿态角度
+		*/
+		update_roll_pitch_mode();
+		update_yaw_mode();//上面这两个函数有问题呀，上面两个函数赋值给的是EARTH_FRAME，但是下面的run_rate_controllers是用的BODY_FRAME，所以还需要仔细再看一下apm
+
+		//这个是更新内环的速率控制器的目标，update targets to rate controllers
+		update_rate_contoller_targets();//这个步骤很重要，是把上面的earth坐标系下的转为机体坐标系
+
+		//这个是执行了角速度的控制器，需要从ahrs或者imu获取角速度的大小，扩大了100倍，这个函数还得看一下
+		run_rate_controllers();
+
+		//这个是油门的控制，跟姿态的控制分开
+		update_throttle_mode();//计算油门量的输出值
+
+
 		break;
 
 	default:
@@ -547,11 +613,17 @@ void Copter::update_current_flight_mode(void)
 	{
 		control_mode=ACRO;
 	}
-	else if(g.rc_5.radio_in>1500)
+	else if(g.rc_5.radio_in>1500 && g.rc_5.radio_in<1900)
 	{
 		control_mode=STABILIZE;
 		std::cout<<"飞控模式是增稳模式:"<<std::endl;
 	}
+	else if(g.rc_5.radio_in>1900)
+	{
+		control_mode=AUTO;
+		std::cout<<"飞控模式是绕航点飞行:"<<std::endl;
+	}
+
 
 	/*
 	 * 什么时候是航点飞行模式呢
@@ -827,6 +899,7 @@ void Copter::update_nav_wp()
    }else if(wp_control == WP_MODE) {
 	   /*
 	    * 这个是我们需要的航点飞行时，把误差转换为
+	    * 20170821
 	    */
 
         // calc error to target
