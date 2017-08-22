@@ -126,11 +126,11 @@ bool AP_GPS_NMEA::read(void)
 #endif
 
 
-	longitude=1161234567;
-	latitude=391234567;
-	altitude=10000;//100米，单位厘米
-	ground_speed=10;
-	ground_course=90;
+//	longitude=1161234567;
+//	latitude=391234567;
+//	altitude=10000;//100米，单位厘米
+//	ground_speed=10;
+//	ground_course=90;
 
 	longitude=(fdm_feed_back.longitude *RAD_TO_DEG)*1e7;
 	latitude=(fdm_feed_back.latitude *RAD_TO_DEG)*1e7;

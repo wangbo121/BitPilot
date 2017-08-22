@@ -1431,7 +1431,80 @@ private:
 extern const AP_HAL::HAL& hal;
 extern Copter copter;
 
+struct AP2GCS_REAL
+{
+    unsigned char head1;
+    unsigned char head2;
+    unsigned char len;
+    unsigned char cnt;
+    unsigned char sysid;
+    unsigned char type;
+    unsigned char commu_method;
+    unsigned char ack_req;//8字节
 
+    unsigned char pack_func_flag;//包功能标志，暂时固定为0
+    unsigned char pack_func_info1;//接收到的命令包计数
+    unsigned char pack_func_info2;//接收到的航点包计数
+    unsigned char pack_func_info3;//包功能辅助信息，在接收到航点包时，作为航点包的计数
+    unsigned int lng;//[度*0.00001]，GPS经度坐标，整型，精确到米
+    unsigned int lat;//[度*0.00001]，GPS纬度坐标，整型，精确到米
+    unsigned short spd;//[Knot*0.01]，实时航速
+    short dir_gps;//24个字节//[度*0.01]，地速航向，GPS航向
+    short dir_heading;//[度*0.01]，机头朝向
+    short dir_target;//[度*0.01]，目标点朝向
+    short dir_nav;//[度*0.01]，导航航向
+    short roll;//32个字节//[度*0.01]，滚转
+    short pitch;//[度*0.01]，俯仰
+    short yaw;//[度*0.01]，偏航
+    unsigned char codedisc;//码盘实时采集返回值 0-360
+    unsigned char da_out1;//[0.1V]电调给定值1
+    unsigned char da_out2;//[0.1V]电调给定值2
+    unsigned char rudder_pos;//32个字节//[度],方向舵角度值,中位为45
+    unsigned char rc_thruster;//[0-255]RC推进器通道值
+    unsigned char rc_rudder;//[0-255]RC方向舵通道值
+    unsigned char rud_p;//[0.1],转弯参数P
+    unsigned char cte_p;//[0.1],CTE参数P
+    unsigned char boat_temp1;//[C],船内温度1
+    unsigned char boat_temp2;//[C],船内温度2
+    unsigned char boat_humi;//[%],船内湿度,预留,可作它用
+    unsigned char voltage_bat1;//48//[V],电池组1实时电压(切换器上的电压)
+    unsigned char voltage_bat2;//[V],电池组2实时电压(切换器上的电压)
+    unsigned char current_bat1;//[0.1A],电池组1实时放电电流(电路互感器上检测的电流)
+    unsigned char current_bat2;//[0.1A],电池组2实时放电电流(电路互感器上检测的电流)
+    unsigned char toggle_state;//切换器状态,D1D0:当前放电通道,01:通道1,10:通道2; D3D2:通道1工作状态:01:0x55正在放电,10:0x5A请求放电;11:0xAA停止放电; D5D4:通道2工作状态; D7D6:预留
+    unsigned char charge_state;//充电机状态,D1D0:当前充电通道,01:通道1,10:通道2,11:通道3; D2:开关机状态,0:开机,1:关机; D3: 手动自动状态, 0:自动,1:手动; D6-4:保留; D7:发电机状态,0:停止,1:工作
+    unsigned char temp;//气象站数据：温度1
+    unsigned char humi;//气象站数据：湿度
+    unsigned char windspeed;//56//气象站数据：风速
+    unsigned char winddir;//气象站数据：风向
+    unsigned char airpress;//气象站数据：气压
+    unsigned char seasault;//气象站数据：海盐
+    unsigned char elec_cond;//气象站数据：电导率
+    unsigned char seatemp1;//气象站数据：海温1
+    unsigned char seatemp2;//气象站数据：海温2
+    unsigned char seatemp3;//气象站数据：海温3
+    unsigned char alt;//56//气象站数据：高度
+    unsigned char radiation;//气象站数据：辐射
+    unsigned char launch_req_ack;//火箭发射请求
+    unsigned char rocket_state;//火箭系统状态
+    unsigned char rktnumber;//火箭编号
+    unsigned char rkt_alt;//[10m]火箭升空高度
+    unsigned char work_mode;
+    unsigned char charger_voltage;
+    unsigned char charger_current;
+    unsigned char wp_next;
+    unsigned char master_state;
+    unsigned char slave_state;
+    unsigned char checksum;//76个字节
 
+};
+
+extern struct AP2GCS_REAL ap2gcs;
+extern int fd_ap2gcs;
+extern struct T_UART_DEVICE uart_device_ap2gcs;
+
+int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char len,\
+                    unsigned int packet_cnt, unsigned char message_type,\
+                    unsigned char commu_method, unsigned char ack_req);
 
 #endif /* COPTER_H_ */

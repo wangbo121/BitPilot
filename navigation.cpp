@@ -37,6 +37,8 @@ void Copter::navigate()
     std::cout<<"home_distance     ="<<home_distance     <<std::endl;
 
 
+	std::cout<<"navigate    next_WP.lng="<<next_WP.lng<<std::endl;
+	std::cout<<" navigate    next_WP.lat="<<next_WP.lat<<std::endl;
     // target_bearing is where we should be heading
     // --------------------------------------------
     target_bearing                  = get_bearing_cd(&filtered_loc, &next_WP);
@@ -57,7 +59,11 @@ uint8_t Copter::check_missed_wp()
 {
     int32_t temp;
     temp = target_bearing - original_target_bearing;
-    temp = wrap_180(temp);
+
+    std::cout<<"check_missed_wp()    temp="<<temp<<std::endl;
+
+    //temp = wrap_180(temp,1);
+    temp = wrap_180(temp,100);
     return (labs(temp) > 9000);         // we passed the waypoint by 100 degrees
 }
 

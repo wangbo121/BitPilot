@@ -450,7 +450,8 @@ bool Copter:: verify_nav_wp()
 
 	// Did we pass the WP?	// Distance checking
 	//if((wp_distance <= g.waypoint_radius*100) || check_missed_wp())
-	if((wp_distance <= g.waypoint_radius*100) || check_missed_wp())
+	if((wp_distance <= (unsigned int)g.waypoint_radius*100) || check_missed_wp())
+	//if((wp_distance <= (unsigned int)g.waypoint_radius*100))
 	{
 
 		// if we have a distance calc error, wp_distance may be less than 0
@@ -620,7 +621,8 @@ void Copter:: do_yaw()
 				command_yaw_delta = 36000 + (command_yaw_start - command_yaw_end);
 			}
 		}
-		command_yaw_delta = wrap_360(command_yaw_delta);
+		//command_yaw_delta = wrap_360(command_yaw_delta);
+		command_yaw_delta = wrap_360(command_yaw_delta,100);
 	}
 
 

@@ -20,6 +20,8 @@
 #include "SITL.h"
 #include "udp.h"
 
+#include "uart.h"
+
 
 //MultiCopter multi_copter("120,48,100,10","x");
 //MultiCopter multi_copter("-122.357,37.6136,100,10","x");
@@ -127,6 +129,16 @@ Aircraft::sitl_input input;
 int fd_socket_generic;
 int16_t             motor_out_flightgear[AP_MOTORS_MAX_NUM_MOTORS];
 
+struct AP2GCS_REAL ap2gcs;
+int fd_ap2gcs;
+#define UART_DEVICE_APGCS "/dev/ttyUSB0"
+struct T_UART_DEVICE uart_device_ap2gcs;
+#define UART_AP2GCS_BAUD 9600
+#define UART_AP2GCS_DATABITS 8 //8 data bit
+#define UART_AP2GCS_STOPBITS 1 //1 stop bit
+#define UART_AP2GCS_PARITY 0 //no parity
+
+
 int main(int argc,char * const argv[])
 {
 	cout<<"Welcome to BitPilot"<<endl;
@@ -195,13 +207,14 @@ void Copter::setup()
 	//第2级pid参数设置
 
 
-	float pid_p_2=2.0;
+	float pid_p_2=5.0;
 
 	g.pid_rate_roll.set_kP(pid_p_2);
 	g.pid_rate_roll.set_kI(0.0);
 	g.pid_rate_roll.set_kD(0.0);
 
-	g.pid_rate_pitch.set_kP(pid_p_2);
+	float pid_p_pitch=5.0;
+	g.pid_rate_pitch.set_kP(pid_p_pitch);
 	g.pid_rate_pitch.set_kI(0.0);
 	g.pid_rate_pitch.set_kD(0.0);
 
@@ -213,13 +226,14 @@ void Copter::setup()
 	/*
 	 * 导航用的pid
 	 */
-	float pid_p_3=5.0;
+	float pid_p_3=2.0;
 	g.pid_nav_lon.set_kP(pid_p_3);
 	g.pid_nav_lon.set_kI(0.0);
 	g.pid_nav_lon.set_kD(0.0);
 
 
-	g.pid_nav_lat.set_kP(pid_p_3);
+	//g.pid_nav_lat.set_kP(pid_p_3);
+	g.pid_nav_lat.set_kP(2.0);
 	g.pid_nav_lat.set_kI(0.0);//又犯了复制没有改名字的错误，set_kI写成了set_kP，导致p又改为了0
 	g.pid_nav_lat.set_kD(0.0);
 
@@ -308,78 +322,89 @@ void Copter::setup()
 
 		int wp_num=10;
 
-		long delta_lon=0;//111米
-		long delta_lat=5000;
+		long delta_lon=50000;//111米  5000，然后半径设置微100米能够比较好仿真
+		//long delta_lon=100000;
+		//long delta_lon=10000;
+
+
+		//long delta_lat=0;
+		long delta_lat=50000;
+		//long delta_lat=100000;
 //		long delta_lon=9000;//111米
 //		long delta_lat=9000;
 
 //		long delta_lon=100000;//111米
 //		long delta_lat=100000;
 
+		//g.waypoint_radius=100;//100米
+		g.waypoint_radius=10;//100米
+
 		wp_total_array[0].id 	= MAV_CMD_NAV_WAYPOINT;
 		wp_total_array[0].lng 	= start_longtitude;				// Lon * 10**7
 		wp_total_array[0].lat 	= start_latitude;				// Lat * 10**7
 		wp_total_array[0].alt 	= 0;							// Home is always 0
 
-
-//		for(int i=1;i<4;i++)
-//		{
-//			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
-//			wp_total_array[i].lng 	= start_longtitude+delta_lon;				// Lon * 10**7
-//			//wp_total_array[i].lng 	= start_longtitude;				// Lon * 10**7
-//			wp_total_array[i].lat 	= start_latitude+delta_lat;				// Lat * 10**7
-//			wp_total_array[i].alt 	= 0;							// Home is always 0
-//
-//
-//		}
+		current_loc.lng=start_longtitude;
+		current_loc.lat=start_latitude;
 
 		int alt_temp=5000;
 
-		for(int i=1;i<5;i++)
-		{
-			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
-			wp_total_array[i].lng 	= start_longtitude+delta_lon*i;				// Lon * 10**7
-			//wp_total_array[i].lng 	= start_longtitude;				// Lon * 10**7
-			wp_total_array[i].lat 	= start_latitude+delta_lat*i;				// Lat * 10**7
-			wp_total_array[i].alt 	= alt_temp;							// Home is always 0
-		}
-
-		for(int i=1;i<6;i++)
-		{
-			wp_total_array[4+i].id 	= MAV_CMD_NAV_WAYPOINT;
-			wp_total_array[4+i].lng 	= start_longtitude-delta_lon*i;				// Lon * 10**7
-			//wp_total_array[i].lng 	= start_longtitude;				// Lon * 10**7
-			wp_total_array[4+i].lat 	= wp_total_array[4].lat-delta_lat*i;				// Lat * 10**7
-			wp_total_array[4+i].alt 	= alt_temp;							// Home is always 0
-		}
-
-		for(int i=0;i<wp_num;i++)
-		{
-			std::cout<<"wp_total_array["<<i<<"].lng="<<wp_total_array[i].lng<<std::endl;
-			std::cout<<"wp_total_array["<<i<<"].lat="<<wp_total_array[i].lat<<std::endl;
-			std::cout<<"wp_total_array["<<i<<"].alt="<<wp_total_array[i].alt<<std::endl;
-		}
-
-
+		/*
+		 * 这个是经度纬度都增加，也就是一直往北或者一直往东，减小经度
+		 */
 //		for(int i=1;i<wp_num;i++)
 //		{
 //			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
-//
-//			wp_total_array[i].alt 	= 100;							// Home is always 0
-//
-//
+//			//wp_total_array[i].lng 	= start_longtitude+delta_lon*i;				// Lon * 10**7
+//			wp_total_array[i].lng 	= start_longtitude-delta_lon*i;				// Lon * 10**7
+//			//wp_total_array[i].lng 	= start_longtitude;				// Lon * 10**7
+//			wp_total_array[i].lat 	= start_latitude+delta_lat*i;				// Lat * 10**7
+//			wp_total_array[i].alt 	= alt_temp;							// Home is always 0
 //		}
-//		wp_total_array[1].lng 	= start_longtitude+delta_lon;				// Lon * 10**7
-//		wp_total_array[1].lat 	= start_latitude;				// Lat * 10**7
-//
-//		wp_total_array[2].lng 	= start_longtitude+delta_lon;				// Lon * 10**7
-//		wp_total_array[2].lat 	= start_latitude+delta_lat;				// Lat * 10**7
-//
-//		wp_total_array[3].lng 	= start_longtitude;				// Lon * 10**7
-//		wp_total_array[3].lat 	= start_latitude+delta_lat;				// Lat * 10**7
-//
-//		wp_total_array[4].lng 	= start_longtitude;				// Lon * 10**7
-//		wp_total_array[4].lat 	= start_latitude;				// Lat * 10**7
+
+
+
+
+
+		/*
+		 * 这个是矩形，绕航线飞行
+		 */
+		for(int i=1;i<wp_num;i++)
+		{
+			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
+
+			wp_total_array[i].alt 	= alt_temp;							// Home is always 0
+
+
+		}
+		wp_total_array[1].lng 	= start_longtitude+delta_lon*1;				// Lon * 10**7
+		wp_total_array[1].lat 	= start_latitude;				// Lat * 10**7
+
+		wp_total_array[2].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
+		wp_total_array[2].lat 	= start_latitude;				// Lat * 10**7
+
+		wp_total_array[3].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
+		wp_total_array[3].lat 	= start_latitude+delta_lat*1;				// Lat * 10**7
+
+		wp_total_array[4].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
+		wp_total_array[4].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
+
+
+		wp_total_array[5].lng 	= start_longtitude+delta_lon*1;				// Lon * 10**7
+		wp_total_array[5].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
+
+		wp_total_array[6].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
+		wp_total_array[6].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
+
+		wp_total_array[7].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
+		wp_total_array[7].lat 	= start_latitude+delta_lat*1;				// Lat * 10**7
+
+		wp_total_array[8].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
+		wp_total_array[8].lat 	= start_latitude+delta_lat*0;				// Lat * 10**7
+
+		wp_total_array[9].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
+		wp_total_array[9].lat 	= start_latitude+delta_lat*0;				// Lat * 10**7
+
 
 
 
@@ -389,6 +414,16 @@ void Copter::setup()
 //
 //		gps.longitude=-1223570059;			// Lon * 10**7
 //		gps.latitude=376135956;
+
+
+		for(int i=0;i<wp_num;i++)
+		{
+			std::cout<<"wp_total_array["<<i<<"].lng="<<wp_total_array[i].lng<<std::endl;
+			std::cout<<"wp_total_array["<<i<<"].lat="<<wp_total_array[i].lat<<std::endl;
+			std::cout<<"wp_total_array["<<i<<"].alt="<<wp_total_array[i].alt<<std::endl;
+		}
+
+
 		init_home();
 
 		std::cout<<"home.lng="<<home.lng<<std::endl;
@@ -404,8 +439,7 @@ void Copter::setup()
 		//command_nav_index=0;
 		command_nav_index=0;
 
-		//g.waypoint_radius=100;//100米
-		g.waypoint_radius=10;//100米
+
 
 		g.crosstrack_gain=1;
 
@@ -417,6 +451,38 @@ void Copter::setup()
 
 		dTnav=100;
 		g.crosstrack_gain=1;
+
+
+		//fd_ap2gcs=open_uart_dev("/dev/ttyUSB0");
+
+		//open_uart_dev(UART_DEVICE_APGCS);
+		uart_device_ap2gcs.uart_name=UART_DEVICE_APGCS;
+
+		uart_device_ap2gcs.baudrate=UART_AP2GCS_BAUD;
+		uart_device_ap2gcs.databits=UART_AP2GCS_DATABITS;
+		uart_device_ap2gcs.parity=UART_AP2GCS_PARITY;
+		uart_device_ap2gcs.stopbits=UART_AP2GCS_STOPBITS;
+
+		uart_device_ap2gcs.uart_num=open_uart_dev(uart_device_ap2gcs.uart_name);
+
+		//uart_device_ap2gcs.ptr_fun=read_radio_data;
+
+		set_uart_opt( uart_device_ap2gcs.uart_name, \
+				uart_device_ap2gcs.baudrate,\
+				uart_device_ap2gcs.databits,\
+				uart_device_ap2gcs.parity,\
+				uart_device_ap2gcs.stopbits);
+
+		//create_uart_pthread(&uart_device_radio);
+
+
+
+		ap2gcs.lng=12235719;
+		ap2gcs.lat=3761355;
+		ap2gcs.alt=50;
+
+
+		send_uart_data(uart_device_ap2gcs.uart_name, (char *)&ap2gcs,sizeof(ap2gcs));
 
 }
 
@@ -486,6 +552,41 @@ void Copter::loop()
 	{//50hz
 		invalid_throttle=true;
 		update_throttle_mode();
+	}
+
+	if(maintask_cnt%100)
+	{
+
+	    unsigned char buf_data[256];
+	    unsigned char buf_packet[256];
+	    int ret;
+	    static int real_cnt;
+	    real_cnt++;
+
+
+	    std::cout<<"send ap2gcs current_loc="<<current_loc.lng<<std::endl;
+		//ap2gcs.lng=current_loc.lng*1e-2;
+	    ap2gcs.lng=-current_loc.lng*1e-2;
+		ap2gcs.lat=current_loc.lat*1e-2;
+		ap2gcs.alt=current_loc.alt*1e-2;
+
+	    //20170728把帧头帧尾加入到数据结构中
+	    static unsigned char frame_len=76;
+	    static unsigned char frame_head_len=8;
+	    static unsigned char frame_checksum_len=2;
+	    static unsigned char frame_data_len;
+	    frame_data_len=frame_len-frame_head_len-frame_checksum_len;
+
+	    memcpy(buf_data, &ap2gcs.pack_func_flag, frame_data_len);
+	    ret=generate_packet(buf_packet, buf_data, frame_data_len,\
+	    		real_cnt, 0x10,\
+	                        0,1);
+
+	    //send_radio_data(buf_packet, ret);
+
+
+		send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf_packet,ret);
+
 	}
 
 }
@@ -580,7 +681,7 @@ void Copter::loop_fast()
 		* update_roll_pitch_mode和update_yaw_mode都是只有p控制器，计算得到目标姿态角度
 		*/
 		update_roll_pitch_mode();
-		//update_yaw_mode();//上面这两个函数有问题呀，上面两个函数赋值给的是EARTH_FRAME，但是下面的run_rate_controllers是用的BODY_FRAME，所以还需要仔细再看一下apm
+		update_yaw_mode();//上面这两个函数有问题呀，上面两个函数赋值给的是EARTH_FRAME，但是下面的run_rate_controllers是用的BODY_FRAME，所以还需要仔细再看一下apm
 
 		//这个是更新内环的速率控制器的目标，update targets to rate controllers
 		update_rate_contoller_targets();//这个步骤很重要，是把上面的earth坐标系下的转为机体坐标系

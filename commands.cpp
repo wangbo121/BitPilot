@@ -163,6 +163,8 @@ It precalculates all the necessary stuff.
 	//SendDebugln(g.command_index, DEC);
 
 		std::cout<<"进入set next wp"<<std::endl;
+		std::cout<<"set_next_WP    prev_WP.lng="<<prev_WP.lng<<std::endl;
+		std::cout<<"set_next_WP    prev_WP.lat="<<prev_WP.lat<<std::endl;
 
 	// copy the current WP into the OldWP slot
 	// ---------------------------------------
@@ -203,7 +205,7 @@ It precalculates all the necessary stuff.
 	// this is handy for the groundstation
 	// -----------------------------------
 	wp_distance 		= get_distance(&current_loc, &next_WP);
-	//target_bearing 		= get_bearing(&prev_WP, &next_WP);////这个函数应该在navigation.cpp文件中写的，这里还没有写所以先注释掉
+	target_bearing 		= get_bearing_cd(&prev_WP, &next_WP);////这个函数应该在navigation.cpp文件中写的，这里还没有写所以先注释掉
 	nav_bearing 		= target_bearing;
 
 	// calc the location error:

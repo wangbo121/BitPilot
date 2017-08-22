@@ -81,8 +81,26 @@
 				command_nav_queue.id = NO_COMMAND;
 			}
 		}else{
+			/*
+			 * 完成任务后按道理说应该悬停或者降落
+			 * 我还没有写，暂时先把command_nav_index归零吧，重复进行
+			 */
+
 			// we are out of commands
-			g.command_index  = command_nav_index = 255;//255对应有符号是-1
+			//g.command_index  = command_nav_index = 255;//255对应有符号是-1
+
+			/*
+			 * 不知道为什么回不来了，难道还有啥设置，设置为1了，为啥还不能朝1走
+			 * 0821好像可以了，执行任务结束后直接回到航点1
+			 */
+			std::cout<<"任务已经完成，重新执行任务"<<std::endl;
+			init_commands();
+			g.command_index  = command_nav_index = 1;//255对应有符号是-1
+			command_nav_queue = get_cmd_with_index(command_nav_index);
+			//set_next_WP(&command_nav_queue);
+			execute_nav_command();
+
+
 			// if we are on the ground, enter stabilize, else Land
 			if (land_complete == true){
 				// we will disarm the motors after landing.
@@ -160,7 +178,10 @@
 //
 //	// clear May indexes to force loading of more commands
 //	// existing May commands are tossed.
-	command_cond_index	= NO_COMMAND;//这个是cond index也就是条件命令，跟上面的nav_commands没有关系
+	/*
+	 * 先舍弃下面的cond index
+	 */
+	//command_cond_index	= NO_COMMAND;//这个是cond index也就是条件命令，跟上面的nav_commands没有关系
 }
 
 // called with GPS navigation update - not constantly
