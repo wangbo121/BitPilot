@@ -504,6 +504,11 @@ Copter::update_roll_pitch_mode(void)
 //	        if(do_simple && new_radio_frame) {
 //	            update_simple_mode();
 //	        }
+
+		 /*
+		  * 20170822 下面里面有一句auto_pitch，auto_pitch之所以取了负号，是因为从固定翼飞机上说我们遥控器往上推是压杆
+		  * 也就意味着elevator的值是负数或者说如果按照1000～2000来说，应该是1000～1500之间，按照servo_out来说就是，-4500～0度
+		  */
 	        // mix in user control with Nav control
 	        nav_roll                += constrain(wrap_180(auto_roll  - nav_roll,100),  -g.auto_slew_rate, g.auto_slew_rate);                 // 40 deg a second
 	        nav_pitch               += constrain(wrap_180(auto_pitch - nav_pitch,100), -g.auto_slew_rate, g.auto_slew_rate);                 // 40 deg a second
