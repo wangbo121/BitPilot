@@ -213,15 +213,27 @@ void Copter::setup()
 	/*
 	 * 导航用的pid
 	 */
-	float pid_p_3=50.0;
+	float pid_p_3=5.0;
 	g.pid_nav_lon.set_kP(pid_p_3);
 	g.pid_nav_lon.set_kI(0.0);
 	g.pid_nav_lon.set_kD(0.0);
 
 
 	g.pid_nav_lat.set_kP(pid_p_3);
-	g.pid_nav_lat.set_kP(0.0);
-	g.pid_nav_lat.set_kP(0.0);
+	g.pid_nav_lat.set_kI(0.0);//又犯了复制没有改名字的错误，set_kI写成了set_kP，导致p又改为了0
+	g.pid_nav_lat.set_kD(0.0);
+
+	/*
+	 * 油门控高
+	 */
+	float pid_p_alt=1;
+	g.pi_alt_hold.set_kP(pid_p_alt);
+	g.pi_alt_hold.set_kI(0.0);
+	g.pi_alt_hold.set_kD(0.0);
+
+	g.pid_throttle.set_kP(pid_p_alt);
+	g.pid_throttle.set_kI(0.0);
+	g.pid_throttle.set_kD(0.0);
 
 
 	/*
@@ -321,28 +333,31 @@ void Copter::setup()
 //
 //		}
 
+		int alt_temp=5000;
+
 		for(int i=1;i<5;i++)
 		{
 			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
 			wp_total_array[i].lng 	= start_longtitude+delta_lon*i;				// Lon * 10**7
 			//wp_total_array[i].lng 	= start_longtitude;				// Lon * 10**7
 			wp_total_array[i].lat 	= start_latitude+delta_lat*i;				// Lat * 10**7
-			wp_total_array[i].alt 	= 10;							// Home is always 0
+			wp_total_array[i].alt 	= alt_temp;							// Home is always 0
 		}
 
-		for(int i=0;i<5;i++)
+		for(int i=1;i<6;i++)
 		{
-			wp_total_array[5+i].id 	= MAV_CMD_NAV_WAYPOINT;
-			wp_total_array[5+i].lng 	= start_longtitude-delta_lon*i;				// Lon * 10**7
+			wp_total_array[4+i].id 	= MAV_CMD_NAV_WAYPOINT;
+			wp_total_array[4+i].lng 	= start_longtitude-delta_lon*i;				// Lon * 10**7
 			//wp_total_array[i].lng 	= start_longtitude;				// Lon * 10**7
-			wp_total_array[5+i].lat 	= wp_total_array[4].lat-delta_lat*i;				// Lat * 10**7
-			wp_total_array[5+i].alt 	= 10;							// Home is always 0
+			wp_total_array[4+i].lat 	= wp_total_array[4].lat-delta_lat*i;				// Lat * 10**7
+			wp_total_array[4+i].alt 	= alt_temp;							// Home is always 0
 		}
 
 		for(int i=0;i<wp_num;i++)
 		{
 			std::cout<<"wp_total_array["<<i<<"].lng="<<wp_total_array[i].lng<<std::endl;
 			std::cout<<"wp_total_array["<<i<<"].lat="<<wp_total_array[i].lat<<std::endl;
+			std::cout<<"wp_total_array["<<i<<"].alt="<<wp_total_array[i].alt<<std::endl;
 		}
 
 
@@ -389,10 +404,19 @@ void Copter::setup()
 		//command_nav_index=0;
 		command_nav_index=0;
 
-		g.waypoint_radius=100;
+		//g.waypoint_radius=100;//100米
+		g.waypoint_radius=10;//100米
 
 		g.crosstrack_gain=1;
 
+		g.channel_throttle.control_in=500;
+		g.channel_throttle.servo_out=500;
+		g.throttle_cruise=500;
+
+		g.sonar_enabled=0;
+
+		dTnav=100;
+		g.crosstrack_gain=1;
 
 }
 
@@ -431,6 +455,9 @@ void Copter::loop()
 		 */
 
 
+		update_alt();
+
+
 		  // calculate distance, angles to target
 			navigate();
 
@@ -453,6 +480,12 @@ void Copter::loop()
 					update_commands();
 				}
 			}
+	}
+
+	if(maintask_cnt%2)
+	{//50hz
+		invalid_throttle=true;
+		update_throttle_mode();
 	}
 
 }
@@ -483,7 +516,7 @@ void Copter::loop_fast()
 	/* 1--读取接收机的信号，获取遥控器各个通道 */
 	read_radio();
 
-	g.channel_rudder.set_pwm(1600);//这个set_pwm参数的范围是1000～2000
+	//g.channel_rudder.set_pwm(1600);//这个set_pwm参数的范围是1000～2000
 	//g.channel_pitch.set_pwm(1600);//这个set_pwm参数的范围是1000～2000，把pitch一直设置为1600，看能不能稳定在9度左右
 	//g.rc_5.set_pwm(1400);//rc_5大于1500时，是增稳控制状态
 	//g.rc_5.set_pwm(1600);//rc_5大于1500时，是增稳控制状态
@@ -525,7 +558,7 @@ void Copter::loop_fast()
 		run_rate_controllers();
 
 		//这个是油门的控制，跟姿态的控制分开
-		update_throttle_mode();//计算油门量的输出值
+		//update_throttle_mode();//计算油门量的输出值
 		break;
 	case ACRO:
 //		std::cout<<"Hello ACRO MODE"<<std::endl;
@@ -547,7 +580,7 @@ void Copter::loop_fast()
 		* update_roll_pitch_mode和update_yaw_mode都是只有p控制器，计算得到目标姿态角度
 		*/
 		update_roll_pitch_mode();
-		update_yaw_mode();//上面这两个函数有问题呀，上面两个函数赋值给的是EARTH_FRAME，但是下面的run_rate_controllers是用的BODY_FRAME，所以还需要仔细再看一下apm
+		//update_yaw_mode();//上面这两个函数有问题呀，上面两个函数赋值给的是EARTH_FRAME，但是下面的run_rate_controllers是用的BODY_FRAME，所以还需要仔细再看一下apm
 
 		//这个是更新内环的速率控制器的目标，update targets to rate controllers
 		update_rate_contoller_targets();//这个步骤很重要，是把上面的earth坐标系下的转为机体坐标系
@@ -556,7 +589,7 @@ void Copter::loop_fast()
 		run_rate_controllers();
 
 		//这个是油门的控制，跟姿态的控制分开
-		update_throttle_mode();//计算油门量的输出值
+		//update_throttle_mode();//计算油门量的输出值
 
 
 		break;
@@ -951,8 +984,9 @@ void Copter::update_navigation()
 
 
 
-
-
+#ifndef constrain
+#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
+#endif
 // run_nav_updates - top level call for the autopilot
 // ensures calculations such as "distance to waypoint" are calculated before autopilot makes decisions
 // To-Do - rename and move this function to make it's purpose more clear
@@ -963,6 +997,40 @@ void Copter::run_nav_updates(void)
 
 void Copter::update_alt()
 {
+	static int16_t 	old_sonar_alt 	= 0;
+	static int32_t 	old_baro_alt 	= 0;
+	static int16_t 	old_climb_rate 	= 0;
+
+
+		// This is real life
+
+		// read in Actual Baro Altitude
+		baro_alt 			= (baro_alt + read_barometer()) >> 1;
+
+		// calc the vertical accel rate
+		int temp			= (baro_alt - old_baro_alt) * 10;//为什么乘以10，其实应该是除以0.1，因为周期是10hz，0.1秒，所以爬升律就等于这个
+		baro_rate 			= (temp + baro_rate) >> 1;
+		old_baro_alt		= baro_alt;
+
+
+
+		// NO Sonar case
+		current_loc.alt = baro_alt + home.alt;
+		climb_rate 		= baro_rate;
+
+
+	// simple smoothing
+	climb_rate = (climb_rate + old_climb_rate)>>1;
+
+	// manage bad data
+	climb_rate = constrain(climb_rate, -300, 300);
+
+	// save for filtering
+	old_climb_rate = climb_rate;
+
+	// update the target altitude
+	next_WP.alt = get_new_altitude();
+
 
 }
 
@@ -1029,11 +1097,11 @@ void Copter::update_nav_wp()
 	   std::cout<<"wp_control == WP_MODE"<<std::endl;
 
         // calc error to target
-        calc_location_error(&next_WP);
+        calc_location_error(&next_WP);//这个对于航点飞行来说没什么用，但是可以打印出来看看经度纬度差多少
 
-        int16_t speed = get_desired_speed(g.waypoint_speed_max, slow_wp);
+        int16_t speed = get_desired_speed(g.waypoint_speed_max, slow_wp);//这个是位置环计算机头方向的最大速度，根据wp_distance来计算
         // use error as the desired rate towards the target
-        calc_nav_rate(speed);//这个是位置环的2级pid控制
+        calc_nav_rate(speed);//这个是位置环的2级pid控制，但是有两个方向，1是机头方向速度，2是向左右侧滑的速度靠近航线去，max_speed方向上的，也就是机头方向，如果要压航线，还需要cross_speed
         calc_loiter_pitch_roll();//这个函数可能还有点问题20170820,这个函数是由nav_roll nav_pitch得到auto_roll auto_pitch
 
     }else if(wp_control == NO_NAV_MODE) {

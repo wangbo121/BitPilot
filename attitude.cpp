@@ -435,6 +435,10 @@ Copter::reset_rate_I()
 void
 Copter::reset_throttle_I(void)
 {
+
+	// For Altitude Hold
+	g.pi_alt_hold.reset_I();
+	g.pid_throttle.reset_I();
 }
 
 void
@@ -525,8 +529,164 @@ Copter::update_roll_pitch_mode(void)
 		break;
 	}
 }
+
+#define THROTTLE_FILTER_SIZE 4
+
+// controls all throttle behavior
+void Copter::update_throttle_mode(void)
+{
+	int16_t throttle_out;
+
+	#if AUTO_THROTTLE_HOLD != 0
+	static float throttle_avg = THROTTLE_CRUISE;
+	#endif
+
+	switch(throttle_mode){
+		case THROTTLE_MANUAL:
+			if (g.channel_throttle.control_in > 0){
+					if (control_mode == ACRO){
+						g.channel_throttle.servo_out 	= g.channel_throttle.control_in;
+					}else{
+						angle_boost 		= get_angle_boost(g.channel_throttle.control_in);
+						g.channel_throttle.servo_out 	= g.channel_throttle.control_in + angle_boost;
+					}
+
+
+				#if AUTO_THROTTLE_HOLD != 0
+				// calc average throttle
+				if ((g.rc_3.control_in > MINIMUM_THROTTLE) && abs(climb_rate) < 60){
+					throttle_avg = throttle_avg * .98 + (float)g.rc_3.control_in * .02;
+					g.throttle_cruise = throttle_avg;
+				}
+				#endif
+//
+//				// Code to manage the Copter state
+//				if ((millis() - takeoff_timer) > 5000){
+//					// we must be in the air by now
+//					takeoff_complete 	= true;
+//				}
+			}else{
+				// we are on the ground
+				takeoff_complete = false;
+
+				// reset baro data if we are near home
+				if(home_distance < 400  || GPS_enabled == false){ // 4m from home
+					// causes Baro to do a quick recalibration
+					// XXX commented until further testing
+					// reset_baro();
+				}
+
+				// remember our time since takeoff
+				// -------------------------------
+//				takeoff_timer = millis();
+
+				// make sure we also request 0 throttle out
+				// so the props stop ... properly
+				// ----------------------------------------
+				g.channel_throttle.servo_out = 0;
+			}
+			break;
+
+		case THROTTLE_HOLD:
+			// allow interactive changing of atitude
+			adjust_altitude();
+
+			// fall through
+
+		case THROTTLE_AUTO:
+			// calculate angle boost
+			angle_boost = get_angle_boost(g.throttle_cruise);
+			std::cout<<"THROTTLE_AUTO    angle_boost="<<angle_boost<<std::endl;
+
+			// manual command up or down?
+			if(manual_boost != 0){
+
+					throttle_out = g.throttle_cruise + angle_boost + manual_boost;
+
+
+				//force a reset of the altitude change
+				clear_new_altitude();
+
+				/*
+				int16_t iterm = g.pi_alt_hold.get_integrator();
+
+				Serial.printf("tar_alt: %d, actual_alt: %d \talt_err: %d, \t manb: %d, iterm %d\n",
+									next_WP.alt,
+									current_loc.alt,
+									altitude_error,
+									manual_boost,
+									iterm);
+				//*/
+				reset_throttle_flag = true;
+
+			}else{
+				if(reset_throttle_flag)	{
+					set_new_altitude(max(current_loc.alt, 100));
+					reset_throttle_flag = false;
+				}
+
+				// 10hz, 			don't run up i term
+				//if(invalid_throttle && motor_auto_armed == true){
+				if(invalid_throttle){
+
+					std::cout<<"invalid throttle !!"<<std::endl;
+
+					// how far off are we
+					altitude_error = get_altitude_error();
+
+					std::cout<<"update_throttle_mode    next_WP.alt="<<next_WP.alt<<std::endl;
+					std::cout<<"update_throttle_mode    current_loc.alt="<<current_loc.alt<<std::endl;
+					std::cout<<"update_throttle_mode    altitude_error = "<<altitude_error <<std::endl;
+
+					// get the AP throttle
+					nav_throttle = get_nav_throttle(altitude_error);
+
+					// clear the new data flag
+					invalid_throttle = false;
+					/*
+					Serial.printf("tar_alt: %d, actual_alt: %d \talt_err: %d, \tnav_thr: %d, \talt Int: %d\n",
+										next_WP.alt,
+										current_loc.alt,
+										altitude_error,
+										nav_throttle,
+										(int16_t)g.pi_alt_hold.get_integrator());
+					//*/
+				}
+
+				// hack to remove the influence of the ground effect
+				if(current_loc.alt < 200 && landing_boost != 0) {
+				  nav_throttle = min(nav_throttle, 0);
+				}
+
+				std::cout<<"update_throttle_mode    nav_throttle="<<nav_throttle<<std::endl;
+				throttle_out = g.throttle_cruise + nav_throttle + angle_boost + get_z_damping() - landing_boost;
+
+				std::cout<<"update_throttle_mode    throttle_out="<<throttle_out<<std::endl;
+			}
+
+			// light filter of output
+			g.channel_throttle.servo_out = (g.channel_throttle.servo_out * (THROTTLE_FILTER_SIZE - 1) + throttle_out) / THROTTLE_FILTER_SIZE;
+			break;
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if 0
 void
-Copter::update_throttle_mode()
+Copter::update_throttle_mode_old()
 {
 	// calculate angle boost
 	if(throttle_mode ==  THROTTLE_MANUAL) {
@@ -549,7 +709,9 @@ Copter::update_throttle_mode()
 
 	case THROTTLE_AUTO:
 #if 0
-	if(motors.auto_armed() == true) {
+	//if(motors.auto_armed() == true)
+		if(1)
+	{
 
 		// how far off are we
 		altitude_error = get_altitude_error();
@@ -589,6 +751,12 @@ Copter::update_throttle_mode()
 		break;
 	}
 }
+#endif
+
+
+
+
+
 
 int16_t Copter::get_angle_boost(int16_t value)
 {
@@ -628,4 +796,78 @@ void Copter::reset_nav_params(void)
 
     // revert to smaller radius set in params
     waypoint_radius = g.waypoint_radius;
+}
+
+
+void
+Copter::adjust_altitude()
+{
+	if(g.channel_throttle.control_in <= 180){
+		// we remove 0 to 100 PWM from hover
+		manual_boost = g.channel_throttle.control_in - 180;
+		manual_boost = max(-120, manual_boost);
+		update_throttle_cruise();
+
+	}else if  (g.channel_throttle.control_in >= 650){
+		// we add 0 to 100 PWM to hover
+		manual_boost = g.channel_throttle.control_in - 650;
+		update_throttle_cruise();
+	}else {
+		manual_boost = 0;
+	}
+}
+
+void
+Copter::update_throttle_cruise()
+{
+	int16_t tmp = g.pi_alt_hold.get_integrator();
+	if(tmp != 0){
+		g.throttle_cruise += tmp;
+		reset_throttle_I();
+	}
+}
+
+int16_t
+Copter::get_nav_throttle(int32_t z_error)
+{
+	static int16_t old_output = 0;
+	int16_t rate_error = 0;
+	int16_t output = 0;
+
+
+	// convert to desired Rate:
+	rate_error 		= g.pi_alt_hold.get_p(z_error);
+	rate_error 		= constrain(rate_error, -100, 100);
+
+	std::cout<<"get_nav_throttle z_error="<<z_error<<std::endl;
+	std::cout<<"get_nav_throttle rate_error="<<rate_error<<std::endl;
+
+	// limit error to prevent I term wind up
+	z_error 		= constrain(z_error, -400, 400);
+
+	// compensates throttle setpoint error for hovering
+	int16_t iterm = g.pi_alt_hold.get_i(z_error, .1);
+
+	// calculate rate error
+	rate_error 		= rate_error - climb_rate;
+	std::cout<<"get_nav_throttle     climb_rate="<<climb_rate<<std::endl;
+
+	// limit the rate
+	output =  constrain(g.pid_throttle.get_pid(rate_error, .1), -160, 180);
+
+	// light filter of output
+	output = (old_output + output) / 2;
+
+	// save our output
+	old_output  = output;
+
+	std::cout<<"get_nav_throttle  output="<<output<<std::endl;
+
+	// output control:
+	return output + iterm;
+}
+
+int Copter::get_z_damping()
+{
+	return 0;
 }

@@ -8,6 +8,7 @@
 #include "navigation.h"
 #include "copter.h"
 #include "location.h"
+#include "fdm.h"
 
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 //****************************************************************
@@ -231,7 +232,13 @@ void Copter::calc_nav_rate(int16_t max_speed)
 
     // push us towards the original track
     update_crosstrack();//这个函数需要original_target_bearing的，这个角度还是很重要呀
+    std::cout<<"calc_nav_rate  crosstrack_error="<<crosstrack_error<<std::endl;
 
+
+    /*
+     * crosstrack_error是需要乘以负号的，在航线右边打左舵，在航线左边打右舵
+     * crosstrack_error转换为cross_speed就是位置环转为位置环的速度环
+     */
     int16_t cross_speed = crosstrack_error * -g.crosstrack_gain;     // scale down crosstrack_error in cm
     cross_speed     = constrain(cross_speed, -150, 150);//这里限制了位置环的速度
 
@@ -242,6 +249,12 @@ void Copter::calc_nav_rate(int16_t max_speed)
     temp_x                  = cos(temp);//这里的x指的是经度方向
     temp_y                  = sin(temp);
 
+    /*
+     * 下面的公式注意一下，经过分析，max_speed指的是从机体上看，沿着机头的方向的速度，
+     * cross_speed指的是从机体上看 ，要靠近航线，压航线
+     * 然后把max_speed 和 cross_speed转换为经度方向上的目标速度x_target_speed
+     * 和纬度方向上的目标速度y_target_speed
+     */
     // rotate desired spped vector:
     int32_t x_target_speed = max_speed   * temp_x - cross_speed * temp_y;
     int32_t y_target_speed = cross_speed * temp_x + max_speed   * temp_y;
@@ -259,7 +272,11 @@ void Copter::calc_nav_rate(int16_t max_speed)
     std::cout<<"x_target_speed="<<x_target_speed<<std::endl;//150 0821
 
     x_rate_error    = constrain(x_rate_error, -500, 500);
+    //nav_lon                 = g.pid_nav_lon.get_pid(x_rate_error, dTnav);//这个是位置环的2级pid，把速率给到pid控制器
+    std::cout<<"calc_nav_rate  dTnav="<<dTnav<<std::endl;
     nav_lon                 = g.pid_nav_lon.get_pid(x_rate_error, dTnav);//这个是位置环的2级pid，把速率给到pid控制器
+
+
     int32_t tilt    = (x_target_speed * x_target_speed * (int32_t)g.tilt_comp) / 10000;
 
     tilt=0;//20170821添加 测试
@@ -437,3 +454,141 @@ static int32_t wrap_180(int32_t error)
     return error;
 }
 #endif
+
+void Copter::clear_new_altitude()
+{
+	alt_change_flag = REACHED_ALT;
+}
+
+
+void Copter::set_new_altitude(int32_t _new_alt)
+{
+	// just to be clear
+	next_WP.alt = current_loc.alt;
+
+	// for calculating the delta time
+	//alt_change_timer = millis();
+
+	// save the target altitude
+	target_altitude = _new_alt;
+
+	// reset our altitude integrator
+	alt_change = 0;
+
+	// save the original altitude
+	original_altitude = current_loc.alt;
+
+	// to decide if we have reached the target altitude
+	if(target_altitude > original_altitude){
+		// we are below, going up
+		alt_change_flag = ASCENDING;
+		//Serial.printf("go up\n");
+	}else if(target_altitude < original_altitude){
+		// we are above, going down
+		alt_change_flag = DESCENDING;
+		//Serial.printf("go down\n");
+	}else{
+		// No Change
+		alt_change_flag = REACHED_ALT;
+		//Serial.printf("reached alt\n");
+	}
+	//Serial.printf("new alt: %d Org alt: %d\n", target_altitude, original_altitude);
+}
+
+int32_t Copter::get_altitude_error()
+{
+	// Next_WP alt is our target alt
+	// It changes based on climb rate
+	// until it reaches the target_altitude
+	return next_WP.alt - current_loc.alt;
+}
+
+
+int32_t Copter::get_new_altitude()
+{
+	// returns a new next_WP.alt
+
+	if(alt_change_flag == ASCENDING){
+		// we are below, going up
+		if(current_loc.alt >=  target_altitude){
+			alt_change_flag = REACHED_ALT;
+		}
+
+		// we shouldn't command past our target
+		if(next_WP.alt >=  target_altitude){
+			return target_altitude;
+		}
+	}else if (alt_change_flag == DESCENDING){
+		// we are above, going down
+		if(current_loc.alt <=  target_altitude)
+			alt_change_flag = REACHED_ALT;
+
+		// we shouldn't command past our target
+		if(next_WP.alt <=  target_altitude){
+			return target_altitude;
+		}
+	}
+
+	// if we have reached our target altitude, return the target alt
+	if(alt_change_flag == REACHED_ALT){
+		return target_altitude;
+	}
+
+	int32_t diff 	= abs(next_WP.alt - target_altitude);
+	int8_t			_scale 	= 4;
+
+	if (next_WP.alt < target_altitude){
+		// we are below the target alt
+		if(diff < 200){
+			_scale = 5;
+		} else {
+			_scale = 4;
+		}
+	}else {
+		// we are above the target, going down
+		if(diff < 400){
+			_scale = 5;
+		}
+		if(diff < 100){
+			_scale = 6;
+		}
+	}
+
+	// we use the elapsed time as our altitude offset
+	// 1000 = 1 sec
+	// 1000 >> 4 = 64cm/s descent by default
+	//int32_t change = (millis() - alt_change_timer) >> _scale;
+	int32_t change = 1000 >> 4;
+
+	if(alt_change_flag == ASCENDING){
+		alt_change += change;
+	}else{
+		alt_change -= change;
+	}
+	// for generating delta time
+	//alt_change_timer = millis();
+
+	return original_altitude + alt_change;
+}
+
+int32_t Copter::read_barometer(void)
+{
+// 	float x, scaling, temp;
+//
+//	barometer.read();
+//	float abs_pressure = barometer.get_pressure();
+//
+//
+//	//Serial.printf("%ld, %ld, %ld, %ld\n", barometer.RawTemp, barometer.RawPress, barometer.Press, abs_pressure);
+//
+//	scaling 				= (float)ground_pressure / abs_pressure;
+//	temp 					= ((float)ground_temperature / 10.0f) + 273.15f;
+//	x 						= log(scaling) * temp * 29271.267f;
+//	return 	(x / 10);
+
+	std::cout<<"fdm_feed_back.altitude  [cm ]="<<fdm_feed_back.altitude*100<<std::endl;
+
+	return (int)fdm_feed_back.altitude*100;
+}
+
+

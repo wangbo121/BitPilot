@@ -193,7 +193,7 @@ It precalculates all the necessary stuff.
 	next_WP.alt = max(next_WP.alt, 100);
 
 	// Save new altitude so we can track it for climb_rate
-	//set_new_altitude(next_WP.alt);//这个函数应该在navigation.cpp文件中写的，这里还没有写所以先注释掉
+	set_new_altitude(next_WP.alt);//这个函数应该在navigation.cpp文件中写的，这里还没有写所以先注释掉
 
 	// this is used to offset the shrinking longitude as we go towards the poles
 	float rads 			= (fabs((float)next_WP.lat)/t7) * 0.0174532925;

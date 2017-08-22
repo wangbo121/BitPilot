@@ -563,7 +563,7 @@ private:
 	   int32_t of_roll;
 	  // The Commanded pitch from the autopilot based on optical flow sensor. negative Pitch means go forward.
 	   int32_t of_pitch;
-	   bool slow_wp = false;
+	   bool slow_wp ;
 
 
 	  ////////////////////////////////////////////////////////////////////////////////
@@ -624,7 +624,7 @@ private:
 	   // Also used to check when we pass a WP
 	   int32_t original_target_bearing;
 	   // The amount of angle correction applied to target_bearing to bring the copter back on its optimum path
-	   //static int16_t crosstrack_error;
+	   // int16_t crosstrack_error;
 	   // should we take the waypoint quickly or slow down?
 	   uint8_t fast_corner;
 	   ////////////////////////////////////////////////////////////////////////////////
@@ -699,6 +699,76 @@ private:
 
 
 
+	    ////////////////////////////////////////////////////////////////////////////////
+	    // flight specific
+	    ////////////////////////////////////////////////////////////////////////////////
+	    // Flag for monitoring the status of flight
+	    // We must be in the air with throttle for 5 seconds before this flag is true
+	    // This flag is reset when we are in a manual throttle mode with 0 throttle or disarmed
+	     //bool	takeoff_complete;
+	    // Used to record the most recent time since we enaged the throttle to take off
+	     int32_t	takeoff_timer;
+	    // Used to see if we have landed and if we should shut our engines - not fully implemented
+	     //bool	land_complete = true;
+	    // used to manually override throttle in interactive Alt hold modes
+	     int16_t 	manual_boost;
+	    // An additional throttle added to keep the copter at the same altitude when banking
+	   //  int16_t 	angle_boost;
+	    // Push copter down for clean landing
+	     int16_t 	landing_boost;
+	    // for controlling the landing throttle curve
+	    //verifies landings
+	     int16_t ground_detector;
+
+	     ////////////////////////////////////////////////////////////////////////////////
+	     // Altitude
+	     ////////////////////////////////////////////////////////////////////////////////
+	     // The pressure at home location - calibrated at arming
+	      int32_t 	ground_pressure;
+	     // The ground temperature at home location - calibrated at arming
+	      int16_t 	ground_temperature;
+	     // The cm we are off in altitude from next_WP.alt – Positive value means we are below the WP
+	      //int32_t		altitude_error;
+	     // The cm/s we are moving up or down - Positive = UP
+	  //    int16_t		climb_rate;
+	     // The altitude as reported by Sonar in cm – Values are 20 to 700 generally.
+	      int16_t		sonar_alt;
+	     // The climb_rate as reported by sonar in cm/s
+	      int16_t		sonar_rate;
+	     // The altitude as reported by Baro in cm – Values can be quite high
+	     // int32_t		baro_alt;
+	     // The climb_rate as reported by Baro in cm/s
+	      int16_t		baro_rate;
+	     //
+	      bool 		reset_throttle_flag;
+
+	      ////////////////////////////////////////////////////////////////////////////////
+	      // Climb rate control
+	      ////////////////////////////////////////////////////////////////////////////////
+	      // Time when we intiated command in millis - used for controlling decent rate
+	      // The orginal altitude used to base our new altitude during decent
+	       int32_t 	original_altitude;
+	      // Used to track the altitude offset for climbrate control
+	       int32_t 	target_altitude;
+	       uint32_t alt_change_timer;
+	      // int8_t 	alt_change_flag;
+	       uint32_t alt_change;
+
+	      ////////////////////////////////////////////////////////////////////////////////
+	      // Navigation Throttle control
+	      ////////////////////////////////////////////////////////////////////////////////
+	      // The Commanded Throttle from the autopilot.
+	      // int16_t	nav_throttle;						// 0-1000 for throttle control
+	      // This is a simple counter to track the amount of throttle used during flight
+	      // This could be useful later in determining and debuging current usage and predicting battery life
+	       ///uint32_t throttle_integrator;
+	      // This is a future value for replacing the throttle_cruise setup procedure. It's an average of throttle control
+	      // that is generated when the climb rate is within a certain threshold
+	      // float	throttle_avg = THROTTLE_CRUISE;
+	      // This is a flag used to trigger the updating of nav_throttle at 10hz
+	       bool 	invalid_throttle;
+	      // Used to track the altitude offset for climbrate control
+	      // int32_t 	target_altitude;
 
 
 
@@ -1070,7 +1140,8 @@ private:
     void set_throttle_zero_flag(int16_t throttle_control);
     void radio_passthrough_to_motors();
     void init_barometer(bool full_calibration);
-    void read_barometer(void);
+    //void read_barometer(void);
+    int32_t read_barometer(void);
     void init_rangefinder(void);
     void read_rangefinder(void);
     bool rangefinder_alt_ok();
@@ -1343,6 +1414,16 @@ private:
 
 	 void reset_nav_params(void);
 
+	 void adjust_altitude();
+
+	 void update_throttle_cruise();
+	 void clear_new_altitude();
+	 void set_new_altitude(int32_t _new_alt);
+
+	 int32_t get_altitude_error();
+	 int16_t get_nav_throttle(int32_t z_error);
+	 int get_z_damping();
+	 int32_t get_new_altitude();
 
 };
 

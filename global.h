@@ -276,6 +276,10 @@ enum MAV_CMD
 #define NAV_ALTITUDE 2
 #define NAV_DELAY    4
 
+#define ASCENDING			1
+#define DESCENDING			-1
+#define REACHED_ALT			0
+
 
 
 
@@ -354,7 +358,8 @@ int8_t         tilt_comp;
 	int8_t     throttle_fs_enabled;
 	int8_t     throttle_fs_action;
 	int16_t    throttle_fs_value;
-	int8_t     throttle_cruise;
+	//int8_t     throttle_cruise;
+	int32_t     throttle_cruise;
 
 	// Flight modes
 	//
@@ -434,6 +439,14 @@ int8_t         tilt_comp;
 	  int16_t        auto_slew_rate;
 
       uint8_t     junk;
+
+      int8_t		sonar_enabled;
+      int8_t		airspeed_enabled;
+      int8_t		flap_1_percent;
+      int8_t		flap_1_speed;
+      int8_t		flap_2_percent;
+      int8_t		flap_2_speed;
+
 };
 
 
