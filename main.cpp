@@ -322,16 +322,15 @@ void Copter::setup()
 
 		int wp_num=10;
 
-		long delta_lon=50000;//111米  5000，然后半径设置微100米能够比较好仿真
+		//long delta_lon=5000;//111米  5000，然后半径设置微100米能够比较好仿真
 		//long delta_lon=100000;
-		//long delta_lon=10000;
+		long delta_lon=0;
 
 
 		//long delta_lat=0;
-		long delta_lat=50000;
+		//long delta_lat=5000;
 		//long delta_lat=100000;
-//		long delta_lon=9000;//111米
-//		long delta_lat=9000;
+		long delta_lat=9000;
 
 //		long delta_lon=100000;//111米
 //		long delta_lat=100000;
@@ -352,15 +351,15 @@ void Copter::setup()
 		/*
 		 * 这个是经度纬度都增加，也就是一直往北或者一直往东，减小经度
 		 */
-//		for(int i=1;i<wp_num;i++)
-//		{
-//			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
-//			//wp_total_array[i].lng 	= start_longtitude+delta_lon*i;				// Lon * 10**7
-//			wp_total_array[i].lng 	= start_longtitude-delta_lon*i;				// Lon * 10**7
-//			//wp_total_array[i].lng 	= start_longtitude;				// Lon * 10**7
-//			wp_total_array[i].lat 	= start_latitude+delta_lat*i;				// Lat * 10**7
-//			wp_total_array[i].alt 	= alt_temp;							// Home is always 0
-//		}
+		for(int i=1;i<wp_num;i++)
+		{
+			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
+			wp_total_array[i].lng 	= start_longtitude+delta_lon*i;				// Lon * 10**7
+			//wp_total_array[i].lng 	= start_longtitude-delta_lon*i;				// Lon * 10**7
+			//wp_total_array[i].lng 	= start_longtitude;				// Lon * 10**7
+			wp_total_array[i].lat 	= start_latitude+delta_lat*i;				// Lat * 10**7
+			wp_total_array[i].alt 	= alt_temp;							// Home is always 0
+		}
 
 
 
@@ -369,41 +368,41 @@ void Copter::setup()
 		/*
 		 * 这个是矩形，绕航线飞行
 		 */
-		for(int i=1;i<wp_num;i++)
-		{
-			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
-
-			wp_total_array[i].alt 	= alt_temp;							// Home is always 0
-
-
-		}
-		wp_total_array[1].lng 	= start_longtitude+delta_lon*1;				// Lon * 10**7
-		wp_total_array[1].lat 	= start_latitude;				// Lat * 10**7
-
-		wp_total_array[2].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
-		wp_total_array[2].lat 	= start_latitude;				// Lat * 10**7
-
-		wp_total_array[3].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
-		wp_total_array[3].lat 	= start_latitude+delta_lat*1;				// Lat * 10**7
-
-		wp_total_array[4].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
-		wp_total_array[4].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
-
-
-		wp_total_array[5].lng 	= start_longtitude+delta_lon*1;				// Lon * 10**7
-		wp_total_array[5].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
-
-		wp_total_array[6].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
-		wp_total_array[6].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
-
-		wp_total_array[7].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
-		wp_total_array[7].lat 	= start_latitude+delta_lat*1;				// Lat * 10**7
-
-		wp_total_array[8].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
-		wp_total_array[8].lat 	= start_latitude+delta_lat*0;				// Lat * 10**7
-
-		wp_total_array[9].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
-		wp_total_array[9].lat 	= start_latitude+delta_lat*0;				// Lat * 10**7
+//		for(int i=1;i<wp_num;i++)
+//		{
+//			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
+//
+//			wp_total_array[i].alt 	= alt_temp;							// Home is always 0
+//
+//
+//		}
+//		wp_total_array[1].lng 	= start_longtitude+delta_lon*1;				// Lon * 10**7
+//		wp_total_array[1].lat 	= start_latitude;				// Lat * 10**7
+//
+//		wp_total_array[2].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
+//		wp_total_array[2].lat 	= start_latitude;				// Lat * 10**7
+//
+//		wp_total_array[3].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
+//		wp_total_array[3].lat 	= start_latitude+delta_lat*1;				// Lat * 10**7
+//
+//		wp_total_array[4].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
+//		wp_total_array[4].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
+//
+//
+//		wp_total_array[5].lng 	= start_longtitude+delta_lon*1;				// Lon * 10**7
+//		wp_total_array[5].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
+//
+//		wp_total_array[6].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
+//		wp_total_array[6].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
+//
+//		wp_total_array[7].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
+//		wp_total_array[7].lat 	= start_latitude+delta_lat*1;				// Lat * 10**7
+//
+//		wp_total_array[8].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
+//		wp_total_array[8].lat 	= start_latitude+delta_lat*0;				// Lat * 10**7
+//
+//		wp_total_array[9].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
+//		wp_total_array[9].lat 	= start_latitude+delta_lat*0;				// Lat * 10**7
 
 
 
