@@ -9,6 +9,51 @@
 #define COPTER_H_
 
 
+/**************************************************************************/
+/*********最开始的这些头文件和定义跟飞控本身没有关系，
+ * 跟flightgear和地面站仿真模拟有关系*********************/
+
+#if 0
+#define LINUX_OS //这个是在linux上测试时用的，比如udp和串口通信
+#endif
+
+/*
+ * 四旋翼的飞行动力模型接口，需要跟flightgear的版本一致
+ * Sim_Multicopter计算得到的模型数据发送到这个接口，
+ * 然后flightgear就能根据这些数据表现出四旋翼应该有的飞行姿态
+ * flightgear只是作为显示飞机三维图像姿态的作用，没有其他任何作用
+ *
+ */
+#include "fdm.h"
+
+//四旋翼自身利用SIM_Multicopter这个文件中的公式计算从螺旋桨转速到飞行12个状态
+#include "SIM_Multicopter.h"
+#include "SITL.h"
+#include "udp.h"
+
+//这个uart主要是模拟打开电台串口，发送实时数据到无人船地面站做测试
+#include "uart.h"
+/*
+ * 下面这些是模拟打开电台串口把实时数据发送到地面站
+ * 然后能从地面站上看出飞机飞行的经纬度
+ * 这个已经在无人船的地面站上经过测试
+ */
+
+#define UART_DEVICE_APGCS "/dev/ttyUSB0"
+
+#define UART_AP2GCS_BAUD 9600
+#define UART_AP2GCS_DATABITS 8 //8 data bit
+#define UART_AP2GCS_STOPBITS 1 //1 stop bit
+#define UART_AP2GCS_PARITY 0 //no parity
+
+
+/***********/
+/**************************************************************/
+
+/*
+ * 从下面开始是关于飞控的头文件
+ */
+
 ////////////////////////////////////////////////////////////////////////////////
 // Header includes
 ////////////////////////////////////////////////////////////////////////////////
@@ -36,6 +81,25 @@ using namespace std;
 #include <pthread.h>
 #include <semaphore.h>
 #include <sys/stat.h>
+
+#include <iostream>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>//创建文件
+#include <pthread.h>
+#include <semaphore.h>
+#include <sys/stat.h>
+#include <string.h>
+/*转换int或者short的字节顺序，该程序arm平台为大端模式，地面站x86架构为小端模式*/
+#include <byteswap.h>
+
+#include<sys/socket.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+#include <string.h>
+
 
 #include "BIT_HAL.h"
 
