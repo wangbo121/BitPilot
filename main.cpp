@@ -18,11 +18,17 @@ int main(int argc,char * const argv[])
 	cout<<"Welcome to BitPilot"<<endl;
 
 #if 0
+	/*
+	 * 先不用apm的硬件抽象层了，传感器数据的获取由王正阳来写，写成任务
+	 * 把数据的单位统一后，传到某一个全局变量all_sensors中，这样飞控程序直接从这个全局变量
+	 * 获取数据，不用修改每个源文件了
+	 */
 	hal.run(argc,argv,&copter);
 
 	return 0;
 
 #else
+
 	/*
 	 * hal的run函数就是调用copter，
 	 * 然后执行copter的setup和loop函数，
@@ -36,16 +42,17 @@ int main(int argc,char * const argv[])
 
 	/*
 	 * 这个while循环是20ms
-	 * 也就是50hz
+	 * 也就是50hz，如果写在ucOS系统中，则该任务是20ms的
 	 */
 	while (1)
 	{
+#if 1
 		maintask_tick.tv_sec = seconds;
 		maintask_tick.tv_usec = mseconds;
 		select(0, NULL, NULL, NULL, &maintask_tick);
 		maintask_cnt++;
-
-		copter.loop();//20ms一个周期的运行
+#endif
+		copter.loop();//20ms一个周期的运行，那么这个loop循环中所有的函数都执行一边（或者说运行最多函数时），所需要的时间应该是小于20ms的
 	}
 
 	return 0;
@@ -57,16 +64,6 @@ int main(int argc,char * const argv[])
 
 void Copter::loop()
 {
-#if 0
-	maintask_tick.tv_sec = seconds;
-	//maintask_tick.tv_usec = mseconds*50;
-	maintask_tick.tv_usec = mseconds;
-
-	maintask_tick.tv_sec = 0;
-	maintask_tick.tv_usec = 10000;//10ms  100hz
-	select(0, NULL, NULL, NULL, &maintask_tick);
-#endif
-
 	maintask_cnt++;
 
 	if(maintask_cnt>50)
@@ -154,7 +151,6 @@ void Copter::loop()
 	    		real_cnt, 0x10,\
 	                        0,1);
 
-	    //send_radio_data(buf_packet, ret);
 
 #ifdef LINUX_OS
 		send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf_packet,ret);
