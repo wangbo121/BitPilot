@@ -13,13 +13,6 @@ int mseconds=MAINTASK_TICK_TIME_MS*(1e3);/*每个tick为20毫秒，也就是2000
 struct timeval maintask_tick;
 int maintask_cnt;
 
-//
-//struct tm *global_time_val;//全局时间变量，其它的时间都从这里取
-//time_t timep;
-//#define ONE_HZ_CNT  50//1hz
-//#define TEN_HZ_CNT   5//10hz
-//#define FIFTY_HZ_CNT 1//50hz
-
 int main(int argc,char * const argv[])
 {
 	cout<<"Welcome to BitPilot"<<endl;
