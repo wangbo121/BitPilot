@@ -7,7 +7,7 @@
 
 #include <iostream>
 #include "ahrs_DCM.h"
-#include "fdm.h"
+//#include "fdm.h"
 
 #define OUTPUTMODE 1				// This is just used for debugging, remove later
 #define ToRad(x) (x*0.01745329252)	// *pi/180

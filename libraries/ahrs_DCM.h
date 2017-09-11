@@ -10,10 +10,11 @@
 
 #include <inttypes.h>
 
-#include <math.h>
-#include "vector2.h"
-#include "vector3.h"
-#include "matrix3.h"
+////#include <math.h>
+//#include "vector2.h"
+//#include "vector3.h"
+//#include "matrix3.h"
+#include "BIT_MATH.h"
 
 #include "compass.h"
 

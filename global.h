@@ -295,6 +295,57 @@ enum MAV_CMD
  # define WAYPOINT_SPEED_MIN             150                    // 1m/s
 #endif
 
+typedef struct tagAll_SENSORS_IN
+{
+	//gps
+	int longitude;//度
+	int latitude;//度
+	int altitude;//米
+	int v_north;//米每秒
+	int v_east;//米每秒
+	int v_down;//米每秒
+
+	//imu
+	float _gyro_x;//弧度每秒
+	float _gyro_y;//弧度每秒
+	float _gyro_z;//弧度每秒
+	float _accel_x;//米每二次方秒
+	float _accel_y;//米每二次方秒
+	float _accel_z;//米每二次方秒
+
+	//rc 遥控器信号输入
+	float rc_raw_in_0;//1000～2000
+	float rc_raw_in_1;
+	float rc_raw_in_2;
+	float rc_raw_in_3;
+	float rc_raw_in_4;
+	float rc_raw_in_5;
+	float rc_raw_in_6;
+	float rc_raw_in_7;
+	float rc_raw_in_8;
+
+
+
+
+
+
+}T_ALL_SENSORS_IN;
+
+typedef struct tagAll_SENSORS_OUT
+{
+
+	float rc_raw_out_0;//这个给到ucos系统中的pwm任务，输出pwm波
+	float rc_raw_out_1;//这个给到ucos系统中的pwm任务，输出pwm波
+	float rc_raw_out_2;//这个给到ucos系统中的pwm任务，输出pwm波
+	float rc_raw_out_3;//这个给到ucos系统中的pwm任务，输出pwm波
+	float rc_raw_out_4;//这个给到ucos系统中的pwm任务，输出pwm波
+	float rc_raw_out_5;//这个给到ucos系统中的pwm任务，输出pwm波
+	float rc_raw_out_6;//这个给到ucos系统中的pwm任务，输出pwm波
+	float rc_raw_out_7;//这个给到ucos系统中的pwm任务，输出pwm波
+	float rc_raw_out_8;//这个给到ucos系统中的pwm任务，输出pwm波
+
+}T_ALL_SENSORS_OUT;
+
 
 
 class Global_Pilot{
@@ -446,6 +497,10 @@ int8_t         tilt_comp;
       int8_t		flap_1_speed;
       int8_t		flap_2_percent;
       int8_t		flap_2_speed;
+
+      T_ALL_SENSORS_IN all_sensors_in;//从飞控模块的外部获取的传感器数据，本来应该是从hal中获取，但是我们现在利用ucos中的一个全局变量获取
+
+      T_ALL_SENSORS_OUT all_sensors_out;//从飞控模块的输出给外部的传感器，本来应该是从hal中输出，但是我们现在利用ucos中的一个全局变量输出，跟飞控核心的代码就没什么关系了
 
 };
 

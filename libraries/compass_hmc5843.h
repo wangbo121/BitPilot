@@ -8,7 +8,7 @@
 #ifndef COMPASS_HMC5843_H_
 #define COMPASS_HMC5843_H_
 
-#include <math.h>
+//#include <math.h>
 #include "matrix3.h"
 
 #include "compass.h"

@@ -8,7 +8,7 @@
 #ifndef AP_MATH_H_
 #define AP_MATH_H_
 
-#include <cmath>
+//#include <cmath>
 #include <limits>
 #include <stdint.h>
 //#include <type_traits>
