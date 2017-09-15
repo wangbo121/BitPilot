@@ -14,6 +14,17 @@
 #include "pid.h"
 #include "rc.h"
 
+/**
+ * 简单打印调试信息
+ */
+#define DEBUG_SWITCH        1
+#ifdef    DEBUG_SWITCH
+#define printf_debug(fmt,args...) printf(fmt, ##args)
+#else
+#define printf_debug(fmt,args...) /*do nothing */
+#endif
+
+
 #define TRUE 1
 #define FALSE 0
 #define ToRad(x) (x*0.01745329252)	// *pi/180
@@ -291,6 +302,10 @@ enum MAV_CMD
 #define min(a,b) ((a)<(b)?(a):(b))
 #define max(a,b) ((a)>(b)?(a):(b))
 
+#ifndef constrain
+#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
+#endif
+
 #ifndef WAYPOINT_SPEED_MIN
  # define WAYPOINT_SPEED_MIN             150                    // 1m/s
 #endif
@@ -497,6 +512,8 @@ int8_t         tilt_comp;
       int8_t		flap_1_speed;
       int8_t		flap_2_percent;
       int8_t		flap_2_speed;
+
+     // struct   Location current_loc;
 
       T_ALL_SENSORS_IN all_sensors_in;//从飞控模块的外部获取的传感器数据，本来应该是从hal中获取，但是我们现在利用ucos中的一个全局变量获取
 

@@ -13,7 +13,7 @@
 /*********最开始的这些头文件和定义跟飞控本身没有关系，
  * 跟flightgear和地面站仿真模拟有关系*********************/
 
-#if 0
+#if 1
 #define LINUX_OS //这个是在linux上测试时用的，比如udp和串口通信
 #endif
 
@@ -141,6 +141,7 @@ public:
 
     void setup() override;
     void loop() override;
+    //~ Copter(){};
 
 public:
     void mavlink_delay_cb();
@@ -1489,6 +1490,10 @@ private:
 	 int get_z_damping();
 	 int32_t get_new_altitude();
 
+#ifdef LINUX_OS
+	 void send_realdata_to_gcs( void );
+#endif
+
 };
 
 
@@ -1566,6 +1571,8 @@ struct AP2GCS_REAL
 extern struct AP2GCS_REAL ap2gcs;
 extern int fd_ap2gcs;
 extern struct T_UART_DEVICE uart_device_ap2gcs;
+
+void send_realdata_to_gcs();
 
 int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char len,\
                     unsigned int packet_cnt, unsigned char message_type,\

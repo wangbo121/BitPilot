@@ -17,15 +17,7 @@ const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 //
 //}
 
-void Copter::set_radio_passthrough(float roll_input, float pitch_input, float throttle_input, float yaw_input)
-{
-#if 0
-    _roll_radio_passthrough = roll_input;
-    _pitch_radio_passthrough = pitch_input;
-    _throttle_radio_passthrough = throttle_input;
-    _yaw_radio_passthrough = yaw_input;
-#endif
-}
+
 
 int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char len,\
                     unsigned int packet_cnt, unsigned char message_type,\
@@ -76,6 +68,46 @@ int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char 
     return packet_data_len + frame_head_len + frame_end_len;
 }
 
+
+#ifdef LINUX_OS
+void Copter::send_realdata_to_gcs( void )
+{
+	 unsigned char buf_data[256];
+	unsigned char buf_packet[256];
+	int ret;
+	static int real_cnt;
+	real_cnt++;
+
+#if 0
+	std::cout<<"send ap2gcs current_loc="<<current_loc.lng<<std::endl;
+	//ap2gcs.lng=current_loc.lng*1e-2;
+	ap2gcs.lng=-current_loc.lng*1e-2;
+	ap2gcs.lat=current_loc.lat*1e-2;
+	ap2gcs.alt=current_loc.alt*1e-2;
+#else
+
+	//ap2gcs.lng=current_loc.lng*1e-2;
+	ap2gcs.lng=-current_loc.lng*1e-2;
+	ap2gcs.lat=current_loc.lat*1e-2;
+	ap2gcs.alt=current_loc.alt*1e-2;
+
+#endif
+	//20170728把帧头帧尾加入到数据结构中
+	static unsigned char frame_len=76;
+	static unsigned char frame_head_len=8;
+	static unsigned char frame_checksum_len=2;
+	static unsigned char frame_data_len;
+	frame_data_len=frame_len-frame_head_len-frame_checksum_len;
+
+	memcpy(buf_data, &ap2gcs.pack_func_flag, frame_data_len);
+	ret=generate_packet(buf_packet, buf_data, frame_data_len,\
+											real_cnt, 0x10,\
+											0,1);
+#ifdef LINUX_OS
+	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf_packet,ret);
+#endif
+}
+#endif
 
 /******************************************************/
 /*****************/
@@ -233,7 +265,7 @@ void Copter::setup()
 	servos_set[3]=1500;
 	memcpy(input.servos,servos_set,sizeof(servos_set));
 
-#if LINUX_OS
+#ifdef LINUX_OS
 	open_udp_dev(IP_SEND_TO, PORT_SENT_TO, PORT_RECEIVE);//发送fdm飞行动力模型给flightgear，从而能够呈现姿态等
 	open_socket_udp_dev(&fd_socket_generic,"127.0.0.1",5056);//发送generic的协议给flightgear，从而能够螺旋桨能够旋转
 #endif
@@ -282,14 +314,14 @@ void Copter::setup()
 		int wp_num=10;
 
 		//long delta_lon=5000;//111米  5000，然后半径设置微100米能够比较好仿真
-		//long delta_lon=100000;
-		long delta_lon=0;
+		long delta_lon=100000;
+		//long delta_lon=0;
 
 
 		//long delta_lat=0;
 		//long delta_lat=5000;
-		//long delta_lat=100000;
-		long delta_lat=9000;
+		long delta_lat=100000;
+		//long delta_lat=9000;
 
 //		long delta_lon=100000;//111米
 //		long delta_lat=100000;
@@ -310,15 +342,15 @@ void Copter::setup()
 		/*
 		 * 这个是经度纬度都增加，也就是一直往北或者一直往东，减小经度
 		 */
-		for(int i=1;i<wp_num;i++)
-		{
-			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
-			wp_total_array[i].lng 	= start_longtitude+delta_lon*i;				// Lon * 10**7
-			//wp_total_array[i].lng 	= start_longtitude-delta_lon*i;				// Lon * 10**7
-			//wp_total_array[i].lng 	= start_longtitude;				// Lon * 10**7
-			wp_total_array[i].lat 	= start_latitude+delta_lat*i;				// Lat * 10**7
-			wp_total_array[i].alt 	= alt_temp;							// Home is always 0
-		}
+//		for(int i=1;i<wp_num;i++)
+//		{
+//			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
+//			wp_total_array[i].lng 	= start_longtitude+delta_lon*i;				// Lon * 10**7
+//			//wp_total_array[i].lng 	= start_longtitude-delta_lon*i;				// Lon * 10**7
+//			//wp_total_array[i].lng 	= start_longtitude;				// Lon * 10**7
+//			wp_total_array[i].lat 	= start_latitude+delta_lat*i;				// Lat * 10**7
+//			wp_total_array[i].alt 	= alt_temp;							// Home is always 0
+//		}
 
 
 
@@ -327,41 +359,41 @@ void Copter::setup()
 		/*
 		 * 这个是矩形，绕航线飞行
 		 */
-//		for(int i=1;i<wp_num;i++)
-//		{
-//			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
-//
-//			wp_total_array[i].alt 	= alt_temp;							// Home is always 0
-//
-//
-//		}
-//		wp_total_array[1].lng 	= start_longtitude+delta_lon*1;				// Lon * 10**7
-//		wp_total_array[1].lat 	= start_latitude;				// Lat * 10**7
-//
-//		wp_total_array[2].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
-//		wp_total_array[2].lat 	= start_latitude;				// Lat * 10**7
-//
-//		wp_total_array[3].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
-//		wp_total_array[3].lat 	= start_latitude+delta_lat*1;				// Lat * 10**7
-//
-//		wp_total_array[4].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
-//		wp_total_array[4].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
-//
-//
-//		wp_total_array[5].lng 	= start_longtitude+delta_lon*1;				// Lon * 10**7
-//		wp_total_array[5].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
-//
-//		wp_total_array[6].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
-//		wp_total_array[6].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
-//
-//		wp_total_array[7].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
-//		wp_total_array[7].lat 	= start_latitude+delta_lat*1;				// Lat * 10**7
-//
-//		wp_total_array[8].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
-//		wp_total_array[8].lat 	= start_latitude+delta_lat*0;				// Lat * 10**7
-//
-//		wp_total_array[9].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
-//		wp_total_array[9].lat 	= start_latitude+delta_lat*0;				// Lat * 10**7
+		for(int i=1;i<wp_num;i++)
+		{
+			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
+
+			wp_total_array[i].alt 	= alt_temp;							// Home is always 0
+
+
+		}
+		wp_total_array[1].lng 	= start_longtitude+delta_lon*1;				// Lon * 10**7
+		wp_total_array[1].lat 	= start_latitude;				// Lat * 10**7
+
+		wp_total_array[2].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
+		wp_total_array[2].lat 	= start_latitude;				// Lat * 10**7
+
+		wp_total_array[3].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
+		wp_total_array[3].lat 	= start_latitude+delta_lat*1;				// Lat * 10**7
+
+		wp_total_array[4].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
+		wp_total_array[4].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
+
+
+		wp_total_array[5].lng 	= start_longtitude+delta_lon*1;				// Lon * 10**7
+		wp_total_array[5].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
+
+		wp_total_array[6].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
+		wp_total_array[6].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
+
+		wp_total_array[7].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
+		wp_total_array[7].lat 	= start_latitude+delta_lat*1;				// Lat * 10**7
+
+		wp_total_array[8].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
+		wp_total_array[8].lat 	= start_latitude+delta_lat*0;				// Lat * 10**7
+
+		wp_total_array[9].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
+		wp_total_array[9].lat 	= start_latitude+delta_lat*0;				// Lat * 10**7
 
 
 
@@ -425,11 +457,9 @@ void Copter::setup()
 
 		//uart_device_ap2gcs.ptr_fun=read_radio_data;
 
-		set_uart_opt( uart_device_ap2gcs.uart_name, \
-				uart_device_ap2gcs.baudrate,\
-				uart_device_ap2gcs.databits,\
-				uart_device_ap2gcs.parity,\
-				uart_device_ap2gcs.stopbits);
+	set_uart_opt(uart_device_ap2gcs.uart_name, uart_device_ap2gcs.baudrate,
+			               uart_device_ap2gcs.databits, uart_device_ap2gcs.parity,
+			               uart_device_ap2gcs.stopbits);
 
 		//create_uart_pthread(&uart_device_radio);
 
@@ -708,6 +738,16 @@ void Copter::loop_fast()
 #endif
 }
 
+void Copter::set_radio_passthrough(float roll_input, float pitch_input, float throttle_input, float yaw_input)
+{
+#if 0
+    _roll_radio_passthrough = roll_input;
+    _pitch_radio_passthrough = pitch_input;
+    _throttle_radio_passthrough = throttle_input;
+    _yaw_radio_passthrough = yaw_input;
+#endif
+}
+
 void Copter::update_current_flight_mode(void)
 {
 	if(g.rc_5.radio_in>1000&&g.rc_5.radio_in<1500)
@@ -940,9 +980,9 @@ void Copter::update_navigation()
 
 
 
-#ifndef constrain
-#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
-#endif
+//#ifndef constrain
+//#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
+//#endif
 // run_nav_updates - top level call for the autopilot
 // ensures calculations such as "distance to waypoint" are calculated before autopilot makes decisions
 // To-Do - rename and move this function to make it's purpose more clear
@@ -1100,102 +1140,6 @@ void Copter::update_trig(void){
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if 0
-//不要删除这个，还有参考价值
-int main()
-{
-	cout<<"Welcome to BitPilot"<<endl;
-
-	/*
-	 * 初始化工作
-	 */
-	//init_bitpilot();
-	copter.setup();
-
-	/*
-	 * 这个while循环是20ms
-	 * 也就是50hz
-	 */
-	while (1)
-	{
-		maintask_tick.tv_sec = seconds;
-		maintask_tick.tv_usec = mseconds;
-		select(0, NULL, NULL, NULL, &maintask_tick);
-		maintask_cnt++;
-
-		copter.loop();
-
-		loop_fast();
-
-		if(0 == maintask_cnt % ONE_HZ_CNT)
-		{
-			/*
-			 * 1hz的循环
-			 */
-
-			printf("hello \n");
-		}
-
-		if(0 == maintask_cnt % TEN_HZ_CNT)
-		{
-			/*
-			 * 10hz的循环
-			 */
-
-			//copter.compass.read();     // Read magnetometer
-			//copter.compass.calculate(dcm.get_dcm_matrix());  // Calculate heading
-			//copter.compass.null_offsets(dcm.get_dcm_matrix());
-
-
-			// calculate the plane's desired bearing
-			// -------------------------------------
-			//copter.navigate();
-
-			// Read altitude from sensors
-			// ------------------
-			//update_alt();
-
-		}
-
-	}
-
-	return 0;
-}
-
-#endif
 
 
 Copter copter;
