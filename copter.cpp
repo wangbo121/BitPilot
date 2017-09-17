@@ -182,17 +182,26 @@ void Copter::setup()
 
 	float pid_p_1=1.0;
 	//第一级pid参数设置
-	g.pi_stabilize_roll.set_kP(pid_p_1);
-	g.pi_stabilize_roll.set_kI(0.0);
-	g.pi_stabilize_roll.set_kD(0.0);
+	float stabilize_roll_p=3.69;
+	float stabilize_roll_i=0.0;
+	float stabilize_roll_d=0.0;
+	g.pi_stabilize_roll.set_kP(stabilize_roll_p);
+	g.pi_stabilize_roll.set_kI(stabilize_roll_i);
+	g.pi_stabilize_roll.set_kD(stabilize_roll_d);
 
-	g.pi_stabilize_pitch.set_kP(pid_p_1);
-	g.pi_stabilize_pitch.set_kI(0.0);
-	g.pi_stabilize_pitch.set_kD(0.0);
+	float stabilize_pitch_p=3.69;
+	float stabilize_pitch_i=0.0;
+	float stabilize_pitch_d=0.0;
+	g.pi_stabilize_pitch.set_kP(stabilize_pitch_p);
+	g.pi_stabilize_pitch.set_kI(stabilize_pitch_i);
+	g.pi_stabilize_pitch.set_kD(stabilize_pitch_d);
 
-	g.pi_stabilize_yaw.set_kP(pid_p_1);
-	g.pi_stabilize_yaw.set_kI(0.0);
-	g.pi_stabilize_yaw.set_kD(0.0);
+	float stabilize_yaw_p=4.0;
+	float stabilize_yaw_i=0.0;
+	float stabilize_yaw_d=0.0;
+	g.pi_stabilize_yaw.set_kP(stabilize_yaw_p);
+	g.pi_stabilize_yaw.set_kI(stabilize_yaw_i);
+	g.pi_stabilize_yaw.set_kD(stabilize_yaw_d);
 
 
 	//第2级pid参数设置
@@ -200,18 +209,29 @@ void Copter::setup()
 
 	float pid_p_2=5.0;
 
-	g.pid_rate_roll.set_kP(pid_p_2);
-	g.pid_rate_roll.set_kI(0.0);
-	g.pid_rate_roll.set_kD(0.0);
+	float stabilize_roll_rate_p=0.255;
+	float stabilize_roll_rate_i=0.122;
+	float stabilize_roll_rate_d=0.017;
+	g.pid_rate_roll.set_kP(stabilize_roll_rate_p);
+	g.pid_rate_roll.set_kI(stabilize_roll_rate_i);
+	g.pid_rate_roll.set_kD(stabilize_roll_rate_d);
 
 	float pid_p_pitch=5.0;
-	g.pid_rate_pitch.set_kP(pid_p_pitch);
-	g.pid_rate_pitch.set_kI(0.0);
-	g.pid_rate_pitch.set_kD(0.0);
 
-	g.pid_rate_yaw.set_kP(pid_p_2);
-	g.pid_rate_yaw.set_kI(0.0);
-	g.pid_rate_yaw.set_kD(0.0);
+	float stabilize_pitch_rate_p=0.255;
+	float stabilize_pitch_rate_i=0.122;
+	float stabilize_pitch_rate_d=0.017;
+	g.pid_rate_pitch.set_kP(stabilize_pitch_rate_p);
+	g.pid_rate_pitch.set_kI(stabilize_pitch_rate_i);
+	g.pid_rate_pitch.set_kD(stabilize_pitch_rate_d);
+
+
+	float stabilize_yaw_rate_p=0.17;
+	float stabilize_yaw_rate_i=0.2;
+	float stabilize_yaw_rate_d=0.003;
+	g.pid_rate_yaw.set_kP(stabilize_yaw_rate_p);
+	g.pid_rate_yaw.set_kI(stabilize_yaw_rate_i);
+	g.pid_rate_yaw.set_kD(stabilize_yaw_rate_d);
 
 
 	/*
@@ -365,6 +385,8 @@ void Copter::setup()
 
 			wp_total_array[i].alt 	= alt_temp;							// Home is always 0
 
+			delta_lon=10000;
+			delta_lat=10000;
 
 		}
 		wp_total_array[1].lng 	= start_longtitude+delta_lon*1;				// Lon * 10**7
