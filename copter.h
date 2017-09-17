@@ -152,7 +152,8 @@ public:
     /**
 	 * 我自己添加了一些
 	 */
-	void navigate();
+	//void navigate();
+    int navigate();//20170917改成有返回值的
 	//void get_stabilize_roll(int32_t target_angle);
 
 
@@ -1489,6 +1490,13 @@ private:
 	 int16_t get_nav_throttle(int32_t z_error);
 	 int get_z_damping();
 	 int32_t get_new_altitude();
+
+	 void medium_loop();
+	 void slow_loop();
+	 void fifty_hz_loop();
+
+	 void gcs_update(void);
+	 void super_slow_loop();
 
 #ifdef LINUX_OS
 	 void send_realdata_to_gcs( void );

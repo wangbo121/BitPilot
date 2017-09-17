@@ -8,7 +8,8 @@
 #include "copter.h"
 
 #ifdef  LINUX_OS
-#define MAINTASK_TICK_TIME_MS 20
+//#define MAINTASK_TICK_TIME_MS 20
+#define MAINTASK_TICK_TIME_MS 10//这个设置为10ms主要是为了跟sim_aircraft的仿真频率一致，其实20ms（50hz就够）
 int seconds=0;
 int mseconds=MAINTASK_TICK_TIME_MS*(1e3);/*每个tick为20毫秒，也就是20000微秒*/
 struct timeval maintask_tick;
@@ -70,10 +71,10 @@ void Copter::loop()
 {
 	maintask_cnt++;
 
-	if(maintask_cnt>50)
+	if(maintask_cnt>100)
 	{
 #ifdef LINUX_OS
-		std::cout<<"*********maintask_cnt>50*********************************************************"<<std::endl;
+		std::cout<<"*********maintask_cnt>100*********************************************************"<<std::endl;
 		float system_time_s=0;
 		system_time_s=clock_gettime_ms();
 		//std::cout<<"system_time_s="<<system_time_s/1000<<std::endl;
@@ -84,11 +85,25 @@ void Copter::loop()
 
 	loop_fast();
 
+	/*
+	 * // reads all of the necessary trig functions for cameras, throttle, etc.
+	 * 这个是更新所有需要的三角函数的数值
+	 */
 	update_trig();
 
+	// check for new GPS messages
+	// --------------------------
+//	if(GPS_enabled){
+//		update_GPS();
+//	}
+
+#if 1
+	medium_loop();
+
+#else
 	if(maintask_cnt%10)
 	{
-		//100ms  10hz 的循环
+		//10hz
 		/*
 		 * 其实fast_loop应该就是仅仅包括radio ahrs update_rate_control servo_out就可以了，不需要知道高度，gps等
 		 * 但是ahrs为了更加准确，加入了gps作为融合，所以把gps的读取放到了fastloop里，但其实gps更新速率应该是
@@ -120,17 +135,35 @@ void Copter::loop()
 			}
 		}
 	}
+#endif
 
+	// Stuff to run at full 50hz, but after the med loops
+	// --------------------------------------------------
+	fifty_hz_loop();
+
+	counter_one_herz++;
+
+	// trgger our 1 hz loop
+	//if(counter_one_herz >= 50){
+	//因为我这里改成了100hz所以需要改成100
+	if(counter_one_herz >= 100){
+		super_slow_loop();
+		counter_one_herz = 0;
+	}
+
+#if 0
+	这个更新油门模式的已经在50hz的循环里有了，不需要再写了
 	if(maintask_cnt%2)
 	{//50hz
 		invalid_throttle=true;
 		update_throttle_mode();
 	}
+#endif
 
 	if(maintask_cnt%100)
 	{
 #ifdef LINUX_OS
-		//发送实时数据给地面站，只是作为在linux平台的测试
+		//发送实时数据给地面站，只是作为在linux平台的测试，在linux平台上暂时测试是1秒钟发送一个实时数据包
 		send_realdata_to_gcs();
 #endif
 	}

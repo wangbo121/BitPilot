@@ -514,7 +514,7 @@ void Copter::loop_fast()
 	//std::cout<<"timer="<<timer/1000<<std::endl;
 
 	G_Dt=(timer-fast_loopTimer)/1000.0;//单位是秒[s]
-	G_Dt=0.01;
+	G_Dt=0.01;//这个设置为0.01秒也就是100hz主要是为了跟sim_aircraft的速率一致，但是其实20ms(50hz)就够
 	//std::cout<<"G_Dt="<<G_Dt<<std::endl;
 
 	fast_loopTimer=timer;
@@ -1059,6 +1059,11 @@ void Copter::update_GPS(void)
 	current_loc.lng = gps.longitude;	// Lon * 10 * *7
 	current_loc.lat = gps.latitude;	// Lat * 10 * *7
 
+	//20170917
+	//其实这里当gps信号稳定且状态可行时，就需要告诉导航级别，可以导航
+	//否则就不导航
+	nav_ok=true;
+
 }
 
 // uses the yaw from the DCM to give more accurate turns
@@ -1161,7 +1166,324 @@ void Copter::update_trig(void){
 	// 270 = cos_yaw: -1.00, sin_yaw:  0.00,
 }
 
+void Copter::medium_loop()
+{
+	// This is the start of the medium (10 Hz) loop pieces
+	// -----------------------------------------
+	switch(medium_loopCounter) {
 
+		// This case deals with the GPS and Compass
+		//-----------------------------------------
+		case 0:
+			medium_loopCounter++;
+
+			//if(GPS_enabled){
+			//	update_GPS();
+			//}
+
+			#if HIL_MODE != HIL_MODE_ATTITUDE					// don't execute in HIL mode
+				if(g.compass_enabled){
+					if (compass.read()) {
+                        compass.calculate(dcm.get_dcm_matrix());  	// Calculate heading
+                        compass.null_offsets(dcm.get_dcm_matrix());
+                    }
+				}
+			#endif
+
+			// auto_trim, uses an auto_level algorithm
+//			auto_trim();
+
+			// record throttle output
+			// ------------------------------
+			throttle_integrator += g.channel_throttle.servo_out;
+			break;
+
+		// This case performs some navigation computations
+		//------------------------------------------------
+		case 1:
+			medium_loopCounter++;
+
+			// Auto control modes:
+			if(nav_ok){
+				// clear nav flag
+				nav_ok = false;
+
+				// calculate the copter's desired bearing and WP distance
+				// ------------------------------------------------------
+				if(navigate()){
+
+					// this calculates the velocity for Loiter
+					// only called when there is new data
+					// ----------------------------------
+					calc_XY_velocity();
+
+					// If we have optFlow enabled we can grab a more accurate speed
+					// here and override the speed from the GPS
+					// ----------------------------------------
+					//#ifdef OPTFLOW_ENABLED
+					//if(g.optflow_enabled && current_loc.alt < 500){
+					//	// optflow wont be enabled on 1280's
+					//	x_GPS_speed 	= optflow.x_cm;
+					//	y_GPS_speed 	= optflow.y_cm;
+					//}
+					//#endif
+
+					// control mode specific updates
+					// -----------------------------
+					update_navigation();
+
+					/*
+					if (g.log_bitmask & MASK_LOG_NTUN)
+						Log_Write_Nav_Tuning();
+						*/
+				}
+			}
+			break;
+
+		// command processing
+		//-------------------
+		case 2:
+			medium_loopCounter++;
+
+			// Read altitude from sensors
+			// --------------------------
+			#if HIL_MODE != HIL_MODE_ATTITUDE					// don't execute in HIL mode
+			update_altitude();
+			#endif
+
+			// Read altitude from sensors
+			// ------------------
+			update_alt();
+
+			// invalidate the throttle hold value
+			// ----------------------------------
+			invalid_throttle = true;
+
+			break;
+
+		// This case deals with sending high rate telemetry
+		//-------------------------------------------------
+		case 3:
+			medium_loopCounter++;
+
+			// perform next command
+			// --------------------
+			if(control_mode == AUTO){
+				if(home_is_set == true && g.command_total > 1){
+					update_commands();
+				}
+			}
+
+			/*
+			 //下面主要是记录姿态的日志，控制的日志，电机的日志以及发送数据给地面站
+            if(motor_armed){
+                if (g.log_bitmask & MASK_LOG_ATTITUDE_MED)
+                    Log_Write_Attitude();
+
+                if (g.log_bitmask & MASK_LOG_CTUN)
+                    Log_Write_Control_Tuning();
+            }
+
+				// send all requested output streams with rates requested
+				// between 5 and 45 Hz
+				gcs_data_stream_send(5,45);
+
+			if (g.log_bitmask & MASK_LOG_MOTORS)
+				Log_Write_Motors();
+				*/
+
+			break;
+
+		// This case controls the slow loop
+		//---------------------------------
+		case 4:
+			medium_loopCounter = 0;
+
+			if (g.battery_monitoring != 0){
+				//read_battery();
+			}
+
+			// Accel trims 		= hold > 2 seconds
+			// Throttle cruise  = switch less than 1 second
+			// --------------------------------------------
+			//read_trim_switch();
+
+			// Check for engine arming
+			// -----------------------
+			//arm_motors();
+
+			// Do an extra baro read
+			// ---------------------
+			#if HIL_MODE != HIL_MODE_ATTITUDE
+			barometer.read();
+			#endif
+
+			// agmatthews - USERHOOKS
+			#ifdef USERHOOK_MEDIUMLOOP
+			   USERHOOK_MEDIUMLOOP
+			#endif
+
+			slow_loop();
+			break;
+
+		default:
+			// this is just a catch all
+			// ------------------------
+			medium_loopCounter = 0;
+			break;
+	}
+}
+
+void Copter::slow_loop()
+{
+	// This is the slow (3 1/3 Hz) loop pieces
+		//----------------------------------------
+		switch (slow_loopCounter){
+		case 0:
+			slow_loopCounter++;
+			superslow_loopCounter++;
+
+			if(superslow_loopCounter > 1200){
+				#if HIL_MODE != HIL_MODE_ATTITUDE
+					if(g.rc_3.control_in == 0 && control_mode == STABILIZE && g.compass_enabled){
+						compass.save_offsets();
+						superslow_loopCounter = 0;
+					}
+				#endif
+			}
+			break;
+
+		case 1:
+			slow_loopCounter++;
+
+			// Read 3-position switch on radio
+			// -------------------------------
+			//read_control_switch();
+
+			// agmatthews - USERHOOKS
+			#ifdef USERHOOK_SLOWLOOP
+			   USERHOOK_SLOWLOOP
+			#endif
+
+			break;
+
+		case 2:
+			slow_loopCounter = 0;
+			//update_events();
+#if 0
+			这些不需要
+			// blink if we are armed
+			update_lights();
+
+			// send all requested output streams with rates requested
+			// between 3 and 5 Hz
+			gcs_data_stream_send(3,5);
+
+			if(g.radio_tuning > 0)
+				tuning();
+#endif
+			#if MOTOR_LEDS == 1
+				update_motor_leds();
+			#endif
+
+			#if USB_MUX_PIN > 0
+			check_usb_mux();
+			#endif
+			break;
+
+		default:
+			slow_loopCounter = 0;
+			break;
+	}
+
+}
+
+
+// stuff that happens at 50 hz
+// ---------------------------
+void Copter::fifty_hz_loop()
+{
+	// moved to slower loop
+	// --------------------
+	update_throttle_mode();
+
+	//声纳
+	// Read Sonar
+	// ----------
+
+	//光流
+	// syncronise optical flow reads with altitude reads
+	#ifdef OPTFLOW_ENABLED
+	if(g.optflow_enabled){
+		update_optical_flow();
+	}
+	#endif
+
+	//用户钩子函数，也就是在程序运行之前的回调函数
+	// agmatthews - USERHOOKS
+	#ifdef USERHOOK_50HZLOOP
+	  USERHOOK_50HZLOOP
+	#endif
+
+	  //相机云台的稳定控制
+	//camera_stabilization();
+
+	  //接收来自地面站的数据，更新命令
+	// kick the GCS to process uplink data
+	gcs_update();
+    //gcs_data_stream_send(45,1000);
+
+}
+
+void Copter::gcs_update(void){
+	//先放在这里，应该是重新建立一个文件gcs_mavlink.cpp放在这个源文件里
+}
+
+#define AUTO_ARMING_DELAY 60
+// 1Hz loop
+void Copter::super_slow_loop()
+{
+	//王博20170917这个函数里面最重要的就是1超过30秒上锁，使得电机无法转动，2发送心跳包给地面站
+#if 0
+	if (g.log_bitmask & MASK_LOG_CUR)
+		Log_Write_Current();
+
+	// this function disarms the copter if it has been sitting on the ground for any moment of time greater than 30s
+	// but only of the control mode is manual
+	if((control_mode <= ACRO) && (g.rc_3.control_in == 0)){
+		auto_disarming_counter++;
+		if(auto_disarming_counter == AUTO_ARMING_DELAY){
+			init_disarm_motors();
+		}else if (auto_disarming_counter > AUTO_ARMING_DELAY){
+			auto_disarming_counter = AUTO_ARMING_DELAY + 1;
+		}
+	}else{
+		auto_disarming_counter = 0;
+	}
+#endif
+
+    //gcs_send_message(MSG_HEARTBEAT);
+    //gcs_data_stream_send(1,3);
+
+
+	// agmatthews - USERHOOKS
+	#ifdef USERHOOK_SUPERSLOWLOOP
+	   USERHOOK_SUPERSLOWLOOP
+	#endif
+
+	/*
+	Serial.printf("alt %d, next.alt %d, alt_err: %d, cruise: %d, Alt_I:%1.2f, wp_dist %d, tar_bear %d, home_d %d, homebear %d\n",
+					current_loc.alt,
+					next_WP.alt,
+					altitude_error,
+					g.throttle_cruise.get(),
+					g.pi_alt_hold.get_integrator(),
+					wp_distance,
+					target_bearing,
+					home_distance,
+					home_to_copter_bearing);
+	*/
+}
 
 
 Copter copter;

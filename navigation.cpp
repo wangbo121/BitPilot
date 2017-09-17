@@ -14,7 +14,7 @@
 //****************************************************************
 // Function that will calculate the desired direction to fly and distance
 //****************************************************************
-void Copter::navigate()
+int Copter::navigate()
 {
     // waypoint distance from plane in cm
     // ---------------------------------------
@@ -32,6 +32,11 @@ void Copter::navigate()
 
     wp_distance     = get_distance_cm(&filtered_loc, &next_WP);
     home_distance   = get_distance_cm(&filtered_loc, &home);
+
+    if (wp_distance < 0){
+    		// something went very wrong
+    		return 0;
+    	}
 
     std::cout<<"wp_distance    ="<<wp_distance    <<std::endl;
     std::cout<<"home_distance     ="<<home_distance     <<std::endl;
@@ -51,6 +56,7 @@ void Copter::navigate()
 	// ------------------------------------------
 	nav_bearing = target_bearing;
 
+	return 1;
 
 }
 
