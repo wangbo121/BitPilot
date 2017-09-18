@@ -24,6 +24,8 @@
 #define printf_debug(fmt,args...) /*do nothing */
 #endif
 
+// mark a function as not to be inlined
+#define NOINLINE __attribute__((noinline))
 
 #define TRUE 1
 #define FALSE 0

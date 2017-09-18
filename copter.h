@@ -126,7 +126,11 @@ using namespace std;
 #include "global.h"
 //#include "GCS.h"
 
-#include "mavlink.h"
+#include "mavlink.h"//这个是基本的mavlink协议库1.0版本
+//#include "GCS_MAVLink.h"
+#include "GCS.h"
+
+
 
 
 class Copter :public AP_HAL::HAL::Callbacks{
@@ -1500,6 +1504,18 @@ private:
 
 	 void gcs_update(void);
 	 void super_slow_loop();
+
+
+
+
+	 /*
+	  * 20170918开始添加地面站与飞控的通信
+	  * mavlink协议1.0
+	  */
+	 void send_heartbeat(mavlink_channel_t chan);
+	 void send_attitude(mavlink_channel_t chan);
+
+
 
 #ifdef LINUX_OS
 	 void send_realdata_to_gcs( void );
