@@ -10,8 +10,9 @@
 
 
 #include "Scheduler.h"
-
+#ifdef LINUX_OS
 #include <unistd.h>
+#endif
 #include <stdlib.h>
 #include <sched.h>
 #include <errno.h>

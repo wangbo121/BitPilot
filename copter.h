@@ -17,6 +17,8 @@
 #define LINUX_OS //这个是在linux上测试时用的，比如udp和串口通信
 #endif
 
+
+#ifdef LINUX_OS
 /*
  * 四旋翼的飞行动力模型接口，需要跟flightgear的版本一致
  * Sim_Multicopter计算得到的模型数据发送到这个接口，
@@ -45,7 +47,7 @@
 #define UART_AP2GCS_DATABITS 8 //8 data bit
 #define UART_AP2GCS_STOPBITS 1 //1 stop bit
 #define UART_AP2GCS_PARITY 0 //no parity
-
+#endif
 
 /***********/
 /**************************************************************/
@@ -76,30 +78,40 @@ using namespace std;
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+
+#ifdef LINUX_OS
 #include <fcntl.h>//创建文件
 #include <pthread.h>
 #include <semaphore.h>
 #include <sys/stat.h>
+#endif
+
 
 #include <iostream>
 
 #include <stdio.h>
 #include <stdlib.h>
+
+
+#ifdef LINUX_OS
 #include <unistd.h>
 #include <fcntl.h>//创建文件
 #include <pthread.h>
 #include <semaphore.h>
 #include <sys/stat.h>
+#endif
+
+
 #include <string.h>
+
+#ifdef LINUX_OS
 /*转换int或者short的字节顺序，该程序arm平台为大端模式，地面站x86架构为小端模式*/
 #include <byteswap.h>
-
 #include<sys/socket.h>
 #include<netinet/in.h>
 #include<arpa/inet.h>
 #include <string.h>
-
+#endif
 
 #include "BIT_HAL.h"
 
@@ -132,9 +144,9 @@ using namespace std;
 
 #ifdef LINUX_OS
 #include "boatlink.h"
-
-
 #endif
+
+
 #include "all_external_device.h"
 
 
@@ -1523,10 +1535,9 @@ private:
 	 void update_all_external_device_input( void );
 
 
-#ifdef LINUX_OS
+
 	 void send_realdata_to_gcs( void );
 
-#endif
 
 };
 
@@ -1541,14 +1552,15 @@ extern int fd_ap2gcs;
 //extern struct T_UART_DEVICE uart_device_ap2gcs;
 extern mavlink_system_t mavlink_system;
 
-void send_realdata_to_gcs();
+//void send_realdata_to_gcs();
+#ifdef LINUX_OS
+int read_radio_data(unsigned char *recv_buf,unsigned int recv_len);
+#endif
 
 int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char len,\
                     unsigned int packet_cnt, unsigned char message_type,\
                     unsigned char commu_method, unsigned char ack_req);
 
-#ifdef LINUX_OS
-int read_radio_data(unsigned char *recv_buf,unsigned int recv_len);
-#endif
+
 
 #endif /* COPTER_H_ */

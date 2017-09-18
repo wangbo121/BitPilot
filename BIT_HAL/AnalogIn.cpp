@@ -10,11 +10,13 @@
 #include "AnalogIn.h"
 
 #include <stdio.h>
+
+#ifdef LINUX_OS
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-
+#endif
 
 #define ANLOGIN_DEBUGGING 0
 
