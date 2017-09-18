@@ -10,6 +10,8 @@
 //#include "mavlink.h"
 mavlink_system_t mavlink_system;
 
+
+
 #ifdef  LINUX_OS
 //#define MAINTASK_TICK_TIME_MS 20
 #define MAINTASK_TICK_TIME_MS 10//这个设置为10ms主要是为了跟sim_aircraft的仿真频率一致，其实20ms（50hz就够）
