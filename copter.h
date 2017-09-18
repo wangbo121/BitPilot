@@ -133,8 +133,9 @@ using namespace std;
 #ifdef LINUX_OS
 #include "boatlink.h"
 
-#endif
 
+#endif
+#include "all_external_device.h"
 
 
 class Copter :public AP_HAL::HAL::Callbacks{
@@ -1519,6 +1520,7 @@ private:
 	 void send_heartbeat(mavlink_channel_t chan);
 	 void send_attitude(mavlink_channel_t chan);
 
+	 void update_all_external_device_input( void );
 
 
 #ifdef LINUX_OS

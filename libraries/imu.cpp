@@ -14,6 +14,9 @@
 #include "fdm.h"
 #include "BIT_MATH.h"
 
+#include "global.h"
+#include "all_external_device.h"
+
 // XXX secret knowledge about the APM/oilpan wiring
 //
 #define A_LED_PIN   37
@@ -146,7 +149,7 @@ IMU::update(void)
 	 * 然后更新dcm矩阵
 	 */
 
-
+#if 0
 	_gyro.x = fdm_feed_back.phidot;
 	_gyro.y = fdm_feed_back.thetadot;
 	_gyro.z = fdm_feed_back.psidot;
@@ -154,7 +157,21 @@ IMU::update(void)
 	_accel.x = fdm_feed_back.A_X_pilot;
 	_accel.y = fdm_feed_back.A_Y_pilot;
 	_accel.z = fdm_feed_back.A_Z_pilot;
+#else
+	/*
+	 * 上面的其实不需要了
+	 * 硬件驱动把更新的数据赋值给all_external_device_input
+	 * 我的飞控软件自成体系，从all_external_device_input获取数据就可以了
+	 */
 
+	_gyro.x = all_external_device_input._gyro_x;
+	_gyro.y = all_external_device_input._gyro_y;
+	_gyro.z = all_external_device_input._gyro_z;
+
+	_accel.x = all_external_device_input._accel_x;
+	_accel.y = all_external_device_input._accel_y;
+	_accel.z = all_external_device_input._accel_z;
+#endif
 	// always updated
 	return true;
 }

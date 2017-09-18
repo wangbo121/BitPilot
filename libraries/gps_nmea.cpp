@@ -22,6 +22,7 @@
 #include "gps_nmea.h"
 #include "fdm.h"
 #include "BIT_MATH.h"
+#include "all_external_device.h"
 
 // SiRF init messages //////////////////////////////////////////////////////////
 //
@@ -132,12 +133,19 @@ bool AP_GPS_NMEA::read(void)
 //	ground_speed=10;
 //	ground_course=90;
 
+#if 1
 	longitude=(fdm_feed_back.longitude *RAD_TO_DEG)*1e7;
 	latitude=(fdm_feed_back.latitude *RAD_TO_DEG)*1e7;
 	altitude=(fdm_feed_back.altitude )*1e2;
 	ground_speed=sqrt(pow(fdm_feed_back.v_north,2)+pow(fdm_feed_back.v_east,2)+pow(fdm_feed_back.v_down,2));
 	//ground_course=90;
+#else
+	longitude=(long)all_external_device_input.longitude;
+	latitude=(long)all_external_device_input.latitude;
+	altitude=(long)all_external_device_input.altitude;
+	ground_speed=(long)sqrt(pow(all_external_device_input.v_north,2)+pow(all_external_device_input.v_east,2)+pow(all_external_device_input.v_down,2));
 
+#endif
 
 //	std::cout<<"gps nmea longitude="<<longitude*1e-7<<std::endl;
 //	std::cout<<"gps nmea latitude="<<latitude*1e-7<<std::endl;

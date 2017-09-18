@@ -15,7 +15,7 @@ extern const AP_HAL::HAL& hal;
 
 #include "rc.h"
 
-
+#include "all_external_device.h"
 
 // Variable definition for interrupt
 volatile uint16_t timer1count   = 0;
@@ -80,24 +80,29 @@ AP_RC::input_ch(uint8_t ch)
 	{
 	case CH_1:
 		//return 1500;
+		return (uint16_t)all_external_device_input.rc_raw_in_0;
 		return 1500;
 		return hal.rcin->read(CH_1);
 		break;
 	case CH_2:
+		return (uint16_t)all_external_device_input.rc_raw_in_1;
 		return 1500;//1200;
 		return hal.rcin->read(CH_2);
 		break;
 	case CH_3:
+		return (uint16_t)all_external_device_input.rc_raw_in_2;
 		return 1500;//1300;
 		return hal.rcin->read(CH_3);
 		break;
 	case CH_4:
 		//return 1800;//1700;
+		return (uint16_t)all_external_device_input.rc_raw_in_3;
 		return 1500;
 		return hal.rcin->read(CH_4);
 		break;
 	case CH_5:
 		//return 1400;//特技，完全手控模式
+		return (uint16_t)all_external_device_input.rc_raw_in_4;
 		return 1700;//增稳
 		return hal.rcin->read(CH_5);
 		break;

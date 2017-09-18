@@ -65,6 +65,11 @@ int main(int argc,char * const argv[])
 #endif
 
 		copter.loop();//20ms一个周期的运行，那么这个loop循环中所有的函数都执行一边（或者说运行最多函数时），所需要的时间应该是小于20ms的
+
+
+
+
+
 	}
 
 	return 0;
