@@ -130,6 +130,10 @@ using namespace std;
 //#include "GCS_MAVLink.h"
 #include "GCS.h"
 
+#ifdef LINUX_OS
+#include "boatlink.h"
+
+#endif
 
 
 
@@ -1532,7 +1536,7 @@ extern Copter copter;
 
 extern struct AP2GCS_REAL ap2gcs;
 extern int fd_ap2gcs;
-extern struct T_UART_DEVICE uart_device_ap2gcs;
+//extern struct T_UART_DEVICE uart_device_ap2gcs;
 extern mavlink_system_t mavlink_system;
 
 void send_realdata_to_gcs();

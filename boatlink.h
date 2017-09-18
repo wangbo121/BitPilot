@@ -395,5 +395,7 @@ extern struct GCS2AP_RADIO gcs2ap_radio_all;
 
 
 int decode_gcs2ap_waypoint(struct WAY_POINT *ptr_wp_data, struct GCS_AP_WP *ptr_gcs2ap_wp);
+int decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GCS2AP_CMD *ptr_gcs2ap_cmd);
+int send_ap2gcs_waypoint_num(unsigned char wp_start,unsigned char wp_num);
 
 #endif /* HEADERS_BOATLINK_H_ */

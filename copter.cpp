@@ -150,7 +150,7 @@ int read_radio_data(unsigned char *recv_buf,unsigned int recv_len)
 	/* 这个是帧尾的校验和 其实是2个字节 但是我们现在只用1个字节 */
 	static unsigned char _checksum = 0;
 
-	int i = 0;
+	unsigned int i = 0;
 	static unsigned char c;
 	static unsigned char valid_len=5;
 
@@ -161,11 +161,11 @@ int read_radio_data(unsigned char *recv_buf,unsigned int recv_len)
 
 
 	memcpy(_buffer, recv_buf, recv_len);
-#if 0
+#if 1
 	printf("radio data buf=\n");
-	for(i=0;i<len;i++)
+	for(i=0;i<recv_len;i++)
 	{
-		printf("%0x ",buf[i]);
+		printf("%0x ",recv_buf[i]);
 	}
 	printf("\n");
 #endif
@@ -298,6 +298,22 @@ int read_radio_data(unsigned char *recv_buf,unsigned int recv_len)
 							//global_bool_boatpilot.send_ap2gcs_wp_req=_pack_recv_ack_req;
 							//global_bool_boatpilot.gcs2ap_wp_cnt=_pack_recv_cnt;
 							//global_bool_boatpilot.ap2gcs_wp_cnt=_pack_recv_cnt;
+						}
+						_checksum = 0;
+						radio_recv_state = 0;
+						_frame_received_cnt=0;
+						break;
+					case COMMAND_GCS2AP_CMD:
+						if (_frame_received_cnt == sizeof(gcs2ap_cmd))
+						{
+							//printf("正确接收到GCS2AP_CMD数据包，且数据包数据长度与命令结构长度相同\n");//20170410已测试
+							memcpy(&gcs2ap_cmd, _frame_received, _frame_received_cnt);
+							global_bool_boatpilot.bool_get_gcs2ap_cmd = TRUE;
+							decode_gcs2ap_cmd(&gcs2ap_radio_all, &gcs2ap_cmd);
+							//global_bool_boatpilot.bool_gcs2ap_beidou=_pack_recv_com_link;//这次先不判断北斗，北斗和电台同时发送实时数据，同时接收并解析命令包
+							//global_bool_boatpilot.send_ap2gcs_cmd_req=_pack_recv_ack_req;
+							//global_bool_boatpilot.gcs2ap_cmd_cnt=_pack_recv_cnt;
+							global_bool_boatpilot.ap2gcs_cmd_cnt=_pack_recv_cnt;
 						}
 						_checksum = 0;
 						radio_recv_state = 0;
@@ -635,6 +651,7 @@ void Copter::setup()
 		wp_total_array[9].lat 	= start_latitude+delta_lat*0;				// Lat * 10**7
 
 
+		memcpy(&wp_total_array_temp,&wp_total_array,sizeof(wp_total_array));
 
 
 //
@@ -685,7 +702,8 @@ void Copter::setup()
 		//fd_ap2gcs=open_uart_dev("/dev/ttyUSB0");
 
 		//open_uart_dev(UART_DEVICE_APGCS);
-		uart_device_ap2gcs.uart_name=UART_DEVICE_APGCS;
+		//uart_device_ap2gcs.uart_name=UART_DEVICE_APGCS;
+		uart_device_ap2gcs.uart_name="/dev/ttyUSB0";
 
 		uart_device_ap2gcs.baudrate=UART_AP2GCS_BAUD;
 		uart_device_ap2gcs.databits=UART_AP2GCS_DATABITS;
@@ -710,7 +728,7 @@ void Copter::setup()
 		ap2gcs.alt=50;
 
 
-		send_uart_data(uart_device_ap2gcs.uart_name, (char *)&ap2gcs,sizeof(ap2gcs));
+		//send_uart_data(uart_device_ap2gcs.uart_name, (char *)&ap2gcs,sizeof(ap2gcs));
 #endif
 }
 

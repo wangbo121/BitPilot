@@ -202,6 +202,30 @@ void Copter::loop()
 
 #endif
 	}
+
+
+	if(global_bool_boatpilot.send_ap2gcs_wp_req)
+	{
+		global_bool_boatpilot.wp_total_num=4;
+			global_bool_boatpilot.send_ap2gcs_wp_end_num=3;
+		printf("电台--请求发送航点数据给地面站\n");
+		global_bool_boatpilot.ap2gcs_wp_cnt++;
+
+		if(global_bool_boatpilot.ap2gcs_wp_cnt_previous!=global_bool_boatpilot.ap2gcs_wp_cnt)
+		{
+			ap2gcs_wp.pack_func_info3=global_bool_boatpilot.ap2gcs_wp_cnt;
+
+			if(global_bool_boatpilot.send_ap2gcs_wp_end_num>=global_bool_boatpilot.wp_total_num-1)
+			{
+				global_bool_boatpilot.send_ap2gcs_wp_end_num=global_bool_boatpilot.wp_total_num-1;
+			}
+
+			send_ap2gcs_waypoint_num(global_bool_boatpilot.send_ap2gcs_wp_start_num,global_bool_boatpilot.send_ap2gcs_wp_end_num-global_bool_boatpilot.send_ap2gcs_wp_start_num+1);
+
+			global_bool_boatpilot.ap2gcs_wp_cnt_previous=global_bool_boatpilot.ap2gcs_wp_cnt;
+			global_bool_boatpilot.send_ap2gcs_wp_req=FALSE;
+		}
+	}
 }
 
 

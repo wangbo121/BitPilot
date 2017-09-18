@@ -45,7 +45,7 @@ static int get_uart_num(char *uart_name)
     {
         if(strcmp(uart_name,uart_dev[i])==0)
         {
-            //printf("这是第i个串口=%d\n",i);
+            printf("这是第%d个串口\n",i);
             uart_no=i;
             break;
         }

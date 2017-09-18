@@ -14,6 +14,14 @@
 #include "pid.h"
 #include "rc.h"
 
+#define LINUX_OS
+
+#ifdef LINUX_OS
+#include "location.h"
+extern struct T_UART_DEVICE uart_device_ap2gcs;
+extern struct Location wp_total_array_temp[255];
+#endif
+
 /**
  * 简单打印调试信息
  */
