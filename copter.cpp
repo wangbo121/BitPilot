@@ -653,6 +653,11 @@ void Copter::setup()
 
 		memcpy(&wp_total_array_temp,&wp_total_array,sizeof(wp_total_array));
 
+#ifdef LINUX_OS
+		global_bool_boatpilot.wp_total_num=wp_num;
+
+#endif
+
 
 //
 //		gps.longitude=-1223571928;				// Lon * 10**7

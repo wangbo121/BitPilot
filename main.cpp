@@ -206,8 +206,8 @@ void Copter::loop()
 
 	if(global_bool_boatpilot.send_ap2gcs_wp_req)
 	{
-		global_bool_boatpilot.wp_total_num=4;
-			global_bool_boatpilot.send_ap2gcs_wp_end_num=3;
+		//global_bool_boatpilot.wp_total_num=4;
+			//global_bool_boatpilot.send_ap2gcs_wp_end_num=3;
 		printf("电台--请求发送航点数据给地面站\n");
 		global_bool_boatpilot.ap2gcs_wp_cnt++;
 

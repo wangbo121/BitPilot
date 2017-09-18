@@ -79,11 +79,14 @@ int send_ap2gcs_waypoint_num(unsigned char wp_start,unsigned char wp_num)
 
 
 
-    for(int i=0;i<4;i++)
+    //for(int i=0;i<4;i++)
+    for(int i=0;i<global_bool_boatpilot.wp_total_num;i++)
+
     {
     	wp_data[i].no=i;
 
     	wp_data[i].lng=-(wp_total_array_temp[i].lng*1e-2);//wp_total_array_temp是我mavlink定义的航点数组
+    	//wp_data[i].lng=(wp_total_array_temp[i].lng*1e-2);//wp_total_array_temp是我mavlink定义的航点数组
     	wp_data[i].lat=wp_total_array_temp[i].lat*1e-2;
     }
 
@@ -229,7 +232,7 @@ int decode_gcs2ap_cmd(struct GCS2AP_RADIO *ptr_gcs2ap_radio, struct GCS2AP_CMD *
     }
     else
     {
-    	global_bool_boatpilot.wp_total_num=4;
+    	//global_bool_boatpilot.wp_total_num=4;
         /*
          * 不是回传命令时，则需要获取cmd的值到gcs2ap_radio中
          * 也就是说进入这个判断则意味着地面站在发送正常命令包
