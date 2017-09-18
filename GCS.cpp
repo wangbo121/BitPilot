@@ -100,3 +100,16 @@ void flush(byte id)
 	buff_pointer = 0;
 }
 */
+
+/*
+ * 添加boatlink的协议然后测试航点20170918
+ */
+
+
+
+
+
+
+
+
+

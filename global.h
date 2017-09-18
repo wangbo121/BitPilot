@@ -365,8 +365,6 @@ typedef struct tagAll_SENSORS_OUT
 
 }T_ALL_SENSORS_OUT;
 
-
-
 class Global_Pilot{
 
 public:
@@ -579,7 +577,209 @@ extern T_AP2FG  ap2fg_send;
 
 extern T_AP2FG  ap2fg_recv;
 
+struct T_GLOBAL_BOOL_BOATPILOT
+{
+	unsigned char bool_get_gcs2ap_cmd;//电台获取到地面站的命令包
+	unsigned char bool_get_gcs2ap_waypoint;//电台获取到地面站的航点包
+    unsigned char bool_gcs2ap_beidou;//0:不解析北斗数据，1:解析北斗接收的地面站数据包，并采用
+    unsigned char bool_generator_on;//发电机 0:不工作，1:工作
+    unsigned char bool_is_sending_wp_ap2gcs;//电台 在回传全部航点时，作为正在回传的标志
+    unsigned char bool_beidou_get_gcs2ap_cmd;
+    unsigned char bool_beidou_get_gcs2ap_waypoint;
+    unsigned char bool_loiter_mode;//停留模式=true
+    unsigned char bool_shutdown_master;//主控重启
+    unsigned char bool_shutdown_slave;//副控重启
+    unsigned char bool_rudder_calib_success;//方向舵极限值标定成功
+    unsigned char bool_is_calib_rudder;//正在标定状态，方向舵可以随意摆动
+    unsigned char turn_mode;//转弯方式，0:方向舵，1:差速 2:方向舵和差速同时混合转弯
+    unsigned char s2m_generator_onoff_req_previous;//上一次副控向主控请求发电机的工作状态
+    unsigned char radio_recv_packet_cnt;//电台 地面站发送给驾驶仪的数据包的计数，计数不同时，驾驶仪才接收地面站的数据，否则则舍弃
+    unsigned char radio_recv_packet_cnt_previous;
+    unsigned char udp_recv_packet_cnt;//只是用来记录主控接收到副控的udp的数据包计数，没有用作别的用途
+    unsigned char wp_total_num;//wp_data[]数组记录了航点，wp_total_num则用来表示每次自动驾驶时地面站发给驾驶仪的航点总个数，最小是1
+    unsigned char send_ap2gcs_wp_req;//驾驶仪 发送航点请求
+    unsigned char ap2gcs_wp_cnt_previous;//驾驶仪 发送航点计数
+    unsigned char ap2gcs_wp_cnt;
+    unsigned char send_ap2gcs_real_req;//驾驶仪 发送实时数据请求
+    unsigned char ap2gcs_real_cnt_previous;//驾驶仪 发送实时数据计数
+    unsigned char ap2gcs_real_cnt;
+    unsigned char send_ap2gcs_cmd_req;//驾驶仪 发送(回传)命令请求
+    unsigned char ap2gcs_cmd_cnt_previous;//驾驶仪 发送(回传)命令计数
+    unsigned char ap2gcs_cmd_cnt;
+    unsigned char send_m2s_udp_req;//主控给副控发送udp数据包请求
+    unsigned char m2s_udp_cnt_previous;//主控给副控发送udp数据包计数
+    unsigned char m2s_udp_cnt;
+    unsigned char bd_send_ap2gcs_wp_req;
+    unsigned char bd_ap2gcs_wp_cnt_previous;
+    unsigned char bd_ap2gcs_wp_cnt;
+    unsigned char bd_send_ap2gcs_real_req;
+    unsigned char bd_ap2gcs_real_cnt_previous;
+    unsigned char bd_ap2gcs_real_cnt;
+    unsigned char bd_send_ap2gcs_cmd_req;
+    unsigned char bd_ap2gcs_cmd_cnt_previous;
+    unsigned char bd_ap2gcs_cmd_cnt;
+    unsigned char rudder_calib_cnt_previous;//标定方向舵的左极限右极限和中间值
+    unsigned char launch_req_ack_cnt_previous;//副控确认火箭可发射后，向主控提出发射火箭请求
+    unsigned char save_boatpilot_log_req;//保存无人船日志请求，这个是定时保存，每秒存储一个日志结构
+    unsigned char wp_packet_cnt;//地面站发送给驾驶仪的第wp_packet_cnt个航点数据包
+    unsigned char assign_config_req;//当驾驶仪接收到地面站的命令包时，驾驶仪认为需要更新配置(也就是一些参数设置)
+    unsigned char assign_config_cnt_previous;
+    unsigned char assign_config_cnt;
+    unsigned char save_config_req;//驾驶仪中的config结构发生变化时，就提出保存config请求
+    unsigned char set_switch_channel_previous;//切换器 上一次的通道
+    unsigned char voltage_llim_previous;//切换器 放电电压最低值
+    unsigned char voltage_hlim_previous;//切换器 放电电压最高值
+    unsigned char bat0_is_discharing;//切换器 电池0通道正在放电
+    unsigned char bat1_is_discharing;//切换器 电池1通道正在放电
+    unsigned char charger_set_channel_previous;//充电机 上一次的通道
+    unsigned char charger_set_voltage_previous;//充电机 上一次的电压
+    unsigned char charger_set_current_previous;//充电机 上一次的电流
+    unsigned char charge_start_previous;//充电机 上次的开机关机状态，只有检测到与当前状态不同时才改变
+    unsigned char wp_next;//自动驾驶时，由地面站设置的或者改变的当前目标航点，最小值0
+    unsigned char send_ap2gcs_wp_start_num;//发送航点数据包时，起始航点数，最小值0
+    unsigned char send_ap2gcs_wp_end_num;//发送航点数据包时，航点数木，最小值1
+    unsigned char send_ap2gcs_specific_wp_req;//地面站请求驾驶仪回传特定的某几个航点，不是回传全部航点
+    unsigned char master_state;//主控的状态 D7:电台等待超时 D6:gps等待超时 D5:modbus继电器模拟量等待超时 D4:modbus码盘等待超时 D3:udp等待超时 D2:北斗等待超时 D1: D0:
+    unsigned char slave_state;//副控的状态
+    unsigned char slave_config_previous;//地面站配置副控，现在用来控制是否读取485的电流通道
+    unsigned char spare0;//64字节
 
+    short left_motor_voltage;//单位[0.1伏特]
+    short right_motor_voltage;//单位[0.1伏特]
+    short rudder_angle_degree;//单位[度] 范围[-45-+45度]这是通过码盘读回来的真实的方向舵的角度值，通过实时数据返回给地面站
+    short cte_error_check_radian;//psi_r根据偏航距得到的修正方向舵角[-3.14*1000-+3.14*1000]
+    short current_to_target_radian;//[-180*1000-+180*1000][0.001弧度]
+    short command_radian;//[-180*1000-+180*1000][0.001弧度]
+    short dir_target_degree;//[0.01度]当前位置与目标航点位置的方位角bearing angle
+    short dir_nav_degree;//80字节//[0.01度]制导算法得到的导航目标航迹角course angle或者航向角heading angle
+
+    int cte_distance_error;//84字节//[0.01米]
+
+#if 0
+    //float rudder_middle_position;//[0-720]方向舵标定时，定义的方向舵的中位的2倍，初始值设置为360线(驾驶仪认为是180度)，码盘的360度对应的是720线
+    float rudder_middle_position;//方向舵处于中间位置时对应的码盘的读数
+    float rudder_left_limit_position;//[0-360]方向舵标定时的左极限，初始默认180-45=135度
+    float rudder_right_limit_position;//[0-360]方向舵标定时的右极限，初始默认180+45=225度
+    float rudder_delta_fabs;//[0-90]20170508    [0-45]方向舵标定时，为保证向左和向右转动时左右极限值对称，故采用此变化范围
+#else
+    short rudder_middle_position;//方向舵处于中间位置时对应的码盘的读数
+    short rudder_left_limit_position;//[0-720]方向舵标定时的左极限位置，对应的码盘读数
+    short rudder_right_limit_position;//[0-720]方向舵标定时的右极限位置，对应的码盘读数
+    short rudder_delta_fabs;//92字节//[0-90]方向舵标定时，为保证向左和向右转动时左右极限值对称，故有此变量
+#endif
+
+    /*
+     * 以后改变global变量结构
+     * 必须从这个以后添加，否则需要修改日志记录那里
+     * 20170518
+     */
+    unsigned char gcs2ap_wp_cnt;//电台--接收到的地面站发送给驾驶仪的航点包计数
+    unsigned char gcs2ap_cmd_cnt;//电台--接收到的地面站发送给驾驶仪的航点包计数
+    unsigned char bd_gcs2ap_wp_cnt;//北斗--接收到的地面站发送给驾驶仪的航点包计数
+    unsigned char bd_gcs2ap_cmd_cnt;//北斗--接收到的地面站发送给驾驶仪的命令包计数
+
+    float radio_send_time;
+    float radio_need_to_send_time;
+    float radio_send_delta_time;
+    float radio_get_data_previous_time_s;//电台获取到数据的前一时间单位秒[s]
+    float radio_lose_data_time_s;//电台获取到数据的前一时间单位秒[s]
+
+    float radio_wait_time;
+    float gps_wait_time;
+    float modbus_wait_time;
+    float modbus_rotary_wait_time;
+    float udp_wait_time;
+    float bd_wait_time;
+};
+
+typedef struct T_DateTime
+{
+    unsigned short year;
+    unsigned char month;
+    unsigned char day;
+    unsigned char hour;
+    unsigned char minute;
+    unsigned char second;
+    unsigned char stuffing;//填充字节，保证数据包字节数为4的整数倍
+}T_DATETIME;
+
+#define GPS_LOG_FILE "gps.log"
+#define REALTIME_LOG_FILE "realtime.log"
+#define BOATPILOT_LOG_FILE "boatpilot.log"
+#define WAY_POINT_FILE "waypoint.log"
+#define CONFIG_FILE "config.log"
+
+#define BEIDOU_LOG_FILE "BD.dat"
+
+struct AP2GCS_REAL
+{
+    unsigned char head1;
+    unsigned char head2;
+    unsigned char len;
+    unsigned char cnt;
+    unsigned char sysid;
+    unsigned char type;
+    unsigned char commu_method;
+    unsigned char ack_req;//8字节
+
+    unsigned char pack_func_flag;//包功能标志，暂时固定为0
+    unsigned char pack_func_info1;//接收到的命令包计数
+    unsigned char pack_func_info2;//接收到的航点包计数
+    unsigned char pack_func_info3;//包功能辅助信息，在接收到航点包时，作为航点包的计数
+    unsigned int lng;//[度*0.00001]，GPS经度坐标，整型，精确到米
+    unsigned int lat;//[度*0.00001]，GPS纬度坐标，整型，精确到米
+    unsigned short spd;//[Knot*0.01]，实时航速
+    short dir_gps;//24个字节//[度*0.01]，地速航向，GPS航向
+    short dir_heading;//[度*0.01]，机头朝向
+    short dir_target;//[度*0.01]，目标点朝向
+    short dir_nav;//[度*0.01]，导航航向
+    short roll;//32个字节//[度*0.01]，滚转
+    short pitch;//[度*0.01]，俯仰
+    short yaw;//[度*0.01]，偏航
+    unsigned char codedisc;//码盘实时采集返回值 0-360
+    unsigned char da_out1;//[0.1V]电调给定值1
+    unsigned char da_out2;//[0.1V]电调给定值2
+    unsigned char rudder_pos;//32个字节//[度],方向舵角度值,中位为45
+    unsigned char rc_thruster;//[0-255]RC推进器通道值
+    unsigned char rc_rudder;//[0-255]RC方向舵通道值
+    unsigned char rud_p;//[0.1],转弯参数P
+    unsigned char cte_p;//[0.1],CTE参数P
+    unsigned char boat_temp1;//[C],船内温度1
+    unsigned char boat_temp2;//[C],船内温度2
+    unsigned char boat_humi;//[%],船内湿度,预留,可作它用
+    unsigned char voltage_bat1;//48//[V],电池组1实时电压(切换器上的电压)
+    unsigned char voltage_bat2;//[V],电池组2实时电压(切换器上的电压)
+    unsigned char current_bat1;//[0.1A],电池组1实时放电电流(电路互感器上检测的电流)
+    unsigned char current_bat2;//[0.1A],电池组2实时放电电流(电路互感器上检测的电流)
+    unsigned char toggle_state;//切换器状态,D1D0:当前放电通道,01:通道1,10:通道2; D3D2:通道1工作状态:01:0x55正在放电,10:0x5A请求放电;11:0xAA停止放电; D5D4:通道2工作状态; D7D6:预留
+    unsigned char charge_state;//充电机状态,D1D0:当前充电通道,01:通道1,10:通道2,11:通道3; D2:开关机状态,0:开机,1:关机; D3: 手动自动状态, 0:自动,1:手动; D6-4:保留; D7:发电机状态,0:停止,1:工作
+    unsigned char temp;//气象站数据：温度1
+    unsigned char humi;//气象站数据：湿度
+    unsigned char windspeed;//56//气象站数据：风速
+    unsigned char winddir;//气象站数据：风向
+    unsigned char airpress;//气象站数据：气压
+    unsigned char seasault;//气象站数据：海盐
+    unsigned char elec_cond;//气象站数据：电导率
+    unsigned char seatemp1;//气象站数据：海温1
+    unsigned char seatemp2;//气象站数据：海温2
+    unsigned char seatemp3;//气象站数据：海温3
+    unsigned char alt;//56//气象站数据：高度
+    unsigned char radiation;//气象站数据：辐射
+    unsigned char launch_req_ack;//火箭发射请求
+    unsigned char rocket_state;//火箭系统状态
+    unsigned char rktnumber;//火箭编号
+    unsigned char rkt_alt;//[10m]火箭升空高度
+    unsigned char work_mode;
+    unsigned char charger_voltage;
+    unsigned char charger_current;
+    unsigned char wp_next;
+    unsigned char master_state;
+    unsigned char slave_state;
+    unsigned char checksum;//76个字节
+
+};
+
+extern struct T_GLOBAL_BOOL_BOATPILOT  global_bool_boatpilot;
 
 
 #endif /* GLOBAL_H_ */
