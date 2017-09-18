@@ -200,10 +200,19 @@ void Copter::loop()
 		mavlink_system.compid = MAV_COMP_ID_ALL;
 		mavlink_msg_heartbeat_pack(mavlink_system.sysid, mavlink_system.compid, &msg, system_type,autopilot_type, system_mode, custom_mode, system_state);
 		 len = mavlink_msg_to_send_buffer(mav_send_buf, &msg);
-
+#ifdef LINUX_OS
 		 send_uart_data(uart_device_ap2gcs.uart_name, (char *)mav_send_buf,len);
-
+#endif
 	    //send IMU
+
+		 mavlink_msg_attitude_pack(mavlink_system.sysid,mavlink_system.compid,  &msg,  maintask_cnt,
+		                                   fdm_feed_back.phi, fdm_feed_back.theta, fdm_feed_back.psi,
+		                                   fdm_feed_back.phidot,fdm_feed_back.thetadot,fdm_feed_back.psidot);
+
+		 len = mavlink_msg_to_send_buffer(mav_send_buf, &msg);
+#ifdef LINUX_OS
+	 send_uart_data(uart_device_ap2gcs.uart_name, (char *)mav_send_buf,len);
+#endif
 
 #endif
 	}
@@ -225,8 +234,9 @@ void Copter::loop()
 				global_bool_boatpilot.send_ap2gcs_wp_end_num=global_bool_boatpilot.wp_total_num-1;
 			}
 
+#ifdef LINUX_OS
 			send_ap2gcs_waypoint_num(global_bool_boatpilot.send_ap2gcs_wp_start_num,global_bool_boatpilot.send_ap2gcs_wp_end_num-global_bool_boatpilot.send_ap2gcs_wp_start_num+1);
-
+#endif
 			global_bool_boatpilot.ap2gcs_wp_cnt_previous=global_bool_boatpilot.ap2gcs_wp_cnt;
 			global_bool_boatpilot.send_ap2gcs_wp_req=FALSE;
 		}
