@@ -109,6 +109,16 @@ void Copter::send_realdata_to_gcs( void )
 }
 #endif
 
+
+
+#ifdef LINUX_OS
+int read_radio_data(unsigned char *recv_buf,unsigned int recv_len)
+{
+
+
+}
+#endif
+
 /******************************************************/
 /*****************/
 
@@ -477,13 +487,14 @@ void Copter::setup()
 
 		uart_device_ap2gcs.uart_num=open_uart_dev(uart_device_ap2gcs.uart_name);
 
-		//uart_device_ap2gcs.ptr_fun=read_radio_data;
+		uart_device_ap2gcs.ptr_fun=read_radio_data;
 
-	set_uart_opt(uart_device_ap2gcs.uart_name, uart_device_ap2gcs.baudrate,
+	   set_uart_opt(uart_device_ap2gcs.uart_name, uart_device_ap2gcs.baudrate,
 			               uart_device_ap2gcs.databits, uart_device_ap2gcs.parity,
 			               uart_device_ap2gcs.stopbits);
 
 		//create_uart_pthread(&uart_device_radio);
+	create_uart_pthread(&uart_device_ap2gcs);
 
 
 

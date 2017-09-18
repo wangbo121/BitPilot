@@ -7,6 +7,9 @@
 
 #include "copter.h"
 
+//#include "mavlink.h"
+mavlink_system_t mavlink_system;
+
 #ifdef  LINUX_OS
 //#define MAINTASK_TICK_TIME_MS 20
 #define MAINTASK_TICK_TIME_MS 10//这个设置为10ms主要是为了跟sim_aircraft的仿真频率一致，其实20ms（50hz就够）
@@ -165,6 +168,36 @@ void Copter::loop()
 #ifdef LINUX_OS
 		//发送实时数据给地面站，只是作为在linux平台的测试，在linux平台上暂时测试是1秒钟发送一个实时数据包
 		send_realdata_to_gcs();
+
+
+		/*
+		 * 发送心跳包
+		 */
+		mavlink_system.sysid=1;
+		mavlink_system.compid=1;
+
+		// Initialize the required buffers
+		mavlink_message_t msg;
+		uint8_t mav_send_buf[MAVLINK_MAX_PACKET_LEN];
+
+		uint8_t system_type=	MAV_TYPE_QUADROTOR;
+		uint8_t autopilot_type=MAV_AUTOPILOT_GENERIC;
+		uint8_t system_mode=MAV_MODE_PREFLIGHT;
+		uint8_t custom_mode=0;
+		uint8_t system_state=MAV_STATE_STANDBY;
+
+
+
+		int len;
+		//send heart beat
+		mavlink_system.compid = MAV_COMP_ID_ALL;
+		mavlink_msg_heartbeat_pack(mavlink_system.sysid, mavlink_system.compid, &msg, system_type,autopilot_type, system_mode, custom_mode, system_state);
+		 len = mavlink_msg_to_send_buffer(mav_send_buf, &msg);
+
+		 send_uart_data(uart_device_ap2gcs.uart_name, (char *)mav_send_buf,len);
+
+	    //send IMU
+
 #endif
 	}
 }

@@ -126,13 +126,14 @@
 #define TOY_MODE 5                      // THOR This mode defines the Virtual
                                         // WP following mode
 
+#if 0
 #define	MAV_ROI_NONE 0 /* No region of interest. | */
 	#define MAV_ROI_WPNEXT    1 /* Point toward next MISSION. | */
 	#define MAV_ROI_WPINDEX   2 /* Point toward given MISSION. | */
 	#define MAV_ROI_LOCATION   3 /* Point toward fixed location. | */
 	#define MAV_ROI_TARGET   4 /* Point toward of given id. | */
 	#define MAV_ROI_ENUM_END  5 /*  | */
-
+#endif
 
 
 // definitions for earth frame and body frame
@@ -206,6 +207,7 @@
                     // requested
 #define NO_COMMAND 0
 
+#if 0
 enum MAV_CMD
 {
 	MAV_CMD_NAV_WAYPOINT=16, /* Navigate to MISSION. |Hold time in decimal seconds. (ignored by fixed wing, time to stay at MISSION for rotary wing)| Acceptance radius in meters (if the sphere with this radius is hit, the MISSION counts as reached)| 0 to pass through the WP, if > 0 radius in meters to pass by WP. Positive value for clockwise orbit, negative value for counter-clockwise orbit. Allows trajectory control.| Desired yaw angle at MISSION (rotary wing)| Latitude| Longitude| Altitude|  */
@@ -247,7 +249,7 @@ enum MAV_CMD
 	MAV_CMD_COMPONENT_ARM_DISARM=400, /* Arms / Disarms a component |1 to arm, 0 to disarm|  */
 	MAV_CMD_ENUM_END=401, /*  | */
 };
-
+#endif
 
 // Waypoint options
 #define MASK_OPTIONS_RELATIVE_ALT               1

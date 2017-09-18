@@ -126,6 +126,9 @@ using namespace std;
 #include "global.h"
 //#include "GCS.h"
 
+#include "mavlink.h"
+
+
 class Copter :public AP_HAL::HAL::Callbacks{
 public:
 
@@ -1500,6 +1503,7 @@ private:
 
 #ifdef LINUX_OS
 	 void send_realdata_to_gcs( void );
+
 #endif
 
 };
@@ -1579,11 +1583,16 @@ struct AP2GCS_REAL
 extern struct AP2GCS_REAL ap2gcs;
 extern int fd_ap2gcs;
 extern struct T_UART_DEVICE uart_device_ap2gcs;
+extern mavlink_system_t mavlink_system;
 
 void send_realdata_to_gcs();
 
 int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char len,\
                     unsigned int packet_cnt, unsigned char message_type,\
                     unsigned char commu_method, unsigned char ack_req);
+
+#ifdef LINUX_OS
+int read_radio_data(unsigned char *recv_buf,unsigned int recv_len);
+#endif
 
 #endif /* COPTER_H_ */
