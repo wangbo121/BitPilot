@@ -27,9 +27,10 @@ extern struct Location wp_total_array_temp[255];
  */
 #define DEBUG_SWITCH        1
 #ifdef    DEBUG_SWITCH
-#define printf_debug(fmt,args...) printf(fmt, ##args)
+//#define printf_debug(fmt,args...) printf(fmt, ##args)
+#define DEBUG_PRINTF(fmt,args...) printf(fmt, ##args)
 #else
-#define printf_debug(fmt,args...) /*do nothing */
+#define DEBUG_PRINTF(fmt,args...) /*do nothing */
 #endif
 
 // mark a function as not to be inlined

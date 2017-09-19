@@ -14,15 +14,8 @@ struct T_GLOBAL_BOOL_BOATPILOT  global_bool_boatpilot;
 
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 
-/*
- * 构造函数是没有返回值的
- */
-//Copter::Copter(void)
-//{
-//
-//}
-
-
+//#include "mavlink.h"
+mavlink_system_t mavlink_system;
 
 int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char len,\
                     unsigned int packet_cnt, unsigned char message_type,\
@@ -407,10 +400,6 @@ int16_t             motor_out_flightgear[AP_MOTORS_MAX_NUM_MOTORS];
  */
 void Copter::setup()
 {
-	//init_led();
-	//init_motor();
-	//init_mpu6050();
-
 	init_ardupilot();
 
 	float pid_p_1=1.0;
@@ -468,8 +457,8 @@ void Copter::setup()
 
 
 	/*
-	 * 导航用的pid
-	 */
+	* 导航用的pid
+	*/
 	float pid_p_3=2.0;
 	g.pid_nav_lon.set_kP(pid_p_3);
 	g.pid_nav_lon.set_kI(0.0);
@@ -482,8 +471,8 @@ void Copter::setup()
 	g.pid_nav_lat.set_kD(0.0);
 
 	/*
-	 * 油门控高
-	 */
+	* 油门控高
+	*/
 	float pid_p_alt=1;
 	g.pi_alt_hold.set_kP(pid_p_alt);
 	g.pi_alt_hold.set_kI(0.0);
@@ -495,10 +484,10 @@ void Copter::setup()
 
 
 	/*
-	 * 下面这些初始化，其实应该放在跟地面站连接时
-	 * 地面站的setup按钮里，设置遥控器的最大最小值
-	 * 但是我这里先直接赋值
-	 */
+	* 下面这些初始化，其实应该放在跟地面站连接时
+	* 地面站的setup按钮里，设置遥控器的最大最小值
+	* 但是我这里先直接赋值
+	*/
 
 	init_rc_in();
 
@@ -507,11 +496,9 @@ void Copter::setup()
 	roll_pitch_mode=ROLL_PITCH_STABLE;
 	yaw_mode=YAW_STABILE;
 
-
-
 	/*
-	 * 添加动力模型
-	 */
+	* 添加动力模型
+	*/
 	servos_set[0]=1500;
 	servos_set[1]=1500;
 	servos_set[2]=1500;
@@ -547,194 +534,194 @@ void Copter::setup()
 	wp_control =WP_MODE;
 
 
-		wp_total_array[0].id=0;
+	wp_total_array[0].id=0;
 
-		g.waypoint_speed_max=WAYPOINT_SPEED_MAX;
+	g.waypoint_speed_max=WAYPOINT_SPEED_MAX;
 
-		/*
-		 * 为了自行测试绕航点飞行，我先自行设置了初始的经度纬度如下
-		 */
-		long start_longtitude=-1223571928;
-		long start_latitude=376135531;
-//		long delta_lon=10012;
-//		long delta_lat=10001;//大概有100米？
-//
-//		long delta_lon=10000000;
-//		long delta_lat=10000000;
-
-
-
-		int wp_num=10;
-
-		//long delta_lon=5000;//111米  5000，然后半径设置微100米能够比较好仿真
-		long delta_lon=100000;
-		//long delta_lon=0;
-
-
-		//long delta_lat=0;
-		//long delta_lat=5000;
-		long delta_lat=100000;
-		//long delta_lat=9000;
-
-//		long delta_lon=100000;//111米
-//		long delta_lat=100000;
-
-		//g.waypoint_radius=100;//100米
-		g.waypoint_radius=10;//100米
-
-		wp_total_array[0].id 	= MAV_CMD_NAV_WAYPOINT;
-		wp_total_array[0].lng 	= start_longtitude;				// Lon * 10**7
-		wp_total_array[0].lat 	= start_latitude;				// Lat * 10**7
-		wp_total_array[0].alt 	= 0;							// Home is always 0
-
-		current_loc.lng=start_longtitude;
-		current_loc.lat=start_latitude;
-
-		int alt_temp=5000;
-
-		/*
-		 * 这个是经度纬度都增加，也就是一直往北或者一直往东，减小经度
-		 */
-//		for(int i=1;i<wp_num;i++)
-//		{
-//			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
-//			wp_total_array[i].lng 	= start_longtitude+delta_lon*i;				// Lon * 10**7
-//			//wp_total_array[i].lng 	= start_longtitude-delta_lon*i;				// Lon * 10**7
-//			//wp_total_array[i].lng 	= start_longtitude;				// Lon * 10**7
-//			wp_total_array[i].lat 	= start_latitude+delta_lat*i;				// Lat * 10**7
-//			wp_total_array[i].alt 	= alt_temp;							// Home is always 0
-//		}
+	/*
+	* 为了自行测试绕航点飞行，我先自行设置了初始的经度纬度如下
+	*/
+	long start_longtitude=-1223571928;
+	long start_latitude=376135531;
+	//		long delta_lon=10012;
+	//		long delta_lat=10001;//大概有100米？
+	//
+	//		long delta_lon=10000000;
+	//		long delta_lat=10000000;
 
 
 
+	int wp_num=10;
+
+	//long delta_lon=5000;//111米  5000，然后半径设置微100米能够比较好仿真
+	long delta_lon=100000;
+	//long delta_lon=0;
 
 
-		/*
-		 * 这个是矩形，绕航线飞行
-		 */
-		for(int i=1;i<wp_num;i++)
-		{
-			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
+	//long delta_lat=0;
+	//long delta_lat=5000;
+	long delta_lat=100000;
+	//long delta_lat=9000;
 
-			wp_total_array[i].alt 	= alt_temp;							// Home is always 0
+	//		long delta_lon=100000;//111米
+	//		long delta_lat=100000;
 
-			delta_lon=10000;
-			delta_lat=10000;
+	//g.waypoint_radius=100;//100米
+	g.waypoint_radius=10;//100米
 
-		}
-		wp_total_array[1].lng 	= start_longtitude+delta_lon*1;				// Lon * 10**7
-		wp_total_array[1].lat 	= start_latitude;				// Lat * 10**7
+	wp_total_array[0].id 	= MAV_CMD_NAV_WAYPOINT;
+	wp_total_array[0].lng 	= start_longtitude;				// Lon * 10**7
+	wp_total_array[0].lat 	= start_latitude;				// Lat * 10**7
+	wp_total_array[0].alt 	= 0;							// Home is always 0
 
-		wp_total_array[2].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
-		wp_total_array[2].lat 	= start_latitude;				// Lat * 10**7
+	current_loc.lng=start_longtitude;
+	current_loc.lat=start_latitude;
 
-		wp_total_array[3].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
-		wp_total_array[3].lat 	= start_latitude+delta_lat*1;				// Lat * 10**7
+	int alt_temp=5000;
 
-		wp_total_array[4].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
-		wp_total_array[4].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
-
-
-		wp_total_array[5].lng 	= start_longtitude+delta_lon*1;				// Lon * 10**7
-		wp_total_array[5].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
-
-		wp_total_array[6].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
-		wp_total_array[6].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
-
-		wp_total_array[7].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
-		wp_total_array[7].lat 	= start_latitude+delta_lat*1;				// Lat * 10**7
-
-		wp_total_array[8].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
-		wp_total_array[8].lat 	= start_latitude+delta_lat*0;				// Lat * 10**7
-
-		wp_total_array[9].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
-		wp_total_array[9].lat 	= start_latitude+delta_lat*0;				// Lat * 10**7
-
-
-		memcpy(&wp_total_array_temp,&wp_total_array,sizeof(wp_total_array));
-
-#ifdef LINUX_OS
-		global_bool_boatpilot.wp_total_num=wp_num;
-
-#endif
-
-
-//
-//		gps.longitude=-1223571928;				// Lon * 10**7
-//		gps.latitude=376135531;				// Lat * 10**7
-//
-//		gps.longitude=-1223570059;			// Lon * 10**7
-//		gps.latitude=376135956;
-
-
-		for(int i=0;i<wp_num;i++)
-		{
-			std::cout<<"wp_total_array["<<i<<"].lng="<<wp_total_array[i].lng<<std::endl;
-			std::cout<<"wp_total_array["<<i<<"].lat="<<wp_total_array[i].lat<<std::endl;
-			std::cout<<"wp_total_array["<<i<<"].alt="<<wp_total_array[i].alt<<std::endl;
-		}
-
-
-		init_home();
-
-		std::cout<<"home.lng="<<home.lng<<std::endl;
-		std::cout<<"home.lat="<<home.lat<<std::endl;
-
-		g.waypoint_total=wp_num;
-		next_WP.id=MAV_CMD_NAV_WAYPOINT;
-
-		init_commands();
-		g.command_total=wp_num;
-
-		command_nav_queue.id = NO_COMMAND;
-		//command_nav_index=0;
-		command_nav_index=0;
+	/*
+	* 这个是经度纬度都增加，也就是一直往北或者一直往东，减小经度
+	*/
+	//		for(int i=1;i<wp_num;i++)
+	//		{
+	//			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
+	//			wp_total_array[i].lng 	= start_longtitude+delta_lon*i;				// Lon * 10**7
+	//			//wp_total_array[i].lng 	= start_longtitude-delta_lon*i;				// Lon * 10**7
+	//			//wp_total_array[i].lng 	= start_longtitude;				// Lon * 10**7
+	//			wp_total_array[i].lat 	= start_latitude+delta_lat*i;				// Lat * 10**7
+	//			wp_total_array[i].alt 	= alt_temp;							// Home is always 0
+	//		}
 
 
 
-		g.crosstrack_gain=1;
 
-		g.channel_throttle.control_in=500;
-		g.channel_throttle.servo_out=500;
-		g.throttle_cruise=500;
 
-		g.sonar_enabled=0;
+	/*
+	* 这个是矩形，绕航线飞行
+	*/
+	for(int i=1;i<wp_num;i++)
+	{
+	wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
 
-		dTnav=100;
-		g.crosstrack_gain=1;
+	wp_total_array[i].alt 	= alt_temp;							// Home is always 0
 
-#ifdef LINUX_OS
-		//fd_ap2gcs=open_uart_dev("/dev/ttyUSB0");
+	delta_lon=10000;
+	delta_lat=10000;
 
-		//open_uart_dev(UART_DEVICE_APGCS);
-		//uart_device_ap2gcs.uart_name=UART_DEVICE_APGCS;
-		uart_device_ap2gcs.uart_name="/dev/ttyUSB0";
+	}
+	wp_total_array[1].lng 	= start_longtitude+delta_lon*1;				// Lon * 10**7
+	wp_total_array[1].lat 	= start_latitude;				// Lat * 10**7
 
-		uart_device_ap2gcs.baudrate=UART_AP2GCS_BAUD;
-		uart_device_ap2gcs.databits=UART_AP2GCS_DATABITS;
-		uart_device_ap2gcs.parity=UART_AP2GCS_PARITY;
-		uart_device_ap2gcs.stopbits=UART_AP2GCS_STOPBITS;
+	wp_total_array[2].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
+	wp_total_array[2].lat 	= start_latitude;				// Lat * 10**7
 
-		uart_device_ap2gcs.uart_num=open_uart_dev(uart_device_ap2gcs.uart_name);
+	wp_total_array[3].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
+	wp_total_array[3].lat 	= start_latitude+delta_lat*1;				// Lat * 10**7
 
-		uart_device_ap2gcs.ptr_fun=read_radio_data;
+	wp_total_array[4].lng 	= start_longtitude+delta_lon*2;				// Lon * 10**7
+	wp_total_array[4].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
 
-	   set_uart_opt(uart_device_ap2gcs.uart_name, uart_device_ap2gcs.baudrate,
-			               uart_device_ap2gcs.databits, uart_device_ap2gcs.parity,
-			               uart_device_ap2gcs.stopbits);
 
-		//create_uart_pthread(&uart_device_radio);
+	wp_total_array[5].lng 	= start_longtitude+delta_lon*1;				// Lon * 10**7
+	wp_total_array[5].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
+
+	wp_total_array[6].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
+	wp_total_array[6].lat 	= start_latitude+delta_lat*2;				// Lat * 10**7
+
+	wp_total_array[7].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
+	wp_total_array[7].lat 	= start_latitude+delta_lat*1;				// Lat * 10**7
+
+	wp_total_array[8].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
+	wp_total_array[8].lat 	= start_latitude+delta_lat*0;				// Lat * 10**7
+
+	wp_total_array[9].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
+	wp_total_array[9].lat 	= start_latitude+delta_lat*0;				// Lat * 10**7
+
+
+	memcpy(&wp_total_array_temp,&wp_total_array,sizeof(wp_total_array));
+
+	#ifdef LINUX_OS
+	global_bool_boatpilot.wp_total_num=wp_num;
+
+	#endif
+
+
+	//
+	//		gps.longitude=-1223571928;				// Lon * 10**7
+	//		gps.latitude=376135531;				// Lat * 10**7
+	//
+	//		gps.longitude=-1223570059;			// Lon * 10**7
+	//		gps.latitude=376135956;
+
+
+	for(int i=0;i<wp_num;i++)
+	{
+	std::cout<<"wp_total_array["<<i<<"].lng="<<wp_total_array[i].lng<<std::endl;
+	std::cout<<"wp_total_array["<<i<<"].lat="<<wp_total_array[i].lat<<std::endl;
+	std::cout<<"wp_total_array["<<i<<"].alt="<<wp_total_array[i].alt<<std::endl;
+	}
+
+
+	init_home();
+
+	std::cout<<"home.lng="<<home.lng<<std::endl;
+	std::cout<<"home.lat="<<home.lat<<std::endl;
+
+	g.waypoint_total=wp_num;
+	next_WP.id=MAV_CMD_NAV_WAYPOINT;
+
+	init_commands();
+	g.command_total=wp_num;
+
+	command_nav_queue.id = NO_COMMAND;
+	//command_nav_index=0;
+	command_nav_index=0;
+
+
+
+	g.crosstrack_gain=1;
+
+	g.channel_throttle.control_in=500;
+	g.channel_throttle.servo_out=500;
+	g.throttle_cruise=500;
+
+	g.sonar_enabled=0;
+
+	dTnav=100;
+	g.crosstrack_gain=1;
+
+	#ifdef LINUX_OS
+	//fd_ap2gcs=open_uart_dev("/dev/ttyUSB0");
+
+	//open_uart_dev(UART_DEVICE_APGCS);
+	//uart_device_ap2gcs.uart_name=UART_DEVICE_APGCS;
+	uart_device_ap2gcs.uart_name="/dev/ttyUSB0";
+
+	uart_device_ap2gcs.baudrate=UART_AP2GCS_BAUD;
+	uart_device_ap2gcs.databits=UART_AP2GCS_DATABITS;
+	uart_device_ap2gcs.parity=UART_AP2GCS_PARITY;
+	uart_device_ap2gcs.stopbits=UART_AP2GCS_STOPBITS;
+
+	uart_device_ap2gcs.uart_num=open_uart_dev(uart_device_ap2gcs.uart_name);
+
+	uart_device_ap2gcs.ptr_fun=read_radio_data;
+
+	set_uart_opt( uart_device_ap2gcs.uart_name, uart_device_ap2gcs.baudrate,
+							uart_device_ap2gcs.databits, uart_device_ap2gcs.parity,
+							uart_device_ap2gcs.stopbits);
+
+	//create_uart_pthread(&uart_device_radio);
 	create_uart_pthread(&uart_device_ap2gcs);
 
 
 
-		ap2gcs.lng=12235719;
-		ap2gcs.lat=3761355;
-		ap2gcs.alt=50;
+	ap2gcs.lng=12235719;
+	ap2gcs.lat=3761355;
+	ap2gcs.alt=50;
 
 
-		//send_uart_data(uart_device_ap2gcs.uart_name, (char *)&ap2gcs,sizeof(ap2gcs));
-#endif
+	//send_uart_data(uart_device_ap2gcs.uart_name, (char *)&ap2gcs,sizeof(ap2gcs));
+	#endif
 }
 
 void Copter::loop_fast()
@@ -1182,11 +1169,6 @@ void Copter::init_mpu6050()
 
 }
 
-
-void Copter:: init_ardupilot()
-{
-
-}
 
 
 

@@ -7,11 +7,6 @@
 
 #include "copter.h"
 
-//#include "mavlink.h"
-mavlink_system_t mavlink_system;
-
-
-
 #ifdef  LINUX_OS
 //#define MAINTASK_TICK_TIME_MS 20
 #define MAINTASK_TICK_TIME_MS 10//这个设置为10ms主要是为了跟sim_aircraft的仿真频率一致，其实20ms（50hz就够）
@@ -24,7 +19,7 @@ unsigned int maintask_cnt;
 
 int main(int argc,char * const argv[])
 {
-	cout<<"Welcome to BitPilot"<<endl;
+	DEBUG_PRINTF("Welcome to BitPilot");
 
 #if 0
 	/*
@@ -39,42 +34,32 @@ int main(int argc,char * const argv[])
 #else
 
 	/*
-	 * hal的run函数就是载入copter实例，
-	 * 然后执行copter的setup和loop函数，
+	 * hal的run函数就是载入copter实例，然后执行copter的setup和loop函数，
 	 * 跟直接写在下面是一样的
 	 */
 
-	/*
-	 * 初始化工作
-	 */
+	//初始化工作
 	copter.setup();
 
-	/*
-	 * 这个while循环是20ms
-	 * 也就是50hz，如果写在ucOS系统中，则该任务是20ms的
-	 */
 	while (1)
 	{
-
-//#if 1
 #ifdef LINUX_OS
+		//20170919为了跟sim_multicopter的动力模型计算频率一致，我们现在的循环频率是100hz
 		maintask_tick.tv_sec = seconds;
 		maintask_tick.tv_usec = mseconds;
 		select(0, NULL, NULL, NULL, &maintask_tick);
 		maintask_cnt++;
 #endif
 
-		copter.loop();//20ms一个周期的运行，那么这个loop循环中所有的函数都执行一边（或者说运行最多函数时），所需要的时间应该是小于20ms的
-
-
-
-
-
+		/*
+		 * 如果这个while(1)的循环周期是10ms那么
+		 * 这个loop循环中所有的函数都执行一边（或者说运行最多函数时），所需要的时间应该是小于10ms的
+		 */
+		copter.loop();
 	}
 
 	return 0;
 #endif
-
 }
 
 void Copter::loop()
@@ -84,20 +69,22 @@ void Copter::loop()
 	if(maintask_cnt>100)
 	{
 #ifdef LINUX_OS
-		std::cout<<"*********maintask_cnt>100*********************************************************"<<std::endl;
+		DEBUG_PRINTF("*********maintask_cnt>100*********************************************************");
 		float system_time_s=0;
 		system_time_s=clock_gettime_ms();
-		//std::cout<<"system_time_s="<<system_time_s/1000<<std::endl;
-		printf_debug("system_time_s==%f\n",system_time_s/1000);
+		DEBUG_PRINTF("system_time_s==%f\n",system_time_s/1000);
 		maintask_cnt=0;
 #endif
 	}
 
+	/*
+	 * 快循环，用来保证增稳，即使没有gps也应该可以手动遥控增稳飞行
+	 */
 	loop_fast();
 
 	/*
 	 * // reads all of the necessary trig functions for cameras, throttle, etc.
-	 * 这个是更新所有需要的三角函数的数值
+	 * 这个是更新所有需要的三角函数的数值	trigonometric function （三角函数）
 	 */
 	update_trig();
 
