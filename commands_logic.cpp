@@ -448,9 +448,17 @@ bool Copter:: verify_nav_wp()
 //		}
 //	}
 
+	/*
+	 * 20170919到达航点一共有3个判断
+	 * 1是到达高度 对应的NAV_ALTITUDE是2
+	 * 2是到达地点半径小于radius 对应的NAV_LOCATION是1
+	 * 3是到达后是不是要悬停,如果悬停时间也够了,那就是三个要求都满足了,那就到达航点了,wp_verify_byte就会等于7
+	 * 但是我这里只判断了是不是到达航点了,在半径范围之内就直接返回true
+	 */
 	// Did we pass the WP?	// Distance checking
 	//if((wp_distance <= g.waypoint_radius*100) || check_missed_wp())
-	if((wp_distance <= (unsigned int)g.waypoint_radius*100) || check_missed_wp())
+	//if((wp_distance <= (unsigned int)g.waypoint_radius*100) || check_missed_wp())
+	if((wp_distance <= (unsigned int)g.waypoint_radius) || check_missed_wp())//20170919wp_distance改成单位是米
 	//if((wp_distance <= (unsigned int)g.waypoint_radius*100))
 	{
 
@@ -475,7 +483,7 @@ bool Copter:: verify_nav_wp()
 		// we have reached our goal
 
 		// loiter at the WP
-		wp_control 	= LOITER_MODE;
+		//wp_control 	= LOITER_MODE;
 //
 //		if ((millis() - loiter_time) > loiter_time_max) {
 //			wp_verify_byte |= NAV_DELAY;

@@ -57,21 +57,6 @@ AP_DCM::update_DCM(float _G_Dt)
 }
 
 /**************************************************/
-
-    //For Debugging
-/*
-void
-printm(const char *l, Matrix3f &m)
-{ 	Serial.println(" "); Serial.println(l);
-	Serial.print(m.a.x, 12); Serial.print(" "); Serial.print(m.a.y, 12); Serial.print(" "); Serial.println(m.a.z, 12);
-	Serial.print(m.b.x, 12); Serial.print(" "); Serial.print(m.b.y, 12); Serial.print(" "); Serial.println(m.b.z, 12);
-	Serial.print(m.c.x, 12); Serial.print(" "); Serial.print(m.c.y, 12); Serial.print(" "); Serial.println(m.c.z, 12);
-	Serial.print(*(uint32_t *)&(m.a.x), HEX); Serial.print(" "); Serial.print(*(uint32_t *)&(m.a.y), HEX); Serial.print(" ");  Serial.println(*(uint32_t *)&(m.a.z), HEX);
-	Serial.print(*(uint32_t *)&(m.b.x), HEX); Serial.print(" "); Serial.print(*(uint32_t *)&(m.b.y), HEX); Serial.print(" ");  Serial.println(*(uint32_t *)&(m.b.z), HEX);
-	Serial.print(*(uint32_t *)&(m.c.x), HEX); Serial.print(" "); Serial.print(*(uint32_t *)&(m.c.y), HEX); Serial.print(" ");  Serial.println(*(uint32_t *)&(m.c.z), HEX);
-}
-*/
-
 /**************************************************/
 void
 AP_DCM::matrix_update(float _G_Dt)

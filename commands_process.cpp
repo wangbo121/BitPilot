@@ -66,6 +66,7 @@
 
 		//command_nav_index=0;//测试
 
+		command_nav_index=command_nav_index%(g.command_total -1);//20170919添加这个的目的主要是为了能够循环执行命令
 		if (command_nav_index < (g.command_total -1)) {
 
 			std::cout << "进入了command_nav_index < (g.command_total -1) "<<std::endl;
@@ -98,6 +99,7 @@
 			g.command_index  = command_nav_index = 1;//255对应有符号是-1
 			command_nav_queue = get_cmd_with_index(command_nav_index);
 			//set_next_WP(&command_nav_queue);
+			reset_nav_params();
 			execute_nav_command();
 
 
@@ -109,7 +111,7 @@
 			}
 		}
 	}
-
+#if 0
 	if(command_cond_queue.id == NO_COMMAND){
 		// Our queue is empty
 		// fill command queue with a new command if available, or do nothing
@@ -159,6 +161,7 @@
 
 		}
 	}
+#endif
 }
 
  void Copter:: execute_nav_command(void)

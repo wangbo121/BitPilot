@@ -410,7 +410,7 @@ public:
 	int8_t     waypoint_mode;
 	int8_t     waypoint_total;
 	int8_t     waypoint_index;
-	int8_t     waypoint_radius;
+	int8_t     waypoint_radius;//20170919这个单位应该是米
 	int8_t     loiter_radius;
 
 // Waypoints

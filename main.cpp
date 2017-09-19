@@ -127,14 +127,11 @@ void Copter::loop()
 		//发送实时数据给地面站，只是作为在linux平台的测试，在linux平台上暂时测试是1秒钟发送一个实时数据包
 		send_realdata_to_gcs();
 
-		//这个是10ms就判断一次是否收到地面站请求回传航点的命令
-		verify_send_all_waypoint_to_gcs();
-
 		maintask_cnt=0;
 	}
 
 	//这个是10ms就判断一次是否收到地面站请求回传航点的命令
-	//verify_send_all_waypoint_to_gcs();
+	verify_send_all_waypoint_to_gcs();
 #endif
 }
 

@@ -30,8 +30,11 @@ int Copter::navigate()
 	std::cout<<"filtered_loc.lng="<<filtered_loc.lng<<std::endl;
 	std::cout<<"filtered_loc.lat="<<filtered_loc.lat<<std::endl;
 
-    wp_distance     = get_distance_cm(&filtered_loc, &next_WP);
-    home_distance   = get_distance_cm(&filtered_loc, &home);
+//    wp_distance     = get_distance_cm(&filtered_loc, &next_WP);
+//    home_distance   = get_distance_cm(&filtered_loc, &home);
+	//20170919改成单位是米
+	 wp_distance     = get_distance(&filtered_loc, &next_WP);
+	home_distance   = get_distance(&filtered_loc, &home);
 
     if (wp_distance < 0){
     		// something went very wrong
@@ -85,15 +88,24 @@ void Copter::calc_XY_velocity(){
     // x_GPS_speed positve = Right
 
     // initialise last_longitude and last_latitude
+#if 0
     if( last_longitude == 0 && last_latitude == 0 ) {
         last_longitude = gps.longitude;
         last_latitude = gps.latitude;
     }
-
+#endif
     // this speed is ~ in cm because we are using 10^7 numbers from GPS
-    float tmp = 1.0/dTnav;
+    //float tmp = 1.0/dTnav;
+    float tmp = 1000.0/dTnav;//20170919如果dTnav单位是ms毫秒的话,
 
-    x_actual_speed  = (float)(gps.longitude - last_longitude)  * scaleLongDown * tmp;
+
+    std::cout<<"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$gps.longitude="<<gps.longitude<<std::endl;
+    std::cout<<"gps.latitude="<<gps.latitude<<std::endl;
+    std::cout<<"last_longitude="<<last_longitude<<std::endl;
+    std::cout<<"last_latitude="<<last_latitude<<std::endl;
+
+   // x_actual_speed  = (float)(gps.longitude - last_longitude)  * scaleLongDown * tmp;
+    x_actual_speed  = (float)(gps.longitude - last_longitude)  *  tmp;
     y_actual_speed  = (float)(gps.latitude  - last_latitude)  * tmp;
 
     std::cout<<"x_actual_speed="<<x_actual_speed<<std::endl;
@@ -243,18 +255,22 @@ void Copter::calc_nav_rate(int16_t max_speed)
     std::cout<<"calc_nav_rate  original_target_bearing="<<original_target_bearing<<std::endl;
 
     // push us towards the original track
-    update_crosstrack();//这个函数需要original_target_bearing的，这个角度还是很重要呀
+    update_crosstrack();//这个函数需要original_target_bearing的，这个角度还是很重要呀,因为是用来判断到没到点的
     std::cout<<"calc_nav_rate  crosstrack_error="<<crosstrack_error<<std::endl;
 
 
+    //crosstrack_error的单位是米
     /*
      * crosstrack_error是需要乘以负号的，在航线右边打左舵，在航线左边打右舵
      * crosstrack_error转换为cross_speed就是位置环转为位置环的速度环
      */
-    int16_t cross_speed = crosstrack_error * -g.crosstrack_gain;     // scale down crosstrack_error in cm
+    //int16_t cross_speed = crosstrack_error * -g.crosstrack_gain;     // scale down crosstrack_error in cm
+    int16_t cross_speed = crosstrack_error * -g.crosstrack_gain*100/2;     // scale down crosstrack_error in cm 之所以乘以100 再除以2是对应 800cm距离时 速度对应400cm/s
     cross_speed     = constrain(cross_speed, -150, 150);//这里限制了位置环的速度
 
     std::cout<<"calc_nav_rate  target_bearing="<<target_bearing<<std::endl;
+
+
 
     // rotate by 90 to deal with trig functions
     temp                    = (9000l - target_bearing) * RADX100;//这里temp的单位是弧度
@@ -280,8 +296,8 @@ void Copter::calc_nav_rate(int16_t max_speed)
     x_rate_error    = x_target_speed - x_actual_speed;//20170821这个应该是gps计算得到的
 #endif
 
-    std::cout<<"x_actual_speed="<<x_actual_speed<<std::endl;//150 0821
-    std::cout<<"x_target_speed="<<x_target_speed<<std::endl;//150 0821
+    std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@calc_nav_rate   x_actual_speed="<<x_actual_speed<<std::endl;//150 0821
+    std::cout<<"calc_nav_rate   x_target_speed="<<x_target_speed<<std::endl;//150 0821
 
     x_rate_error    = constrain(x_rate_error, -500, 500);
     //nav_lon                 = g.pid_nav_lon.get_pid(x_rate_error, dTnav);//这个是位置环的2级pid，把速率给到pid控制器
@@ -294,6 +310,7 @@ void Copter::calc_nav_rate(int16_t max_speed)
     tilt=0;//20170821添加 测试
     if(x_target_speed < 0) tilt = -tilt;
     nav_lon                 += tilt;
+
     nav_lon                 = constrain(nav_lon, -3200, 3200);
 
 
@@ -306,8 +323,8 @@ void Copter::calc_nav_rate(int16_t max_speed)
     y_rate_error    = y_target_speed - y_actual_speed;
 #endif
 
-    std::cout<<"y_actual_speed="<<y_actual_speed<<std::endl;
-    std::cout<<"y_target_speed="<<y_target_speed<<std::endl;
+    std::cout<<"calc_nav_rate y_actual_speed="<<y_actual_speed<<std::endl;
+    std::cout<<"calc_nav_rate y_target_speed="<<y_target_speed<<std::endl;
 
     y_rate_error    = constrain(y_rate_error, -500, 500);       // added a rate error limit to keep pitching down to a minimum
     nav_lat                 = g.pid_nav_lat.get_pid(y_rate_error, dTnav);
@@ -346,6 +363,8 @@ void Copter::calc_loiter_pitch_roll()
 #endif
 int16_t Copter::get_desired_speed(int16_t max_speed, bool _slow)
 {
+	//max_speed这个初始值是600
+
     /*
      * |< WP Radius
      *  0  1   2   3   4   5   6   7   8m
@@ -355,21 +374,25 @@ int16_t Copter::get_desired_speed(int16_t max_speed, bool _slow)
      ||< we should slow to 1.5 m/s as we hit the target
      */
 
-    if(fast_corner) {
+	_slow=0;
+    //if(fast_corner) {
+	if(_slow) {
         waypoint_radius = g.waypoint_radius * 2;
         //max_speed         = max_speed;
     }else{
-        waypoint_radius = g.waypoint_radius;
-        max_speed               = min(max_speed, (wp_distance - g.waypoint_radius) / 3);
+        waypoint_radius = g.waypoint_radius;//g.waypoint_radius的单位是米,而wp_distance的单位是厘米,这里waypoint_radius应该乘以100的20170919
+        max_speed               = min(max_speed, (wp_distance - g.waypoint_radius) / 3*100);
         max_speed               = max(max_speed, WAYPOINT_SPEED_MIN);           // go at least 100cm/s
     }
 
+#if 0
     // limit the ramp up of the speed
     // waypoint_speed_gov is reset to 0 at each new WP command
     if(max_speed > waypoint_speed_gov) {
         waypoint_speed_gov += (int)(100.0 * dTnav);         // increase at .5/ms
         max_speed = waypoint_speed_gov;
     }
+#endif
 
     std::cout<<"max_speed="<<max_speed<<std::endl;
 
@@ -391,12 +414,26 @@ int16_t Copter::get_desired_climb_rate()
 #endif
 void Copter::update_crosstrack(void)
 {
+#if 0
     // Crosstrack Error
     // ----------------
     // If we are too far off or too close we don't do track following
-    float temp = (target_bearing - original_target_bearing) * RADX100;
+    float temp = (target_bearing - original_target_bearing) * RADX100;//RADX100是3.14/180*0.01 temp计算的单位就是弧度,没有扩大100倍
     crosstrack_error = sin(temp) * wp_distance;          // Meters we are off track line
+#else
+    //这个是apm2.3的版本
+    // Crosstrack Error
+	// ----------------
+	if (abs(wrap_180(target_bearing - original_target_bearing)) < 4500) {	 // If we are too far off or too close we don't do track following
+		float temp = (target_bearing - original_target_bearing) * RADX100;
+		crosstrack_error = sin(temp) * (wp_distance * g.crosstrack_gain);	 // Meters we are off track line
+		nav_bearing = target_bearing + constrain(crosstrack_error, -3000, 3000);
+		nav_bearing = wrap_360(nav_bearing);
+	}else{
+		nav_bearing = target_bearing;
+	}
 
+#endif
     std::cout<<"target_bearing - original_target_bearing="<<target_bearing - original_target_bearing<<std::endl;
 }
 #if 0

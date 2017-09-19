@@ -33,6 +33,7 @@ Copter::get_stabilize_roll(int32_t target_angle)
 	     * 外环，也就是从角度误差经过pid控制器，把控制器的输出作为角速度环的输入，但是外环其实只用了p比例控制，没有用id
 	     */
 	    int32_t target_rate = g.pi_stabilize_roll.get_p(target_angle);
+		//int32_t target_rate = g.pi_stabilize_roll.get_pi(target_angle,G_Dt);//20170919改成pi
 	   // std::cout<<"target_rate="<<target_rate<<std::endl;
 
 	    int16_t i_stab;
@@ -283,11 +284,11 @@ Copter::get_rate_roll(int32_t target_rate)
 
 	// call pid controller
 	rate_error      = target_rate - current_rate;
-	p                       = g.pid_rate_roll.get_p(rate_error);
+	p                      = g.pid_rate_roll.get_p(rate_error);
 
-		i                       = g.pid_rate_roll.get_i(rate_error, G_Dt);
-	d                       = g.pid_rate_roll.get_d(rate_error, G_Dt);
-	output          = p + i + d;
+	i                       = g.pid_rate_roll.get_i(rate_error, G_Dt);
+	d                      = g.pid_rate_roll.get_d(rate_error, G_Dt);
+	output            = p + i + d;
 
 //	std::cout<<"rate roll   :    rate_error="<<rate_error<<std::endl;
 //	std::cout<<"rate roll   :    pid out="<<output<<std::endl;
@@ -298,9 +299,6 @@ Copter::get_rate_roll(int32_t target_rate)
 
 	// output control
 	return output;
-
-
-
 }
 
 int16_t
@@ -328,12 +326,12 @@ Copter::get_rate_pitch(int32_t target_rate)
 
 	    // call pid controller
 	    rate_error      = target_rate - current_rate;
-	    p                       = g.pid_rate_pitch.get_p(rate_error);
+		p                       = g.pid_rate_pitch.get_p(rate_error);
 
 
-	        i                       = g.pid_rate_pitch.get_i(rate_error, G_Dt);
+		i                       = g.pid_rate_pitch.get_i(rate_error, G_Dt);
 
-	    d                       = g.pid_rate_pitch.get_d(rate_error, G_Dt);
+		d                       = g.pid_rate_pitch.get_d(rate_error, G_Dt);
 	    output          = p + i + d;
 
 //		std::cout<<"rate pitch   :    rate_error="<<rate_error<<std::endl;
@@ -464,11 +462,10 @@ Copter::update_yaw_mode(void)
 		 /*
 		  * 还是要注意所有wrap_180和wrap_360的使用的unimode是100还是1
 		  */
-	        nav_yaw += constrain(wrap_180(auto_yaw - nav_yaw,100), -60*100, 60*100);                 // 40 deg a second
-		 //nav_yaw += constrain(wrap_180(auto_yaw - nav_yaw,100), -20, 20);                 // 40 deg a second
-	        //Serial.printf("nav_yaw %d ", nav_yaw);
-	        nav_yaw  = wrap_360(nav_yaw,100);
-	        get_stabilize_yaw(nav_yaw);
+			//   nav_yaw += constrain(wrap_180(auto_yaw - nav_yaw,100), -60*100, 60*100);                 // 40 deg a second
+			nav_yaw += constrain(wrap_180(auto_yaw - nav_yaw,100), -20, 20);                 // 40 deg a second
+			nav_yaw  = wrap_360(nav_yaw,100);
+			get_stabilize_yaw(nav_yaw);
 	        break;
 
 	default:
@@ -511,7 +508,7 @@ Copter::update_roll_pitch_mode(void)
 		  * 也就意味着elevator的值是负数或者说如果按照1000～2000来说，应该是1000～1500之间，按照servo_out来说就是，-4500～0度
 		  */
 	        // mix in user control with Nav control
-	        nav_roll                += constrain(wrap_180(auto_roll  - nav_roll,100),  -g.auto_slew_rate, g.auto_slew_rate);                 // 40 deg a second
+	        nav_roll                += constrain(wrap_180(auto_roll  - nav_roll,100),  -g.auto_slew_rate, g.auto_slew_rate);                 // 40 deg a second g.auto_slew_rate=30 初始化的宏定义
 	        nav_pitch               += constrain(wrap_180(auto_pitch - nav_pitch,100), -g.auto_slew_rate, g.auto_slew_rate);                 // 40 deg a second
 
 	        std::cout<<"update_roll_pitch_mode    auto_roll="<<auto_roll<<std::endl;

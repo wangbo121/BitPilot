@@ -461,14 +461,14 @@ void Copter::setup()
 	*/
 	float pid_p_3=2.0;
 	g.pid_nav_lon.set_kP(pid_p_3);
-	g.pid_nav_lon.set_kI(0.0);
-	g.pid_nav_lon.set_kD(0.0);
+	g.pid_nav_lon.set_kI(0.122);
+	g.pid_nav_lon.set_kD(0.017);
 
 
 	//g.pid_nav_lat.set_kP(pid_p_3);
 	g.pid_nav_lat.set_kP(2.0);
-	g.pid_nav_lat.set_kI(0.0);//又犯了复制没有改名字的错误，set_kI写成了set_kP，导致p又改为了0
-	g.pid_nav_lat.set_kD(0.0);
+	g.pid_nav_lat.set_kI(0.122);//又犯了复制没有改名字的错误，set_kI写成了set_kP，导致p又改为了0
+	g.pid_nav_lat.set_kD(0.017);
 
 	/*
 	* 油门控高
@@ -554,20 +554,20 @@ void Copter::setup()
 	int wp_num=10;
 
 	//long delta_lon=5000;//111米  5000，然后半径设置微100米能够比较好仿真
-	long delta_lon=100000;
+	long delta_lon=1e5;
 	//long delta_lon=0;
 
 
 	//long delta_lat=0;
 	//long delta_lat=5000;
-	long delta_lat=100000;
+	long delta_lat=1e5;
 	//long delta_lat=9000;
 
 	//		long delta_lon=100000;//111米
 	//		long delta_lat=100000;
 
 	//g.waypoint_radius=100;//100米
-	g.waypoint_radius=10;//100米
+	g.waypoint_radius=10;//waypoint_radius的单位是米,程序中比较的是厘米,在程序里面已经乘以100了,这里的单位就是米
 
 	wp_total_array[0].id 	= MAV_CMD_NAV_WAYPOINT;
 	wp_total_array[0].lng 	= start_longtitude;				// Lon * 10**7
@@ -605,6 +605,10 @@ void Copter::setup()
 
 	wp_total_array[i].alt 	= alt_temp;							// Home is always 0
 
+	delta_lon=10000;
+	delta_lat=10000;
+
+	//20170919
 	delta_lon=10000;
 	delta_lat=10000;
 
@@ -687,7 +691,8 @@ void Copter::setup()
 
 	g.sonar_enabled=0;
 
-	dTnav=100;
+	dTnav=100;//单位应该是毫秒  // Delta Time in milliseconds for navigation computations  因为pid的函数中计算积分所需要的时间就是以毫秒为单位的
+	//dTnav=0.1;//单位是秒,20170919应该按照gps更新的速度设置的,那么就应该是10hz或者5hz呀
 	g.crosstrack_gain=1;
 
 	#ifdef LINUX_OS
@@ -697,6 +702,7 @@ void Copter::setup()
 	char char_uart[20];
 
 	strcpy(char_uart,str_uart.c_str());
+
 
 	//open_uart_dev(UART_DEVICE_APGCS);
 	//uart_device_ap2gcs.uart_name=UART_DEVICE_APGCS;
@@ -773,7 +779,7 @@ void Copter::loop_fast()
 	/* 2--更新姿态，获取飞机现在的姿态角 */
 	compass.read();
 	//gps.read();
-	update_GPS();//gps read只是读取数据 update_GPS里面还需要给current_loc赋值
+	//update_GPS();//gps read只是读取数据 update_GPS里面还需要给current_loc赋值//20170919放在这里太快了,还是放在10hz的里面好点
 	imu.update();
 	/*
 	 * 因为下面的ahrs中需要imu gps compass的数据，
@@ -1361,6 +1367,7 @@ void Copter::update_nav_wp()
 	   /*
 	    * 这个是我们需要的航点飞行时，把误差转换为
 	    * 20170821
+	    * 一开始由于next_WP都是0,所以肯定计算结果是错误的,但是update_commands很快就会执行,那么next_WP就会计算出来,从而很快就正确了
 	    */
 
 	   std::cout<<"wp_control == WP_MODE"<<std::endl;
@@ -1368,6 +1375,7 @@ void Copter::update_nav_wp()
         // calc error to target
         calc_location_error(&next_WP);//这个对于航点飞行来说没什么用，但是可以打印出来看看经度纬度差多少
 
+        //speed的单位是cm每秒,最小是100cm/s最大是600cm/s
         int16_t speed = get_desired_speed(g.waypoint_speed_max, slow_wp);//这个是位置环计算机头方向的最大速度，根据wp_distance来计算
         // use error as the desired rate towards the target
         calc_nav_rate(speed);//这个是位置环的2级pid控制，但是有两个方向，1是机头方向速度，2是向左右侧滑的速度靠近航线去，max_speed方向上的，也就是机头方向，如果要压航线，还需要cross_speed
@@ -1426,15 +1434,23 @@ void Copter::medium_loop()
 			//if(GPS_enabled){
 			//	update_GPS();
 			//}
+			static int gps_cnt;
+			gps_cnt++;
+			if(gps_cnt>10)
+			{
+				update_GPS();
+				gps_cnt=0;
+			}
 
-			#if HIL_MODE != HIL_MODE_ATTITUDE					// don't execute in HIL mode
-				if(g.compass_enabled){
-					if (compass.read()) {
-                        compass.calculate(dcm.get_dcm_matrix());  	// Calculate heading
-                        compass.null_offsets(dcm.get_dcm_matrix());
-                    }
+
+			if(g.compass_enabled)
+			{
+				//if (compass.read())
+				{
+					//compass.calculate(dcm.get_dcm_matrix());  	// Calculate heading
+					//compass.null_offsets(dcm.get_dcm_matrix());
 				}
-			#endif
+			}
 
 			// auto_trim, uses an auto_level algorithm
 //			auto_trim();
@@ -1457,6 +1473,12 @@ void Copter::medium_loop()
 				// calculate the copter's desired bearing and WP distance
 				// ------------------------------------------------------
 				if(navigate()){
+					/*
+					 * 程序开始运行时,navigate计算的wp_distance     = get_distance(&filtered_loc, &next_WP);
+					 * 肯定是非常大的,因为next_WP是(0,0)也就是经度为0,纬度也为0,所以下面的update_navigation
+					 * 中的verify_commands();肯定返回的也是fasle也就是没有到达,
+					 * 直到update_commands更新,得到下一个航点的位置,所以实际上update_commands是先有效执行的
+					 */
 
 					// this calculates the velocity for Loiter
 					// only called when there is new data
@@ -1589,6 +1611,9 @@ void Copter::slow_loop()
 			slow_loopCounter++;
 			superslow_loopCounter++;
 
+			/*
+			 * 下面这个是更新记录磁力计的偏移量,后期还是得用
+			 */
 			if(superslow_loopCounter > 1200){
 				#if HIL_MODE != HIL_MODE_ATTITUDE
 					if(g.rc_3.control_in == 0 && control_mode == STABILIZE && g.compass_enabled){
