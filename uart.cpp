@@ -27,6 +27,8 @@
 
 #include "uart.h"
 
+#include "global.h"
+
 #define UART_DEV_TOTAL 12
 #define UART_BUF_SIZE  512
 
@@ -40,6 +42,9 @@ static int get_uart_num(char *uart_name)
 {
     int i=0;
     int uart_no=0;
+
+    //printf("串口名字=%s\n",uart_name);
+    //printf("串口名字=%s\n",uart_dev[5]);
 
     for(i=0;i<UART_DEV_TOTAL;i++)
     {
@@ -265,6 +270,7 @@ int read_uart_data(char *uart_name, char *rcv_buf, int time_out_ms, int buf_len)
 
     struct stat temp_stat;
 
+    //printf("read data 串口名字=%s\n",uart_name);
     fd=get_uart_fd(uart_name);
     pos = 0;
 
@@ -313,15 +319,39 @@ int read_uart_data(char *uart_name, char *rcv_buf, int time_out_ms, int buf_len)
 void *uart_recvbuf_and_process(void * ptr_pthread_arg)
 {
     char buf[UART_BUF_SIZE] = { 0 };
-    unsigned int read_len;
+    int read_len;
 
     struct T_UART_DEVICE *ptr_uart;
 
     ptr_uart=(struct T_UART_DEVICE *)ptr_pthread_arg;
 
+    ptr_uart=&uart_device_ap2gcs;
+
+    printf("uart recvbuf 串口名字=%s\n",ptr_uart->uart_name);
+
+#define UART_AP2GCS_BAUD 9600
+#define UART_AP2GCS_DATABITS 8 //8 data bit
+#define UART_AP2GCS_STOPBITS 1 //1 stop bit
+#define UART_AP2GCS_PARITY 0 //no parity
+
     while(1)
     {
+    	uart_device_ap2gcs.uart_name="/dev/ttyUSB0";
+
+		uart_device_ap2gcs.baudrate=UART_AP2GCS_BAUD;
+		uart_device_ap2gcs.databits=UART_AP2GCS_DATABITS;
+		uart_device_ap2gcs.parity=UART_AP2GCS_PARITY;
+		uart_device_ap2gcs.stopbits=UART_AP2GCS_STOPBITS;
+
+
+
+    	printf("uart recvbuf 串口名字=%s\n",ptr_uart->uart_name);
         if(-1!=(read_len=read_uart_data(ptr_uart->uart_name, buf, 200, sizeof(buf)-1)))
+    	//if(-1!=(read_len=read_uart_data("/dev/ttyUSB0", buf, 200, sizeof(buf)-1)))
+    	//read_uart_data("/dev/ttyUSB0", buf, 200, sizeof(buf)-1);//可以运行
+    	//read_len=read_uart_data("/dev/ttyUSB0", buf, 200, sizeof(buf)-1);//不可以运行,为啥呢?不是赋值的问题,而是 ptr_uart->ptr_fun的问题,这里有问题,这个结构有啥问题呢
+    	//ptr_uart->ptr_fun((unsigned char*)buf,read_len);
+    	///if(1)
         {
 #if 0
             printf("read_len=%d\n",read_len);
@@ -335,6 +365,8 @@ void *uart_recvbuf_and_process(void * ptr_pthread_arg)
             }
         }
     }
+
+    return 0;
 }
 
 int create_uart_pthread(struct T_UART_DEVICE *ptr_uart)
@@ -360,7 +392,7 @@ int create_uart_pthread(struct T_UART_DEVICE *ptr_uart)
     ret = pthread_create (&uart_pthrd[uart_no],            //线程标识符指针
                               NULL,                            //默认属性
                               uart_recvbuf_and_process,//运行函数
-                              &temp_device);                 //运行函数的参数
+                              (void *)&temp_device);                 //运行函数的参数
     if (0 != ret)
     {
        perror ("pthread create error\n");

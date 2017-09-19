@@ -10,6 +10,7 @@
 #include <string.h>
 #include <math.h>
 
+#define LINUX_OS
 #ifdef LINUX_OS
 /*转换int或者short的字节顺序，该程序arm平台为大端模式，地面站x86架构为小端模式*/
 #include <byteswap.h>
@@ -20,6 +21,8 @@
 
 #include <sys/stat.h>
 #endif
+
+
 
 #include "global.h"
 #include "uart.h"

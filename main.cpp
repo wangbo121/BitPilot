@@ -15,7 +15,6 @@ int mseconds=MAINTASK_TICK_TIME_MS*(1e3);/*每个tick为20毫秒，也就是2000
 struct timeval maintask_tick;
 
 void verify_send_all_waypoint_to_gcs( void);
-
 #endif
 
 unsigned int maintask_cnt;
@@ -29,7 +28,7 @@ void send_attitude_to_gcs( void );
 
 int main(int argc,char * const argv[])
 {
-	DEBUG_PRINTF("Welcome to BitPilot");
+	DEBUG_PRINTF("Welcome to BitPilot\n");
 
 #if 0
 	/*
@@ -110,27 +109,32 @@ void Copter::loop()
 		/*
 		 * 发送数据包给地面站,但是里面的串口发送还用的是linux的,仍然需要更改
 		 */
-		send_heartbeat_to_gcs();
-		send_attitude_to_gcs();
+		//send_heartbeat_to_gcs();
+		//send_attitude_to_gcs();
 	}
 
 #ifdef LINUX_OS
 	maintask_cnt++;
-	if(maintask_cnt%100)
+	if(maintask_cnt>100)
 	{
 		//这个是1秒钟打印一次
 		DEBUG_PRINTF("*********maintask_cnt>100*********************************************************");
 		float system_time_s=0;
 		system_time_s=clock_gettime_ms();
 		DEBUG_PRINTF("system_time_s==%f\n",system_time_s/1000);
-		//maintask_cnt=0;
+
 
 		//发送实时数据给地面站，只是作为在linux平台的测试，在linux平台上暂时测试是1秒钟发送一个实时数据包
 		send_realdata_to_gcs();
+
+		//这个是10ms就判断一次是否收到地面站请求回传航点的命令
+		verify_send_all_waypoint_to_gcs();
+
+		maintask_cnt=0;
 	}
 
 	//这个是10ms就判断一次是否收到地面站请求回传航点的命令
-	verify_send_all_waypoint_to_gcs();
+	//verify_send_all_waypoint_to_gcs();
 #endif
 }
 
@@ -169,12 +173,6 @@ void send_attitude_to_gcs( void )
 	// Initialize the required buffers
 	mavlink_message_t msg;
 	uint8_t mav_send_buf[MAVLINK_MAX_PACKET_LEN];
-
-	uint8_t system_type=	MAV_TYPE_QUADROTOR;
-	uint8_t autopilot_type=MAV_AUTOPILOT_GENERIC;
-	uint8_t system_mode=MAV_MODE_PREFLIGHT;
-	uint8_t custom_mode=0;
-	uint8_t system_state=MAV_STATE_STANDBY;
 
 	int len;
 	mavlink_system.compid = MAV_COMP_ID_ALL;

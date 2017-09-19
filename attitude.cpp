@@ -465,6 +465,7 @@ Copter::update_yaw_mode(void)
 		  * 还是要注意所有wrap_180和wrap_360的使用的unimode是100还是1
 		  */
 	        nav_yaw += constrain(wrap_180(auto_yaw - nav_yaw,100), -60*100, 60*100);                 // 40 deg a second
+		 //nav_yaw += constrain(wrap_180(auto_yaw - nav_yaw,100), -20, 20);                 // 40 deg a second
 	        //Serial.printf("nav_yaw %d ", nav_yaw);
 	        nav_yaw  = wrap_360(nav_yaw,100);
 	        get_stabilize_yaw(nav_yaw);

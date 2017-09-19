@@ -693,9 +693,14 @@ void Copter::setup()
 	#ifdef LINUX_OS
 	//fd_ap2gcs=open_uart_dev("/dev/ttyUSB0");
 
+	string str_uart="/dev/ttyUSB0";
+	char char_uart[20];
+
+	strcpy(char_uart,str_uart.c_str());
+
 	//open_uart_dev(UART_DEVICE_APGCS);
 	//uart_device_ap2gcs.uart_name=UART_DEVICE_APGCS;
-	uart_device_ap2gcs.uart_name="/dev/ttyUSB0";
+	uart_device_ap2gcs.uart_name=char_uart;
 
 	uart_device_ap2gcs.baudrate=UART_AP2GCS_BAUD;
 	uart_device_ap2gcs.databits=UART_AP2GCS_DATABITS;
@@ -709,6 +714,8 @@ void Copter::setup()
 	set_uart_opt( uart_device_ap2gcs.uart_name, uart_device_ap2gcs.baudrate,
 							uart_device_ap2gcs.databits, uart_device_ap2gcs.parity,
 							uart_device_ap2gcs.stopbits);
+
+	printf("uart recvbuf 串口名字=%s\n",uart_device_ap2gcs.uart_name);
 
 	//create_uart_pthread(&uart_device_radio);
 	create_uart_pthread(&uart_device_ap2gcs);
@@ -726,6 +733,9 @@ void Copter::setup()
 
 void Copter::loop_fast()
 {
+	/*
+	 * 将来跟硬件驱动获取数据整合时,这个函数是不需要的,现在是模拟,所以才需要
+	 */
 	//20170918添加了all_external_device_input和output一直循环从驱动中获取数据，至于硬件驱动到底多大频率获取的我不管，我只是每次从这里获取数据
 	update_all_external_device_input();
 
@@ -741,15 +751,15 @@ void Copter::loop_fast()
 	 * 4--control根据飞行模式 control_mode的选项，选择不同的控制方式
 	 * 5--set_servos
 	 */
+#ifdef LINUX_OS
 	float timer;
 	timer=clock_gettime_ms();
-	//std::cout<<"timer="<<timer/1000<<std::endl;
-
-	G_Dt=(timer-fast_loopTimer)/1000.0;//单位是秒[s]
-	G_Dt=0.01;//这个设置为0.01秒也就是100hz主要是为了跟sim_aircraft的速率一致，但是其实20ms(50hz)就够
-	//std::cout<<"G_Dt="<<G_Dt<<std::endl;
+	G_Dt=(timer-fast_loopTimer)/1000.0;
 
 	fast_loopTimer=timer;
+#endif
+
+	G_Dt=0.01;//这个设置为0.01秒也就是100hz主要是为了跟sim_aircraft的速率一致，但是其实20ms(50hz)就够
 
 	/* 1--读取接收机的信号，获取遥控器各个通道 */
 	read_radio();
@@ -770,6 +780,13 @@ void Copter::loop_fast()
 	 * 所以需要先读取那些传感器的数据
 	 */
 	ahrs.update_DCM(G_Dt);
+
+	if(takeoff_complete == false)
+	{
+		// reset these I terms to prevent awkward tipping on takeoff
+		reset_rate_I();
+		reset_stability_I();
+	}
 
 	/* 3--update_current_flight_mode 更新控制状态，从而选择控制方式 */
 	update_current_flight_mode();
