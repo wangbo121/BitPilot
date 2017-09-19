@@ -14,7 +14,9 @@
 #include "pid.h"
 #include "rc.h"
 
-#define LINUX_OS
+#ifndef LINUX_OS
+#define LINUX_OS //这个是在linux上测试时用的，比如udp和串口通信
+#endif
 
 #ifdef LINUX_OS
 #include "location.h"

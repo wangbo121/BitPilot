@@ -874,6 +874,7 @@ void Copter::loop_fast()
 
 	memcpy(&fdm_send,&fdm,sizeof(fdm));
 
+#ifdef LINUX_OS
 	fdm_send.version = htonl(FG_NET_FDM_VERSION);
 	fdm_send.latitude = htond(fdm_send.latitude);
 	fdm_send.longitude = htond(fdm_send.longitude);
@@ -890,6 +891,7 @@ void Copter::loop_fast()
 	fdm_send.cur_time = htonl(time(0));
 	fdm_send.warp = htonl(1);
 	fdm_send.visibility = htonf(5000.0);
+#endif
 
 #ifdef LINUX_OS
 	sendto(fd_sock_send, &fdm_send, sizeof(fdm_send), 0, (struct sockaddr *)&udp_sendto_addr, sizeof(udp_sendto_addr));
@@ -1632,6 +1634,7 @@ void Copter::fifty_hz_loop()
 {
 	// moved to slower loop
 	// --------------------
+	invalid_throttle=true;
 	update_throttle_mode();
 
 	//声纳

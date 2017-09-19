@@ -13,9 +13,19 @@
 int seconds=0;
 int mseconds=MAINTASK_TICK_TIME_MS*(1e3);/*每个tick为20毫秒，也就是20000微秒*/
 struct timeval maintask_tick;
+
+void verify_send_all_waypoint_to_gcs( void);
+
 #endif
 
 unsigned int maintask_cnt;
+
+/*
+ * 这两个函数即使不在linux系统上也是需要的
+ * 按照mavlink协议发送数据给地面站
+ */
+void send_heartbeat_to_gcs( void );
+void send_attitude_to_gcs( void );
 
 int main(int argc,char * const argv[])
 {
@@ -64,19 +74,6 @@ int main(int argc,char * const argv[])
 
 void Copter::loop()
 {
-	maintask_cnt++;
-
-	if(maintask_cnt>100)
-	{
-#ifdef LINUX_OS
-		DEBUG_PRINTF("*********maintask_cnt>100*********************************************************");
-		float system_time_s=0;
-		system_time_s=clock_gettime_ms();
-		DEBUG_PRINTF("system_time_s==%f\n",system_time_s/1000);
-		maintask_cnt=0;
-#endif
-	}
-
 	/*
 	 * 快循环，用来保证增稳，即使没有gps也应该可以手动遥控增稳飞行
 	 */
@@ -94,45 +91,7 @@ void Copter::loop()
 //		update_GPS();
 //	}
 
-#if 1
 	medium_loop();
-
-#else
-	if(maintask_cnt%10)
-	{
-		//10hz
-		/*
-		 * 其实fast_loop应该就是仅仅包括radio ahrs update_rate_control servo_out就可以了，不需要知道高度，gps等
-		 * 但是ahrs为了更加准确，加入了gps作为融合，所以把gps的读取放到了fastloop里，但其实gps更新速率应该是
-		 * 没有那么快的，10hz的gps是比较常规的，fastloop是50hz的
-		 */
-
-		//更新高度，气压计或者gps高度
-		update_alt();
-
-		// calculate distance, angles to target
-		navigate();
-
-		// this calculates the velocity for Loiter
-		// only called when there is new data
-		// ----------------------------------
-		calc_XY_velocity();
-
-		// update flight control system
-		update_navigation();
-		//printf_debug("update_navigation    original_target_bearing=%d\n",original_target_bearing);
-
-		if(control_mode == AUTO)
-		{
-			if(home_is_set == true && g.command_total > 1)
-			{
-				//command_nav_queue.id = NO_COMMAND;
-				printf_debug("home is set     command_nav_queue.id=%d\n",command_nav_queue.id);
-				update_commands();
-			}
-		}
-	}
-#endif
 
 	// Stuff to run at full 50hz, but after the med loops
 	// --------------------------------------------------
@@ -140,75 +99,104 @@ void Copter::loop()
 
 	counter_one_herz++;
 
-	// trgger our 1 hz loop
+	// trigger our 1 hz loop
 	//if(counter_one_herz >= 50){
 	//因为我这里改成了100hz所以需要改成100
-	if(counter_one_herz >= 100){
+	if(counter_one_herz >= 100)
+	{
 		super_slow_loop();
 		counter_one_herz = 0;
-	}
-
-#if 0
-	这个更新油门模式的已经在50hz的循环里有了，不需要再写了
-	if(maintask_cnt%2)
-	{//50hz
-		invalid_throttle=true;
-		update_throttle_mode();
-	}
-#endif
-
-	if(maintask_cnt%100)
-	{
-#ifdef LINUX_OS
-		//发送实时数据给地面站，只是作为在linux平台的测试，在linux平台上暂时测试是1秒钟发送一个实时数据包
-		send_realdata_to_gcs();
-
 
 		/*
-		 * 发送心跳包
+		 * 发送数据包给地面站,但是里面的串口发送还用的是linux的,仍然需要更改
 		 */
-		mavlink_system.sysid=1;
-		mavlink_system.compid=1;
-
-		// Initialize the required buffers
-		mavlink_message_t msg;
-		uint8_t mav_send_buf[MAVLINK_MAX_PACKET_LEN];
-
-		uint8_t system_type=	MAV_TYPE_QUADROTOR;
-		uint8_t autopilot_type=MAV_AUTOPILOT_GENERIC;
-		uint8_t system_mode=MAV_MODE_PREFLIGHT;
-		uint8_t custom_mode=0;
-		uint8_t system_state=MAV_STATE_STANDBY;
-
-
-
-		int len;
-		//send heart beat
-		mavlink_system.compid = MAV_COMP_ID_ALL;
-		mavlink_msg_heartbeat_pack(mavlink_system.sysid, mavlink_system.compid, &msg, system_type,autopilot_type, system_mode, custom_mode, system_state);
-		 len = mavlink_msg_to_send_buffer(mav_send_buf, &msg);
-#ifdef LINUX_OS
-		 send_uart_data(uart_device_ap2gcs.uart_name, (char *)mav_send_buf,len);
-#endif
-	    //send IMU
-
-		 mavlink_msg_attitude_pack(mavlink_system.sysid,mavlink_system.compid,  &msg,  maintask_cnt,
-		                                   fdm_feed_back.phi, fdm_feed_back.theta, fdm_feed_back.psi,
-		                                   fdm_feed_back.phidot,fdm_feed_back.thetadot,fdm_feed_back.psidot);
-
-		 len = mavlink_msg_to_send_buffer(mav_send_buf, &msg);
-#ifdef LINUX_OS
-	 send_uart_data(uart_device_ap2gcs.uart_name, (char *)mav_send_buf,len);
-#endif
-
-#endif
+		send_heartbeat_to_gcs();
+		send_attitude_to_gcs();
 	}
 
+#ifdef LINUX_OS
+	maintask_cnt++;
+	if(maintask_cnt%100)
+	{
+		//这个是1秒钟打印一次
+		DEBUG_PRINTF("*********maintask_cnt>100*********************************************************");
+		float system_time_s=0;
+		system_time_s=clock_gettime_ms();
+		DEBUG_PRINTF("system_time_s==%f\n",system_time_s/1000);
+		//maintask_cnt=0;
 
+		//发送实时数据给地面站，只是作为在linux平台的测试，在linux平台上暂时测试是1秒钟发送一个实时数据包
+		send_realdata_to_gcs();
+	}
+
+	//这个是10ms就判断一次是否收到地面站请求回传航点的命令
+	verify_send_all_waypoint_to_gcs();
+#endif
+}
+
+void send_heartbeat_to_gcs( void )
+{
+	// 发送心跳包
+	send_heartbeat_to_gcs();
+	mavlink_system.sysid=1;
+	mavlink_system.compid=1;
+
+	// Initialize the required buffers
+	mavlink_message_t msg;
+	uint8_t mav_send_buf[MAVLINK_MAX_PACKET_LEN];
+
+	uint8_t system_type=	MAV_TYPE_QUADROTOR;
+	uint8_t autopilot_type=MAV_AUTOPILOT_GENERIC;
+	uint8_t system_mode=MAV_MODE_PREFLIGHT;
+	uint8_t custom_mode=0;
+	uint8_t system_state=MAV_STATE_STANDBY;
+
+	int len;
+	//send heart beat
+	mavlink_system.compid = MAV_COMP_ID_ALL;
+	mavlink_msg_heartbeat_pack(mavlink_system.sysid, mavlink_system.compid, &msg, system_type,autopilot_type, system_mode, custom_mode, system_state);
+	len = mavlink_msg_to_send_buffer(mav_send_buf, &msg);
+#ifdef LINUX_OS
+	send_uart_data(uart_device_ap2gcs.uart_name, (char *)mav_send_buf,len);
+#endif
+}
+
+void send_attitude_to_gcs( void )
+{
+	mavlink_system.sysid=1;
+	mavlink_system.compid=1;
+
+	// Initialize the required buffers
+	mavlink_message_t msg;
+	uint8_t mav_send_buf[MAVLINK_MAX_PACKET_LEN];
+
+	uint8_t system_type=	MAV_TYPE_QUADROTOR;
+	uint8_t autopilot_type=MAV_AUTOPILOT_GENERIC;
+	uint8_t system_mode=MAV_MODE_PREFLIGHT;
+	uint8_t custom_mode=0;
+	uint8_t system_state=MAV_STATE_STANDBY;
+
+	int len;
+	mavlink_system.compid = MAV_COMP_ID_ALL;
+
+	//send IMU
+	mavlink_msg_attitude_pack(  mavlink_system.sysid,mavlink_system.compid,  &msg,  maintask_cnt,
+														fdm_feed_back.phi, fdm_feed_back.theta, fdm_feed_back.psi,
+														fdm_feed_back.phidot,fdm_feed_back.thetadot,fdm_feed_back.psidot);
+
+	len = mavlink_msg_to_send_buffer(mav_send_buf, &msg);
+#ifdef LINUX_OS
+	send_uart_data(uart_device_ap2gcs.uart_name, (char *)mav_send_buf,len);
+#endif
+}
+
+#ifdef  LINUX_OS
+void verify_send_all_waypoint_to_gcs( void)
+{
 	if(global_bool_boatpilot.send_ap2gcs_wp_req)
 	{
 		//global_bool_boatpilot.wp_total_num=4;
-			//global_bool_boatpilot.send_ap2gcs_wp_end_num=3;
+		//global_bool_boatpilot.send_ap2gcs_wp_end_num=3;
 		printf("电台--请求发送航点数据给地面站\n");
 		global_bool_boatpilot.ap2gcs_wp_cnt++;
 
@@ -220,15 +208,10 @@ void Copter::loop()
 			{
 				global_bool_boatpilot.send_ap2gcs_wp_end_num=global_bool_boatpilot.wp_total_num-1;
 			}
-
-#ifdef LINUX_OS
 			send_ap2gcs_waypoint_num(global_bool_boatpilot.send_ap2gcs_wp_start_num,global_bool_boatpilot.send_ap2gcs_wp_end_num-global_bool_boatpilot.send_ap2gcs_wp_start_num+1);
-#endif
 			global_bool_boatpilot.ap2gcs_wp_cnt_previous=global_bool_boatpilot.ap2gcs_wp_cnt;
 			global_bool_boatpilot.send_ap2gcs_wp_req=FALSE;
 		}
 	}
 }
-
-
-
+#endif

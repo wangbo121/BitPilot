@@ -75,7 +75,9 @@ void send_heartbeat(mavlink_channel_t chan)
 	mavlink_msg_heartbeat_pack(mavlink_system.sysid, mavlink_system.compid, &msg, system_type,autopilot_type,system_mode,custom_mode,system_state);
 	 len = mavlink_msg_to_send_buffer(mav_send_buf, &msg);
 
+#ifdef LINUX_OS
 	 send_uart_data(uart_device_ap2gcs.uart_name, (char *)mav_send_buf,len);
+#endif
 
 #endif
 }

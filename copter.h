@@ -13,6 +13,7 @@
 /*********最开始的这些头文件和定义跟飞控本身没有关系，
  * 跟flightgear和地面站仿真模拟有关系*********************/
 
+
 #ifndef LINUX_OS
 #define LINUX_OS //这个是在linux上测试时用的，比如udp和串口通信
 #endif
