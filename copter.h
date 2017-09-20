@@ -614,9 +614,9 @@ private:
 	   uint8_t command_yaw_relative;
 	  // Yaw will point at this location if yaw_tracking is set to MAV_ROI_LOCATION
 	   struct   Location target_WP;
-	   uint8_t wp_control;
+	   uint8_t wp_control;//航点的控制方式有悬停，自动，绕圈等
 	   //uint8_t   yaw_tracking = MAV_ROI_WPNEXT;
-	   uint8_t   yaw_tracking ;
+	   uint8_t   yaw_tracking ;//机头是否朝着航点，还是朝着兴趣点，其实朝着航点就是把兴趣点设置为航点
 
 
 	   ////////////////////////////////////////////////////////////////////////////////

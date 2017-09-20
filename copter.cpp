@@ -7,347 +7,20 @@
 
 #include "copter.h"
 
-#ifdef LINUX_OS
-#include "boatlink.h"
-struct T_GLOBAL_BOOL_BOATPILOT  global_bool_boatpilot;
-#endif
-
-const AP_HAL::HAL& hal = AP_HAL::get_HAL();
-
-//#include "mavlink.h"
-mavlink_system_t mavlink_system;
-
-int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char len,\
-                    unsigned int packet_cnt, unsigned char message_type,\
-                    unsigned char commu_method, unsigned char ack_req)
-{
-    static unsigned char frame_head_len=8;
-    static unsigned char frame_end_len=2;
-    unsigned char packet[128];
-    unsigned char checksum = 0;
-
-    int i, j;
-    int packet_data_len;
-
-    packet[0] = 0xaa;
-    packet[1] = 0x55;
-    packet[2] = 76;//20170728统一定义为76字节，包含帧头帧尾
-    packet_data_len = len;
-
-    packet[3] = packet_cnt;
-
-    packet[4] = 0x01;
-    packet[5] = message_type;
-
-    packet[6]=commu_method;
-    packet[7]=ack_req;
-
-    for (i = frame_head_len, j = 0; i < packet_data_len + frame_head_len; i++, j++)
-    {
-        packet[i] = src_buf[j];
-    }
-
-    for (i = 0; i < len + frame_head_len; i++)
-    {
-        checksum += packet[i];
-    }
-
-    i = len + frame_head_len;
-
-    //20170728把数据包长度统一减少2个字节，为76个字节
-    packet[i]=0;
-    checksum=checksum+packet[i];
-    packet[i+1] = (checksum & 0xFF);
-
-    memcpy(dst_buf, packet, packet_data_len + frame_head_len + frame_end_len);
-    //printf("打包后返回的字节长度=%d\n",packet_data_len + frame_head_len + frame_end_len);//20170729已测试
-
-    /*返回总的发送字节数*/
-    return packet_data_len + frame_head_len + frame_end_len;
-}
-
-
-#ifdef LINUX_OS
-void Copter::send_realdata_to_gcs( void )
-{
-	 unsigned char buf_data[256];
-	unsigned char buf_packet[256];
-	int ret;
-	static int real_cnt;
-	real_cnt++;
-
-#if 0
-	std::cout<<"send ap2gcs current_loc="<<current_loc.lng<<std::endl;
-	//ap2gcs.lng=current_loc.lng*1e-2;
-	ap2gcs.lng=-current_loc.lng*1e-2;
-	ap2gcs.lat=current_loc.lat*1e-2;
-	ap2gcs.alt=current_loc.alt*1e-2;
-#else
-
-	//ap2gcs.lng=current_loc.lng*1e-2;
-	ap2gcs.lng=-current_loc.lng*1e-2;
-	ap2gcs.lat=current_loc.lat*1e-2;
-	ap2gcs.alt=current_loc.alt*1e-2;
-
-#endif
-	//20170728把帧头帧尾加入到数据结构中
-	static unsigned char frame_len=76;
-	static unsigned char frame_head_len=8;
-	static unsigned char frame_checksum_len=2;
-	static unsigned char frame_data_len;
-	frame_data_len=frame_len-frame_head_len-frame_checksum_len;
-
-	memcpy(buf_data, &ap2gcs.pack_func_flag, frame_data_len);
-	ret=generate_packet(buf_packet, buf_data, frame_data_len,\
-											real_cnt, 0x10,\
-											0,1);
-#ifdef LINUX_OS
-	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf_packet,ret);
-#endif
-}
-#endif
-
-
-
-#ifdef LINUX_OS
-#define RADIO_RECV_HEAD1  0
-#define RADIO_RECV_HEAD2  1
-#define RADIO_RECV_LEN  2
-#define RADIO_RECV_CNT  3
-#define RADIO_RECV_SYSID 4
-#define RADIO_RECV_TYPE 5
-#define RADIO_RECV_COM_LINK 6
-#define RADIO_RECV_ACK_REQ 7
-#define RADIO_RECV_DATA 8
-
-#define RADIO_RECV_CHECKSUM0 9
-#define RADIO_RECV_CHECKSUM1 10
-
-static int radio_recv_state = 0;
-
-int read_radio_data(unsigned char *recv_buf,unsigned int recv_len)
-{
-	/* 直接把读取到的数据拷贝到_buffer数组中 */
-	static unsigned char _buffer[512];
-
-	/* 这个帧头的8个字节，都保存下来，放在_frame_received里面 */
-	//head1=0xaa;
-	//head2=0x55;
-	static int _pack_recv_len = 0;
-	static int _pack_recv_cnt = 0;
-	static unsigned char _sysid;
-	static unsigned char _pack_recv_type;
-	static unsigned char _pack_recv_com_link;
-	static unsigned char _pack_recv_ack_req;
-
-	/* 这个是帧尾的校验和 其实是2个字节 但是我们现在只用1个字节 */
-	static unsigned char _checksum = 0;
-
-	unsigned int i = 0;
-	static unsigned char c;
-	static unsigned char valid_len=5;
-
-	static unsigned char _frame_received_cnt;
-	static unsigned char _frame_received[512];//存放一帧的数据，从帧头到帧尾校验和都包括，完整的一帧
-	static unsigned char _frame_checksum_len=2;
-
-
-
-	memcpy(_buffer, recv_buf, recv_len);
-#if 1
-	printf("radio data buf=\n");
-	for(i=0;i<recv_len;i++)
-	{
-		printf("%0x ",recv_buf[i]);
-	}
-	printf("\n");
-#endif
-
-	for (i = 0; i<recv_len; i++)
-	{
-		c = _buffer[i];
-		switch (radio_recv_state)
-		{
-		case RADIO_RECV_HEAD1:
-			if (c == 0xaa)
-			{
-				radio_recv_state = RADIO_RECV_HEAD2;
-				_checksum = c;
-			}
-			break;
-		case RADIO_RECV_HEAD2:
-			if (c == 0x55)
-			{
-				radio_recv_state = RADIO_RECV_LEN;
-				_checksum += c;
-			}
-			else
-			{
-				_checksum = 0;
-				radio_recv_state = RADIO_RECV_HEAD1;
-				_frame_received_cnt=0;
-			}
-			break;
-		case RADIO_RECV_LEN:
-			_checksum += c;
-			_pack_recv_len=c;
-
-			_frame_received[0]=0xaa;
-			_frame_received[1]=0x55;
-			_frame_received[2]=c;//20170728这个是统一为76个字节了，可以打印出来看
-			_frame_received_cnt=3;
-
-			radio_recv_state = RADIO_RECV_CNT;
-			break;
-		case RADIO_RECV_CNT:
-			_pack_recv_cnt = c;
-			_checksum += c;
-
-			_frame_received[_frame_received_cnt]=c;
-			_frame_received_cnt++;
-
-			radio_recv_state = RADIO_RECV_SYSID;
-			break;
-		case RADIO_RECV_SYSID:
-			_sysid = c;
-			if(0!=_sysid)
-			{
-				_checksum += c;
-
-				_frame_received[_frame_received_cnt]=c;
-				_frame_received_cnt++;
-
-				radio_recv_state = RADIO_RECV_TYPE;
-			}
-			break;
-		case RADIO_RECV_TYPE:
-			_pack_recv_type = c;
-			_checksum += c;
-
-			_frame_received[_frame_received_cnt]=c;
-			_frame_received_cnt++;
-
-			radio_recv_state = RADIO_RECV_COM_LINK;
-			break;
-		case RADIO_RECV_COM_LINK:
-			_pack_recv_com_link = c;
-			_checksum += c;
-
-			_frame_received[_frame_received_cnt]=c;
-			_frame_received_cnt++;
-
-			radio_recv_state = RADIO_RECV_ACK_REQ;
-			break;
-		case RADIO_RECV_ACK_REQ:
-			_pack_recv_ack_req = c;
-			_checksum += c;
-
-			//_frame_received[7]=c;
-			_frame_received[_frame_received_cnt]=c;
-			_frame_received_cnt++;
-
-			radio_recv_state = RADIO_RECV_DATA;
-			break;
-		case RADIO_RECV_DATA:
-			_checksum += c;
-
-			_frame_received[_frame_received_cnt]=c;
-			_frame_received_cnt++;
-
-			if (_frame_received_cnt >= _pack_recv_len-_frame_checksum_len)
-			{
-				//printf("checksum=%0x \n",_checksum);
-				radio_recv_state = RADIO_RECV_CHECKSUM0;
-			}
-			break;
-		case RADIO_RECV_CHECKSUM0:
-			_checksum += c;
-
-			_frame_received[_frame_received_cnt]=c;
-			_frame_received_cnt++;
-
-			radio_recv_state = RADIO_RECV_CHECKSUM1;
-			break;
-		case RADIO_RECV_CHECKSUM1:
-			if (_checksum == c)
-			{
-				_frame_received[_frame_received_cnt]=c;//如果正常的话，这里的_frame_received_cnt应该等于76，包含帧头和帧尾
-				_frame_received_cnt++;
-				//printf("_frame_received_cnt=%d\n",_frame_received_cnt);
-
-				global_bool_boatpilot.radio_recv_packet_cnt = _pack_recv_cnt;
-				if(global_bool_boatpilot.radio_recv_packet_cnt_previous!=global_bool_boatpilot.radio_recv_packet_cnt)
-				{
-					switch (_pack_recv_type)
-					{
-					case COMMAND_GCS2AP_WAYPOINT:
-						if (_frame_received_cnt == sizeof(gcs_ap_wp))
-						{
-							printf("正确接收到GCS_AP_WP数据包，且数据包数据长度与航点结构长度相同\n");
-							memcpy(&gcs_ap_wp, _frame_received, _frame_received_cnt);
-							global_bool_boatpilot.bool_get_gcs2ap_waypoint = TRUE;
-							 decode_gcs2ap_waypoint(wp_data,&gcs_ap_wp);
-							//global_bool_boatpilot.bool_gcs2ap_beidou=_pack_recv_com_link;
-							//global_bool_boatpilot.send_ap2gcs_wp_req=_pack_recv_ack_req;
-							//global_bool_boatpilot.gcs2ap_wp_cnt=_pack_recv_cnt;
-							//global_bool_boatpilot.ap2gcs_wp_cnt=_pack_recv_cnt;
-						}
-						_checksum = 0;
-						radio_recv_state = 0;
-						_frame_received_cnt=0;
-						break;
-					case COMMAND_GCS2AP_CMD:
-						if (_frame_received_cnt == sizeof(gcs2ap_cmd))
-						{
-							//printf("正确接收到GCS2AP_CMD数据包，且数据包数据长度与命令结构长度相同\n");//20170410已测试
-							memcpy(&gcs2ap_cmd, _frame_received, _frame_received_cnt);
-							global_bool_boatpilot.bool_get_gcs2ap_cmd = TRUE;
-							decode_gcs2ap_cmd(&gcs2ap_radio_all, &gcs2ap_cmd);
-							//global_bool_boatpilot.bool_gcs2ap_beidou=_pack_recv_com_link;//这次先不判断北斗，北斗和电台同时发送实时数据，同时接收并解析命令包
-							//global_bool_boatpilot.send_ap2gcs_cmd_req=_pack_recv_ack_req;
-							//global_bool_boatpilot.gcs2ap_cmd_cnt=_pack_recv_cnt;
-							global_bool_boatpilot.ap2gcs_cmd_cnt=_pack_recv_cnt;
-						}
-						_checksum = 0;
-						radio_recv_state = 0;
-						_frame_received_cnt=0;
-						break;
-
-					default:
-						break;
-					}
-
-				}
-			}
-			else
-			{
-				printf("电台--数据校验和错误，校验和是加和\n");
-				_checksum = 0;
-				radio_recv_state = 0;
-				_frame_received_cnt=0;
-			}
-		}
-	}
-
-	return 0;
-
-
-}
-#endif
-
 /******************************************************/
 /*****************/
-
 int fd_ap2gcs;
 struct T_UART_DEVICE uart_device_ap2gcs;
 
 /*
  * 20180821发现初始化的纬度在先
  */
-//MultiCopter multi_copter("37.6136,-122.357,10,0","x");//起始高度为10，yaw是0
-MultiCopter multi_copter("37.6136,-122.357,10,0","+");//起始高度为10，yaw是0
+//MultiCopter multi_copter("37.6136,-122.357,10,0","x");//x型机架，起始高度为10，yaw是0
+MultiCopter multi_copter("37.6136,-122.357,10,0","+");//+型机架，起始高度为10，yaw是0
 
-//MultiCopter multi_copter;
+//fdm是从四旋翼的simulate数学模型中获取数据，
+//然后fdm_send发送给flightgear，
+//fdm_feed_back作为状态观测或者说是传感器把数据反馈回来
 T_FDM fdm;
 T_FDM fdm_send;
 T_FDM fdm_feed_back;//这个动力模型解算出来后，就把数据返回给imu，gps，compass等
@@ -394,14 +67,15 @@ int16_t             motor_out_flightgear[AP_MOTORS_MAX_NUM_MOTORS];
 
 
 /*
- * wangbo20170802
- * 其实下面这些Copter类的函数的定义是可以放在copter.cpp中的
- * 但是对于看代码的人来说，可以直接从这里看到函数定义，就不用跳到copter.cpp中去了
+ * wangbo20170802setup包括2部分，
+ * 1是init_ardupilot是用来初始化硬件驱动的，
+ * 2是剩下部分是用来初始化参数或者状态的
  */
 void Copter::setup()
 {
 	init_ardupilot();
 
+	//一共10组pid参数
 	//第一级pid参数设置
 	float stabilize_roll_p=3.69;
 	float stabilize_roll_i=0.0;
@@ -425,7 +99,6 @@ void Copter::setup()
 	g.pi_stabilize_yaw.set_kI(stabilize_yaw_i);
 	g.pi_stabilize_yaw.set_kD(stabilize_yaw_d);
 
-
 	//第2级pid参数设置
 	float stabilize_roll_rate_p=0.15;//0.255;
 	float stabilize_roll_rate_i=0.1;//0.122;
@@ -441,7 +114,6 @@ void Copter::setup()
 	g.pid_rate_pitch.set_kI(stabilize_pitch_rate_i);
 	g.pid_rate_pitch.set_kD(stabilize_pitch_rate_d);
 
-
 	float stabilize_yaw_rate_p=0.2;//0.17;
 	float stabilize_yaw_rate_i=0.02;//0.2;
 	float stabilize_yaw_rate_d=0.0;//0.003;
@@ -453,13 +125,14 @@ void Copter::setup()
 	/*
 	* 导航用的pid
 	*/
+	//经度差pid
 	float pid_p_3=2.0;
 	g.pid_nav_lon.set_kP(pid_p_3);
 	g.pid_nav_lon.set_kI(0.122);
 	//g.pid_nav_lon.set_kD(0.017);
 	g.pid_nav_lon.set_kD(0.0);
 
-
+	//纬度差pid
 	//g.pid_nav_lat.set_kP(pid_p_3);
 	g.pid_nav_lat.set_kP(2.0);
 	g.pid_nav_lat.set_kI(0.122);//又犯了复制没有改名字的错误，set_kI写成了set_kP，导致p又改为了0
@@ -477,7 +150,6 @@ void Copter::setup()
 	g.pid_throttle.set_kP(0.5);
 	g.pid_throttle.set_kI(1.0);
 	g.pid_throttle.set_kD(0.0);
-
 	//上面一共10组pid控制器
 
 	/*
@@ -488,34 +160,12 @@ void Copter::setup()
 
 	init_rc_in();
 
-	fast_loopTimer=clock_gettime_ms();//必须有这个初始化，否则第一次G_Dt的值会非常大
+
 
 	roll_pitch_mode=ROLL_PITCH_STABLE;
 	yaw_mode=YAW_STABILE;
 
-	/*
-	* 添加动力模型
-	*/
-	servos_set[0]=1500;
-	servos_set[1]=1500;
-	servos_set[2]=1500;
-	servos_set[3]=1500;
-	memcpy(input.servos,servos_set,sizeof(servos_set));
 
-#ifdef LINUX_OS
-	open_udp_dev(IP_SEND_TO, PORT_SENT_TO, PORT_RECEIVE);//发送fdm飞行动力模型给flightgear，从而能够呈现姿态等
-	open_socket_udp_dev(&fd_socket_generic,"127.0.0.1",5056);//发送generic的协议给flightgear，从而能够螺旋桨能够旋转
-#endif
-
-	ap2fg.throttle0 = 0.2;
-	ap2fg.throttle1 = 0.3;
-	ap2fg.throttle2 = 0.4;
-	ap2fg.throttle3 = 0.5;
-
-	ap2fg_send_test.throttle0=0;
-	ap2fg_send_test.throttle1=0;
-	ap2fg_send_test.throttle2=0;
-	ap2fg_send_test.throttle3=0;
 
 	g.auto_slew_rate=AUTO_SLEW_RATE;
 
@@ -528,7 +178,7 @@ void Copter::setup()
 	sin_roll_y=0;
 
 	yaw_tracking = MAV_ROI_WPNEXT;
-	wp_control =WP_MODE;
+	wp_control =WP_MODE;//设置为自动巡航模式
 
 
 	wp_total_array[0].id=0;
@@ -538,32 +188,12 @@ void Copter::setup()
 	/*
 	* 为了自行测试绕航点飞行，我先自行设置了初始的经度纬度如下
 	*/
-	long start_longtitude=-1223571928;
+	long start_longtitude=-1223571928;//原始gps经度乘以10的7次方，最小一位对应的是厘米
 	long start_latitude=376135531;
-	//		long delta_lon=10012;
-	//		long delta_lat=10001;//大概有100米？
-	//
-	//		long delta_lon=10000000;
-	//		long delta_lat=10000000;
-
-
 
 	int wp_num=10;
-
-	//long delta_lon=5000;//111米  5000，然后半径设置微100米能够比较好仿真
-	long delta_lon=1e5;
-	//long delta_lon=0;
-
-
-	//long delta_lat=0;
-	//long delta_lat=5000;
+	long delta_lon=1e5;//1000米，初始是1000米，但是在后面分别增加了一直向东和绕正方形航行，所以会重新给delta_lon赋值
 	long delta_lat=1e5;
-	//long delta_lat=9000;
-
-	//		long delta_lon=100000;//111米
-	//		long delta_lat=100000;
-
-	//g.waypoint_radius=100;//100米
 	g.waypoint_radius=10;//waypoint_radius的单位是米,程序中比较的是厘米,在程序里面已经乘以100了,这里的单位就是米
 
 	wp_total_array[0].id 	= MAV_CMD_NAV_WAYPOINT;
@@ -576,9 +206,7 @@ void Copter::setup()
 
 	int alt_temp=5000;
 
-	/*
-	* 这个是经度纬度都增加，也就是一直往北或者一直往东，减小经度
-	*/
+	//这个是经度纬度都增加，也就是一直往北或者一直往东，减小经度
 	//		for(int i=1;i<wp_num;i++)
 	//		{
 	//			wp_total_array[i].id 	= MAV_CMD_NAV_WAYPOINT;
@@ -589,12 +217,8 @@ void Copter::setup()
 	//			wp_total_array[i].alt 	= alt_temp;							// Home is always 0
 	//		}
 
-
-
-
-
 	/*
-	* 这个是矩形，绕航线飞行
+	* 这个是矩形，绕航线飞行，每个航点距离是100米
 	*/
 	for(int i=1;i<wp_num;i++)
 	{
@@ -604,11 +228,6 @@ void Copter::setup()
 
 	delta_lon=10000;
 	delta_lat=10000;
-
-	//20170919
-	delta_lon=10000;
-	delta_lat=10000;
-
 	}
 	wp_total_array[1].lng 	= start_longtitude+delta_lon*1;				// Lon * 10**7
 	wp_total_array[1].lat 	= start_latitude;				// Lat * 10**7
@@ -638,22 +257,7 @@ void Copter::setup()
 	wp_total_array[9].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
 	wp_total_array[9].lat 	= start_latitude+delta_lat*0;				// Lat * 10**7
 
-
 	memcpy(&wp_total_array_temp,&wp_total_array,sizeof(wp_total_array));
-
-	#ifdef LINUX_OS
-	global_bool_boatpilot.wp_total_num=wp_num;
-
-	#endif
-
-
-	//
-	//		gps.longitude=-1223571928;				// Lon * 10**7
-	//		gps.latitude=376135531;				// Lat * 10**7
-	//
-	//		gps.longitude=-1223570059;			// Lon * 10**7
-	//		gps.latitude=376135956;
-
 
 	for(int i=0;i<wp_num;i++)
 	{
@@ -661,7 +265,6 @@ void Copter::setup()
 	std::cout<<"wp_total_array["<<i<<"].lat="<<wp_total_array[i].lat<<std::endl;
 	std::cout<<"wp_total_array["<<i<<"].alt="<<wp_total_array[i].alt<<std::endl;
 	}
-
 
 	init_home();
 
@@ -674,11 +277,8 @@ void Copter::setup()
 	init_commands();
 	g.command_total=wp_num;
 
-	command_nav_queue.id = NO_COMMAND;
-	//command_nav_index=0;
+	command_nav_queue.id = NO_COMMAND;//只有nav_queue的id是没有命令时，update_commands才会生效，更新命令
 	command_nav_index=0;
-
-
 
 	g.crosstrack_gain=1;
 
@@ -690,21 +290,52 @@ void Copter::setup()
 
 	dTnav=100;//单位应该是毫秒  // Delta Time in milliseconds for navigation computations  因为pid的函数中计算积分所需要的时间就是以毫秒为单位的
 	//dTnav=0.1;//单位是秒,20170919应该按照gps更新的速度设置的,那么就应该是10hz或者5hz呀
-	g.crosstrack_gain=1;
 
-	#ifdef LINUX_OS
-	//fd_ap2gcs=open_uart_dev("/dev/ttyUSB0");
 
-//	string str_uart="/dev/ttyUSB0";
-//	char char_uart[20];
-//
-//	strcpy(char_uart,str_uart.c_str());
-//
+
+
+
+
+	/*
+	 * 下面是用来连接flightgear和地面站进行模拟测试的
+	 */
+#ifdef LINUX_OS
+	fast_loopTimer=clock_gettime_ms();//必须有这个初始化，否则第一次G_Dt的值会非常大
+#endif
+
+#ifdef LINUX_OS
+	global_bool_boatpilot.wp_total_num=wp_num;
+#endif
+
+	/*
+	* 添加动力模型
+	*/
+	servos_set[0]=1500;
+	servos_set[1]=1500;
+	servos_set[2]=1500;
+	servos_set[3]=1500;
+	memcpy(input.servos,servos_set,sizeof(servos_set));
+
+#ifdef LINUX_OS
+	open_udp_dev(IP_SEND_TO, PORT_SENT_TO, PORT_RECEIVE);//发送fdm飞行动力模型给flightgear，从而能够呈现姿态等
+	open_socket_udp_dev(&fd_socket_generic,"127.0.0.1",5056);//发送generic的协议给flightgear，从而能够螺旋桨能够旋转
+#endif
+
+#ifdef LINUX_OS
+	ap2fg.throttle0 = 0.2;
+	ap2fg.throttle1 = 0.3;
+	ap2fg.throttle2 = 0.4;
+	ap2fg.throttle3 = 0.5;
+
+	ap2fg_send_test.throttle0=0;
+	ap2fg_send_test.throttle1=0;
+	ap2fg_send_test.throttle2=0;
+	ap2fg_send_test.throttle3=0;
+#endif
+
+#ifdef LINUX_OS
 	char *char_uart="/dev/ttyUSB0";
 
-
-	//open_uart_dev(UART_DEVICE_APGCS);
-	//uart_device_ap2gcs.uart_name=UART_DEVICE_APGCS;
 	uart_device_ap2gcs.uart_name=char_uart;
 
 	uart_device_ap2gcs.baudrate=UART_AP2GCS_BAUD;
@@ -720,20 +351,10 @@ void Copter::setup()
 							uart_device_ap2gcs.databits, uart_device_ap2gcs.parity,
 							uart_device_ap2gcs.stopbits);
 
-	printf("uart recvbuf 串口名字=%s\n",uart_device_ap2gcs.uart_name);
+	DEBUG_PRINTF("uart recvbuf 串口名字=%s\n",uart_device_ap2gcs.uart_name);
 
-	//create_uart_pthread(&uart_device_radio);
 	create_uart_pthread(&uart_device_ap2gcs);
-
-
-
-	ap2gcs.lng=12235719;
-	ap2gcs.lat=3761355;
-	ap2gcs.alt=50;
-
-
-	//send_uart_data(uart_device_ap2gcs.uart_name, (char *)&ap2gcs,sizeof(ap2gcs));
-	#endif
+#endif
 }
 
 void Copter::loop_fast()
@@ -778,13 +399,15 @@ void Copter::loop_fast()
 	/* 2--更新姿态，获取飞机现在的姿态角 */
 	compass.read();
 	//gps.read();
+	//100hz更新gps数据没有太大的意义，并且在程序中我们需要用gps来计算实际的朝东和朝北的速度，如果gps更新太快，导致每次更新gps时，老的经纬度和新的经纬度是一样的
+	//导致计算的actual_speed是0
 	//update_GPS();//gps read只是读取数据 update_GPS里面还需要给current_loc赋值//20170919放在这里太快了,还是放在10hz的里面好点
 	imu.update();
 	/*
 	 * 因为下面的ahrs中需要imu gps compass的数据，
 	 * 所以需要先读取那些传感器的数据
 	 */
-	ahrs.update_DCM(G_Dt);
+	ahrs.update_DCM(G_Dt);//20170920目前ahrs更新时还没有用drift_correction，也就是没有用gps的数据，但是后面肯定是要加上的
 
 	if(takeoff_complete == false)
 	{
@@ -793,14 +416,16 @@ void Copter::loop_fast()
 		reset_stability_I();
 	}
 
-	/* 3--update_current_flight_mode 更新控制状态，从而选择控制方式 */
+	/* 3--update_current_flight_mode 更新控制状态，从而选择控制方式
+	 * 设置yaw_mode roll_pitch_mode throttle_mode的模式
+	 * 然后update_roll_pitch_mode，update_yaw_mode，update_throttle_mode要用
+	 */
 	update_current_flight_mode();
 
 	/* 4--把期望的roll pitch yaw作用于飞机 */
 	switch(control_mode)
 	{
 	case STABILIZE:
-//		std::cout<<"Hello STABILIZE MODE"<<std::endl;
 		/*
 		* 先是roll pitch yaw的2级pid控制
 		* 再是油门throttle的2级pid控制
@@ -817,11 +442,11 @@ void Copter::loop_fast()
 	    //这个是执行了角速度的控制器，需要从ahrs或者imu获取角速度的大小，扩大了100倍，这个函数还得看一下
 		run_rate_controllers();
 
-		//这个是油门的控制，跟姿态的控制分开
+		//这个是油门的控制，跟姿态的控制分开，油门的更新放在了medium_loop中了，5分之1的loop的频率，如果是50hz的话，那么就是10hz，100ms更新一次
 		//update_throttle_mode();//计算油门量的输出值
 		break;
 	case ACRO:
-//		std::cout<<"Hello ACRO MODE"<<std::endl;
+		//std::cout<<"Hello ACRO MODE"<<std::endl;
 		// call rate controllers
 		g.channel_roll.servo_out = g.channel_roll.control_in;
 		g.channel_pitch.servo_out = g.channel_pitch.control_in;
@@ -831,7 +456,7 @@ void Copter::loop_fast()
 		break;
 
 	case AUTO:
-		std::cout<<"Hello AUTO MODE 绕航点航行"<<std::endl;
+		//std::cout<<"Hello AUTO MODE 绕航点航行"<<std::endl;
 		/*
 		* 先是roll pitch yaw的2级pid控制
 		* 再是油门throttle的2级pid控制
@@ -848,10 +473,8 @@ void Copter::loop_fast()
 		//这个是执行了角速度的控制器，需要从ahrs或者imu获取角速度的大小，扩大了100倍，这个函数还得看一下
 		run_rate_controllers();
 
-		//这个是油门的控制，跟姿态的控制分开
+		//这个是油门的控制，跟姿态的控制分开，油门的更新放在了medium_loop中了，5分之1的loop的频率，如果是50hz的话，那么就是10hz，100ms更新一次
 		//update_throttle_mode();//计算油门量的输出值
-
-
 		break;
 
 	default:
@@ -1806,3 +1429,364 @@ void Copter::super_slow_loop()
 
 
 Copter copter;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifdef LINUX_OS
+struct T_GLOBAL_BOOL_BOATPILOT  global_bool_boatpilot;
+#endif
+
+const AP_HAL::HAL& hal = AP_HAL::get_HAL();
+
+//#include "mavlink.h"
+mavlink_system_t mavlink_system;
+
+int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char len,\
+                    unsigned int packet_cnt, unsigned char message_type,\
+                    unsigned char commu_method, unsigned char ack_req)
+{
+    static unsigned char frame_head_len=8;
+    static unsigned char frame_end_len=2;
+    unsigned char packet[128];
+    unsigned char checksum = 0;
+
+    int i, j;
+    int packet_data_len;
+
+    packet[0] = 0xaa;
+    packet[1] = 0x55;
+    packet[2] = 76;//20170728统一定义为76字节，包含帧头帧尾
+    packet_data_len = len;
+
+    packet[3] = packet_cnt;
+
+    packet[4] = 0x01;
+    packet[5] = message_type;
+
+    packet[6]=commu_method;
+    packet[7]=ack_req;
+
+    for (i = frame_head_len, j = 0; i < packet_data_len + frame_head_len; i++, j++)
+    {
+        packet[i] = src_buf[j];
+    }
+
+    for (i = 0; i < len + frame_head_len; i++)
+    {
+        checksum += packet[i];
+    }
+
+    i = len + frame_head_len;
+
+    //20170728把数据包长度统一减少2个字节，为76个字节
+    packet[i]=0;
+    checksum=checksum+packet[i];
+    packet[i+1] = (checksum & 0xFF);
+
+    memcpy(dst_buf, packet, packet_data_len + frame_head_len + frame_end_len);
+    //printf("打包后返回的字节长度=%d\n",packet_data_len + frame_head_len + frame_end_len);//20170729已测试
+
+    /*返回总的发送字节数*/
+    return packet_data_len + frame_head_len + frame_end_len;
+}
+
+
+#ifdef LINUX_OS
+void Copter::send_realdata_to_gcs( void )
+{
+	 unsigned char buf_data[256];
+	unsigned char buf_packet[256];
+	int ret;
+	static int real_cnt;
+	real_cnt++;
+
+#if 0
+	std::cout<<"send ap2gcs current_loc="<<current_loc.lng<<std::endl;
+	//ap2gcs.lng=current_loc.lng*1e-2;
+	ap2gcs.lng=-current_loc.lng*1e-2;
+	ap2gcs.lat=current_loc.lat*1e-2;
+	ap2gcs.alt=current_loc.alt*1e-2;
+#else
+
+	//ap2gcs.lng=current_loc.lng*1e-2;
+	ap2gcs.lng=-current_loc.lng*1e-2;
+	ap2gcs.lat=current_loc.lat*1e-2;
+	ap2gcs.alt=current_loc.alt*1e-2;
+
+#endif
+	//20170728把帧头帧尾加入到数据结构中
+	static unsigned char frame_len=76;
+	static unsigned char frame_head_len=8;
+	static unsigned char frame_checksum_len=2;
+	static unsigned char frame_data_len;
+	frame_data_len=frame_len-frame_head_len-frame_checksum_len;
+
+	memcpy(buf_data, &ap2gcs.pack_func_flag, frame_data_len);
+	ret=generate_packet(buf_packet, buf_data, frame_data_len,\
+											real_cnt, 0x10,\
+											0,1);
+#ifdef LINUX_OS
+	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf_packet,ret);
+#endif
+}
+#endif
+
+
+
+#ifdef LINUX_OS
+#define RADIO_RECV_HEAD1  0
+#define RADIO_RECV_HEAD2  1
+#define RADIO_RECV_LEN  2
+#define RADIO_RECV_CNT  3
+#define RADIO_RECV_SYSID 4
+#define RADIO_RECV_TYPE 5
+#define RADIO_RECV_COM_LINK 6
+#define RADIO_RECV_ACK_REQ 7
+#define RADIO_RECV_DATA 8
+
+#define RADIO_RECV_CHECKSUM0 9
+#define RADIO_RECV_CHECKSUM1 10
+
+static int radio_recv_state = 0;
+
+int read_radio_data(unsigned char *recv_buf,unsigned int recv_len)
+{
+	/* 直接把读取到的数据拷贝到_buffer数组中 */
+	static unsigned char _buffer[512];
+
+	/* 这个帧头的8个字节，都保存下来，放在_frame_received里面 */
+	//head1=0xaa;
+	//head2=0x55;
+	static int _pack_recv_len = 0;
+	static int _pack_recv_cnt = 0;
+	static unsigned char _sysid;
+	static unsigned char _pack_recv_type;
+	static unsigned char _pack_recv_com_link;
+	static unsigned char _pack_recv_ack_req;
+
+	/* 这个是帧尾的校验和 其实是2个字节 但是我们现在只用1个字节 */
+	static unsigned char _checksum = 0;
+
+	unsigned int i = 0;
+	static unsigned char c;
+	static unsigned char valid_len=5;
+
+	static unsigned char _frame_received_cnt;
+	static unsigned char _frame_received[512];//存放一帧的数据，从帧头到帧尾校验和都包括，完整的一帧
+	static unsigned char _frame_checksum_len=2;
+
+
+
+	memcpy(_buffer, recv_buf, recv_len);
+#if 1
+	printf("radio data buf=\n");
+	for(i=0;i<recv_len;i++)
+	{
+		printf("%0x ",recv_buf[i]);
+	}
+	printf("\n");
+#endif
+
+	for (i = 0; i<recv_len; i++)
+	{
+		c = _buffer[i];
+		switch (radio_recv_state)
+		{
+		case RADIO_RECV_HEAD1:
+			if (c == 0xaa)
+			{
+				radio_recv_state = RADIO_RECV_HEAD2;
+				_checksum = c;
+			}
+			break;
+		case RADIO_RECV_HEAD2:
+			if (c == 0x55)
+			{
+				radio_recv_state = RADIO_RECV_LEN;
+				_checksum += c;
+			}
+			else
+			{
+				_checksum = 0;
+				radio_recv_state = RADIO_RECV_HEAD1;
+				_frame_received_cnt=0;
+			}
+			break;
+		case RADIO_RECV_LEN:
+			_checksum += c;
+			_pack_recv_len=c;
+
+			_frame_received[0]=0xaa;
+			_frame_received[1]=0x55;
+			_frame_received[2]=c;//20170728这个是统一为76个字节了，可以打印出来看
+			_frame_received_cnt=3;
+
+			radio_recv_state = RADIO_RECV_CNT;
+			break;
+		case RADIO_RECV_CNT:
+			_pack_recv_cnt = c;
+			_checksum += c;
+
+			_frame_received[_frame_received_cnt]=c;
+			_frame_received_cnt++;
+
+			radio_recv_state = RADIO_RECV_SYSID;
+			break;
+		case RADIO_RECV_SYSID:
+			_sysid = c;
+			if(0!=_sysid)
+			{
+				_checksum += c;
+
+				_frame_received[_frame_received_cnt]=c;
+				_frame_received_cnt++;
+
+				radio_recv_state = RADIO_RECV_TYPE;
+			}
+			break;
+		case RADIO_RECV_TYPE:
+			_pack_recv_type = c;
+			_checksum += c;
+
+			_frame_received[_frame_received_cnt]=c;
+			_frame_received_cnt++;
+
+			radio_recv_state = RADIO_RECV_COM_LINK;
+			break;
+		case RADIO_RECV_COM_LINK:
+			_pack_recv_com_link = c;
+			_checksum += c;
+
+			_frame_received[_frame_received_cnt]=c;
+			_frame_received_cnt++;
+
+			radio_recv_state = RADIO_RECV_ACK_REQ;
+			break;
+		case RADIO_RECV_ACK_REQ:
+			_pack_recv_ack_req = c;
+			_checksum += c;
+
+			//_frame_received[7]=c;
+			_frame_received[_frame_received_cnt]=c;
+			_frame_received_cnt++;
+
+			radio_recv_state = RADIO_RECV_DATA;
+			break;
+		case RADIO_RECV_DATA:
+			_checksum += c;
+
+			_frame_received[_frame_received_cnt]=c;
+			_frame_received_cnt++;
+
+			if (_frame_received_cnt >= _pack_recv_len-_frame_checksum_len)
+			{
+				//printf("checksum=%0x \n",_checksum);
+				radio_recv_state = RADIO_RECV_CHECKSUM0;
+			}
+			break;
+		case RADIO_RECV_CHECKSUM0:
+			_checksum += c;
+
+			_frame_received[_frame_received_cnt]=c;
+			_frame_received_cnt++;
+
+			radio_recv_state = RADIO_RECV_CHECKSUM1;
+			break;
+		case RADIO_RECV_CHECKSUM1:
+			if (_checksum == c)
+			{
+				_frame_received[_frame_received_cnt]=c;//如果正常的话，这里的_frame_received_cnt应该等于76，包含帧头和帧尾
+				_frame_received_cnt++;
+				//printf("_frame_received_cnt=%d\n",_frame_received_cnt);
+
+				global_bool_boatpilot.radio_recv_packet_cnt = _pack_recv_cnt;
+				if(global_bool_boatpilot.radio_recv_packet_cnt_previous!=global_bool_boatpilot.radio_recv_packet_cnt)
+				{
+					switch (_pack_recv_type)
+					{
+					case COMMAND_GCS2AP_WAYPOINT:
+						if (_frame_received_cnt == sizeof(gcs_ap_wp))
+						{
+							printf("正确接收到GCS_AP_WP数据包，且数据包数据长度与航点结构长度相同\n");
+							memcpy(&gcs_ap_wp, _frame_received, _frame_received_cnt);
+							global_bool_boatpilot.bool_get_gcs2ap_waypoint = TRUE;
+							 decode_gcs2ap_waypoint(wp_data,&gcs_ap_wp);
+							//global_bool_boatpilot.bool_gcs2ap_beidou=_pack_recv_com_link;
+							//global_bool_boatpilot.send_ap2gcs_wp_req=_pack_recv_ack_req;
+							//global_bool_boatpilot.gcs2ap_wp_cnt=_pack_recv_cnt;
+							//global_bool_boatpilot.ap2gcs_wp_cnt=_pack_recv_cnt;
+						}
+						_checksum = 0;
+						radio_recv_state = 0;
+						_frame_received_cnt=0;
+						break;
+					case COMMAND_GCS2AP_CMD:
+						if (_frame_received_cnt == sizeof(gcs2ap_cmd))
+						{
+							//printf("正确接收到GCS2AP_CMD数据包，且数据包数据长度与命令结构长度相同\n");//20170410已测试
+							memcpy(&gcs2ap_cmd, _frame_received, _frame_received_cnt);
+							global_bool_boatpilot.bool_get_gcs2ap_cmd = TRUE;
+							decode_gcs2ap_cmd(&gcs2ap_radio_all, &gcs2ap_cmd);
+							//global_bool_boatpilot.bool_gcs2ap_beidou=_pack_recv_com_link;//这次先不判断北斗，北斗和电台同时发送实时数据，同时接收并解析命令包
+							//global_bool_boatpilot.send_ap2gcs_cmd_req=_pack_recv_ack_req;
+							//global_bool_boatpilot.gcs2ap_cmd_cnt=_pack_recv_cnt;
+							global_bool_boatpilot.ap2gcs_cmd_cnt=_pack_recv_cnt;
+						}
+						_checksum = 0;
+						radio_recv_state = 0;
+						_frame_received_cnt=0;
+						break;
+
+					default:
+						break;
+					}
+
+				}
+			}
+			else
+			{
+				printf("电台--数据校验和错误，校验和是加和\n");
+				_checksum = 0;
+				radio_recv_state = 0;
+				_frame_received_cnt=0;
+			}
+		}
+	}
+
+	return 0;
+
+
+}
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
