@@ -7,12 +7,9 @@
 
 #include "copter.h"
 
-/******************************************************/
-/*****************/
-int fd_ap2gcs;
-struct T_UART_DEVICE uart_device_ap2gcs;
-
+//我们保留了fdm模拟部分，但是删除了把发送给无人船地面站和flightgear这2部分放在了最下面用#define LINUX_OS包含着
 /*
+ * 四旋翼的飞行动力模型输入是4个电机的1000-2000的pwm值，输出是飞行的15个状态
  * 20180821发现初始化的纬度在先
  */
 //MultiCopter multi_copter("37.6136,-122.357,10,0","x");//x型机架，起始高度为10，yaw是0
@@ -25,46 +22,10 @@ T_FDM fdm;
 T_FDM fdm_send;
 T_FDM fdm_feed_back;//这个动力模型解算出来后，就把数据返回给imu，gps，compass等
 
-
-int _input_flag=1;
-
-T_GLOBAL  gblState;
-T_AP2FG  ap2fg;
-T_FG2AP fg2ap;
-T_AP2FG  ap2fg_send;
-T_AP2FG  ap2fg_send_test;
-T_AP2FG  ap2fg_send_test_send;
-
-T_AP2FG  ap2fg_recv;
-
-struct AP2GCS_REAL ap2gcs;
-
-/*
- * //这个作为遥控器的输入信号，或者说遥控器进来后经过出去又要out给servos
- * 虽然四旋翼最终控制的是motor，不是固定翼的servos，但是这个motor也是用servo的pwm波信号
- * 包括其他的舵机都是servo的1000-2000pwm波信号，所以我们统一用servo作为最终电机的
- * 有servo_in 和servo_out 其中servo_in就是等于channel_out的，然后进来后可能还要限幅什么的所以最终输出给电机的叫做
- * servo_out
-*/
-/*
- * channel_out[0]:aileron
- * channel_out[1]:elevator
- * channel_out[2]:throttle
- * channel_out[3]:rudder
-*/
-float channel_out[16];
-
-float servos_set[16];
-
+int16_t             motor_out_flightgear[AP_MOTORS_MAX_NUM_MOTORS];//这个不能删除，本来是输出给flightgear的但是这个1000-2000的量又得赋值给fdm模拟用的servos_set_out
 uint16_t servos_set_out[4];//这是驾驶仪计算的到的motor_out中的四个电机的转速，给电调的信号，1000～2000
 
 Aircraft::sitl_input input;//这个是4个电机的输入，然后用于multi_copter.update(input)更新出飞机的飞行状态
-
-int fd_socket_generic;
-int16_t             motor_out_flightgear[AP_MOTORS_MAX_NUM_MOTORS];
-
-
-
 
 /*
  * wangbo20170802setup包括2部分，
@@ -160,15 +121,9 @@ void Copter::setup()
 
 	init_rc_in();
 
-
-
 	roll_pitch_mode=ROLL_PITCH_STABLE;
 	yaw_mode=YAW_STABILE;
-
-
-
 	g.auto_slew_rate=AUTO_SLEW_RATE;
-
 
 	cos_roll_x 	= 1;
 	cos_pitch_x 	= 1;
@@ -179,7 +134,6 @@ void Copter::setup()
 
 	yaw_tracking = MAV_ROI_WPNEXT;
 	wp_control =WP_MODE;//设置为自动巡航模式
-
 
 	wp_total_array[0].id=0;
 
@@ -291,30 +245,20 @@ void Copter::setup()
 	dTnav=100;//单位应该是毫秒  // Delta Time in milliseconds for navigation computations  因为pid的函数中计算积分所需要的时间就是以毫秒为单位的
 	//dTnav=0.1;//单位是秒,20170919应该按照gps更新的速度设置的,那么就应该是10hz或者5hz呀
 
-
-
-
-
-
 	/*
 	 * 下面是用来连接flightgear和地面站进行模拟测试的
 	 */
-#ifdef LINUX_OS
-	fast_loopTimer=clock_gettime_ms();//必须有这个初始化，否则第一次G_Dt的值会非常大
-#endif
+	input.servos[0]=1500;
+	input.servos[1]=1500;
+	input.servos[2]=1500;
+	input.servos[3]=1500;
+
 
 #ifdef LINUX_OS
+	fast_loopTimer=clock_gettime_ms();//必须有这个初始化，否则第一次G_Dt的值会非常大，不过现在有没有都无所谓了，我已经把G_Dt固定为0.01
 	global_bool_boatpilot.wp_total_num=wp_num;
 #endif
 
-	/*
-	* 添加动力模型
-	*/
-	servos_set[0]=1500;
-	servos_set[1]=1500;
-	servos_set[2]=1500;
-	servos_set[3]=1500;
-	memcpy(input.servos,servos_set,sizeof(servos_set));
 
 #ifdef LINUX_OS
 	open_udp_dev(IP_SEND_TO, PORT_SENT_TO, PORT_RECEIVE);//发送fdm飞行动力模型给flightgear，从而能够呈现姿态等
@@ -326,11 +270,6 @@ void Copter::setup()
 	ap2fg.throttle1 = 0.3;
 	ap2fg.throttle2 = 0.4;
 	ap2fg.throttle3 = 0.5;
-
-	ap2fg_send_test.throttle0=0;
-	ap2fg_send_test.throttle1=0;
-	ap2fg_send_test.throttle2=0;
-	ap2fg_send_test.throttle3=0;
 #endif
 
 #ifdef LINUX_OS
@@ -484,23 +423,19 @@ void Copter::loop_fast()
 	/* 5--把计算所得控制量输出给电机 */
 	motors_output();
 
-//	std::cout<<"g.channel_roll.radio_out="<<g.channel_roll.radio_out<<std::endl;
-//	std::cout<<"g.channel_pitch.radio_out="<<g.channel_pitch.radio_out<<std::endl;
-//	std::cout<<"g.channel_throttle.radio_out="<<g.channel_throttle.radio_out<<std::endl;
-//	std::cout<<"g.channel_rudder.radio_out="<<g.channel_rudder.radio_out<<std::endl;
-
 	/*
-	 * motors_output()函数中把motor_out[]，也就是每个电机的1000～2000的值赋值给了
+	 * 其实到这里主程序也就结束了，我本来想把下面的都放在#define LINUX_OS中的
+	 * 但是ucos上将来是不是也需要模拟仿真呢，就先留着了20170920
+	 */
+	/*
+	 * motors_output()函数中把最终输出给radio_out的数值，
+	 * 也就是每个电机的1000～2000的值赋值给了motor_out_flightgear
+	 * 所以motor_out_flightgear就是飞行动力模型fdm的4个输入量
 	 */
 	servos_set_out[0]=motor_out_flightgear[0];
 	servos_set_out[1]=motor_out_flightgear[1];
 	servos_set_out[2]=motor_out_flightgear[2];
 	servos_set_out[3]=motor_out_flightgear[3];
-
-	for(int i=0;i<4;i++)
-	{
-		//std::cout<<"servos_set_out"<<"["<<i<<"]="<<servos_set_out[i]<<std::endl;
-	}
 
 	/*
 	 * 注意这里的input.servos是uint_16类型的，无符号short型，
@@ -509,17 +444,18 @@ void Copter::loop_fast()
 	memcpy(input.servos,servos_set_out,sizeof(servos_set_out));
 
 	multi_copter.update(input);//利用input更新，copter四旋翼的位置，速度，线加速度，角度，角速度，角加速度是没有的，所以一共3*5=15个数据
-	multi_copter.fill_fdm_flightgear(fdm);
+	multi_copter.fill_fdm_flightgear(fdm);//现在的fdm中的数值就是四旋翼飞行动力模型的各个飞行状态15个数据
 
-	memcpy(&fdm_feed_back,&fdm,sizeof(fdm));
+	memcpy(&fdm_feed_back,&fdm,sizeof(fdm));//fdm_feed_back被作为了估计出来的飞行状态，用来模拟用的，实际使用中这些数据都需要从all_external_device_output获取
 
 //	std::cout<<"fdm_feed_back.phidot="<<fdm_feed_back.phidot<<std::endl;
 //	std::cout<<"fdm_feed_back.thetadot="<<fdm_feed_back.thetadot<<std::endl;
 //	std::cout<<"fdm_feed_back.psidot="<<fdm_feed_back.psidot<<std::endl;
 
-	memcpy(&fdm_send,&fdm,sizeof(fdm));
 
 #ifdef LINUX_OS
+	memcpy(&fdm_send,&fdm,sizeof(fdm));//fdm_send是为了把这个飞行状态发送给flightgear使得flightgear能够三维动态显示飞行状态
+
 	fdm_send.version = htonl(FG_NET_FDM_VERSION);
 	fdm_send.latitude = htond(fdm_send.latitude);
 	fdm_send.longitude = htond(fdm_send.longitude);
@@ -542,13 +478,7 @@ void Copter::loop_fast()
 	sendto(fd_sock_send, &fdm_send, sizeof(fdm_send), 0, (struct sockaddr *)&udp_sendto_addr, sizeof(udp_sendto_addr));
 #endif
 
-
-
-
-
-
-
-
+#ifdef LINUX_OS
 	/*
 	 * 下面是发送数据给flightgear的，20170818不再需要更改
 	 */
@@ -600,42 +530,8 @@ void Copter::loop_fast()
 
 	unsigned char socket_udp_send[2000];
 	memcpy(socket_udp_send,&ap2fg_send,sizeof(ap2fg_send));
-#ifdef LINUX_OS
+
 	send_socket_udp_data(fd_socket_generic, socket_udp_send, sizeof(ap2fg_send),"127.0.0.1",5506 );
-#endif
-#if 0
-	//被注释掉的是用来进行测试的，上面的是实际发送的
-
-	/*
-	 * 固定发送给flightgear的油门速度，能够看出旋转的方向来
-	 * 因为不知道为什么arducopter这个模型，在1500转左侧是逆时针转动
-	 * 在1500转右侧hi顺时针转动，所以这里就是让看个螺旋桨转动的趋势
-	 * 具体的数值换别的控制量来显示
-	 * 不要删除20170818
-	 */
-	ap2fg_send_test.throttle0=0.1420;
-	ap2fg_send_test.throttle1=0.1420;
-	ap2fg_send_test.throttle2=0.1580;
-	ap2fg_send_test.throttle3=0.1580;
-
-	ap2fg_send_test_send.throttle0=hton_double(ap2fg_send_test.throttle0);
-	ap2fg_send_test_send.throttle1=hton_double(ap2fg_send_test.throttle1);
-	ap2fg_send_test_send.throttle2=hton_double(ap2fg_send_test.throttle2);
-	ap2fg_send_test_send.throttle3=hton_double(ap2fg_send_test.throttle3);
-
-	ap2fg_send_test.rpm0=1000;
-	ap2fg_send_test.rpm1=800;
-	ap2fg_send_test.rpm2=500;
-	ap2fg_send_test.rpm3=300;
-
-	ap2fg_send_test_send.rpm0=hton_double(ap2fg_send_test.rpm0);
-	ap2fg_send_test_send.rpm1=hton_double(ap2fg_send_test.rpm1);
-	ap2fg_send_test_send.rpm2=hton_double(ap2fg_send_test.rpm2);
-	ap2fg_send_test_send.rpm3=hton_double(ap2fg_send_test.rpm3);
-
-	unsigned char socket_udp_send[2000];
-	memcpy(socket_udp_send,&ap2fg_send_test_send,sizeof(ap2fg_send_test_send));
-	send_socket_udp_data(fd_socket_generic, socket_udp_send, sizeof(ap2fg_send_test_send),"127.0.0.1",5506 );
 #endif
 }
 
@@ -725,7 +621,7 @@ void Copter::motors_output()
 {
 	int16_t             motor_out[AP_MOTORS_MAX_NUM_MOTORS];
 
-    int8_t              _num_motors; // not a very useful variable as you really need to check the motor_enabled array to see which motors are enabled
+    //int8_t              _num_motors; // not a very useful variable as you really need to check the motor_enabled array to see which motors are enabled
     float               _roll_factor[AP_MOTORS_MAX_NUM_MOTORS]; // each motors contribution to roll
     float               _pitch_factor[AP_MOTORS_MAX_NUM_MOTORS]; // each motors contribution to pitch
     float              _throttle_factor[AP_MOTORS_MAX_NUM_MOTORS];
@@ -759,14 +655,19 @@ void Copter::motors_output()
 	std::cout<<"g.channel_pitch.servo_out="<<g.channel_pitch.servo_out<<std::endl;
 	std::cout<<"g.channel_rudder.servo_out="<<g.channel_rudder.servo_out<<std::endl;
 	std::cout<<"g.channel_throttle.servo_out="<<g.channel_throttle.servo_out<<std::endl;
-//
-//	std::cout<<"********准备输出pwm脉宽给电调***********"<<std::endl;
 
-//	std::cout<<"g.channel_roll.pwm_out="<<g.channel_roll.pwm_out<<std::endl;
-//	std::cout<<"g.channel_pitch.pwm_out="<<g.channel_pitch.pwm_out<<std::endl;
-//	std::cout<<"g.channel_rudder.pwm_out="<<g.channel_rudder.pwm_out<<std::endl;
-//
-//	std::cout<<"g.channel_throttle.radio_out="<<g.channel_throttle.radio_out<<std::endl;
+	std::cout<<"********准备输出pwm脉宽给电调***********"<<std::endl;
+
+	std::cout<<"g.channel_roll.pwm_out="<<g.channel_roll.pwm_out<<std::endl;
+	std::cout<<"g.channel_pitch.pwm_out="<<g.channel_pitch.pwm_out<<std::endl;
+	std::cout<<"g.channel_rudder.pwm_out="<<g.channel_rudder.pwm_out<<std::endl;
+
+	std::cout<<"g.channel_throttle.radio_out="<<g.channel_throttle.radio_out<<std::endl;
+
+	std::cout<<"g.channel_roll.radio_out="<<g.channel_roll.radio_out<<std::endl;
+	std::cout<<"g.channel_pitch.radio_out="<<g.channel_pitch.radio_out<<std::endl;
+	std::cout<<"g.channel_throttle.radio_out="<<g.channel_throttle.radio_out<<std::endl;
+	std::cout<<"g.channel_rudder.radio_out="<<g.channel_rudder.radio_out<<std::endl;
 
 	for(int i=0;i<4;i++)
 	{
@@ -782,23 +683,16 @@ void Copter::motors_output()
 								g.channel_rudder.pwm_out * _yaw_factor[i];
 	}
 
-	for(int i=0;i<4;i++)
-	{
-		//g._rc.output_ch_pwm(i,motor_out[i]);
-		//或者用下面的motors也是可以的
-		//motors.rc_write(i,motor_out[i]);
-//		std::cout<<"motor_out["<<i<<"]="<<motor_out[i]<<std::endl;
-		//sleep(1);
-	}
-
+#ifdef LINUX_OS
 	memcpy(motor_out_flightgear,motor_out,sizeof(motor_out));//模型fdm需要的四个输入量就是电机的1000-2000的信号量
+#endif
 
 	for(int i=0;i<4;i++)
 	{
-		//g._rc.output_ch_pwm(i,motor_out[i]);
+		g._rc.output_ch_pwm(i,motor_out[i]);//把控制量输出到all_external_device_output
 		//或者用下面的motors也是可以的
 		//motors.rc_write(i,motor_out[i]);
-//		std::cout<<"motor_out_flightgear["<<i<<"]="<<motor_out_flightgear[i]<<std::endl;
+		//std::cout<<"motor_out_flightgear["<<i<<"]="<<motor_out_flightgear[i]<<std::endl;
 		//sleep(1);
 	}
 }
@@ -1427,9 +1321,10 @@ void Copter::super_slow_loop()
 	*/
 }
 
-
+const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 Copter copter;
-
+mavlink_system_t mavlink_system;
+struct Location wp_total_array_temp[255]={0};
 
 
 
@@ -1449,13 +1344,31 @@ Copter copter;
 
 
 #ifdef LINUX_OS
+/*
+ * 通过串口通信，发送实时数据给无人船地面站做测试用，主要是经纬度用来地面站上显示
+ */
+int fd_ap2gcs;
+struct T_UART_DEVICE uart_device_ap2gcs;
+struct AP2GCS_REAL ap2gcs;
+
 struct T_GLOBAL_BOOL_BOATPILOT  global_bool_boatpilot;
 #endif
 
-const AP_HAL::HAL& hal = AP_HAL::get_HAL();
+#ifdef LINUX_OS
+/*
+ * 通过udp网络通信，发送给flightgear
+ */
+T_AP2FG  ap2fg;
+T_AP2FG  ap2fg_send;
 
-//#include "mavlink.h"
-mavlink_system_t mavlink_system;
+T_FG2AP fg2ap;
+
+int fd_socket_generic;
+//int16_t             motor_out_flightgear[AP_MOTORS_MAX_NUM_MOTORS];
+#endif
+
+
+
 
 int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char len,\
                     unsigned int packet_cnt, unsigned char message_type,\

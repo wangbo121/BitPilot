@@ -19,10 +19,11 @@
 #endif
 
 #ifdef LINUX_OS
-#include "location.h"
 extern struct T_UART_DEVICE uart_device_ap2gcs;
-extern struct Location wp_total_array_temp[255];
 #endif
+
+#include "location.h"
+extern struct Location wp_total_array_temp[255];
 
 /**
  * 简单打印调试信息
@@ -584,14 +585,9 @@ typedef struct tagFG2AP
   double heading_deg;//机头初始朝向
 }T_FG2AP;
 
-
-extern T_GLOBAL  gblState;
 extern T_AP2FG  ap2fg;
 extern T_FG2AP fg2ap;
 extern T_AP2FG  ap2fg_send;
-
-
-extern T_AP2FG  ap2fg_recv;
 
 struct T_GLOBAL_BOOL_BOATPILOT
 {

@@ -5,12 +5,14 @@
  *      Author: wangbo
  */
 
+#include "global.h"
+#ifdef LINUX_OS
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
-#define LINUX_OS
+//#define LINUX_OS
 #ifdef LINUX_OS
 /*转换int或者short的字节顺序，该程序arm平台为大端模式，地面站x86架构为小端模式*/
 #include <byteswap.h>
@@ -30,6 +32,8 @@
 
 #include "boatlink.h"
 //#include "copter.h"
+
+
 
 static int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char len,\
                     unsigned int packet_cnt, unsigned char message_type,\
@@ -69,7 +73,7 @@ struct T_BOATPILOT_LOG boatpilot_log;
 
 
 
- struct Location wp_total_array_temp[255]={0};
+
 /*
  * 发送指定从wp_start起始的wp_num个航点
  */
@@ -525,3 +529,4 @@ int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char 
     /*返回总的发送字节数*/
     return packet_data_len + frame_head_len + frame_end_len;
 }
+#endif

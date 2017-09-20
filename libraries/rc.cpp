@@ -128,12 +128,16 @@ AP_RC::output_ch_pwm(uint8_t ch, uint16_t pwm)
 	switch(ch)
 	{
 	case CH_1:
+		all_external_device_output.rc_raw_out_0=(float)pwm;
 		break;
 	case CH_2:
+		all_external_device_output.rc_raw_out_1=(float)pwm;
 		break;
 	case CH_3:
+		all_external_device_output.rc_raw_out_2=(float)pwm;
 		break;
 	case CH_4:
+		all_external_device_output.rc_raw_out_3=(float)pwm;
 		break;
 	}
 }

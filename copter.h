@@ -60,7 +60,21 @@
 //飞控所需要的外部设备数据和计划最终输出给外部设备的数据都从这个all_external_device接口进出
 #include "all_external_device.h"
 
+//飞控模拟用的头文件
+/*
+ * 四旋翼的飞行动力模型接口，需要跟flightgear的版本一致，fdm.h主要是通过udp跟flightgear通信的接口
+ * Sim_Multicopter计算得到的模型数据发送到这个接口，
+ * 然后flightgear就能根据这些数据表现出四旋翼应该有的飞行姿态
+ * flightgear只是作为显示飞机三维图像姿态的作用，没有其他任何作用
+ */
+#include "fdm.h"
 
+//四旋翼独立的数学模型，输入是四个电机的转速，输出是飞行状态
+//四旋翼自身利用SIM_Multicopter这个文件中的公式计算从螺旋桨转速到飞行12个状态
+#include "SIM_Multicopter.h"
+#include "SITL.h"
+
+extern struct Location wp_total_array_temp[255];
 class Copter :public AP_HAL::HAL::Callbacks{
 public:
 
@@ -1457,6 +1471,8 @@ private:
 extern const AP_HAL::HAL& hal;
 extern Copter copter;
 
+extern mavlink_system_t mavlink_system;
+
 /**********到此飞控自身所需头文件结束***************/
 /**********************************************************************************/
 
@@ -1481,7 +1497,7 @@ extern Copter copter;
 
 
 #ifndef LINUX_OS
-#define LINUX_OS //这个是在linux上测试时用的，比如udp和串口通信
+//#define LINUX_OS //这个是在linux上测试时用的，比如udp和串口通信
 #endif
 
 #ifdef LINUX_OS
@@ -1489,21 +1505,11 @@ extern Copter copter;
 #endif
 
 #ifdef LINUX_OS
-/*
- * 四旋翼的飞行动力模型接口，需要跟flightgear的版本一致，fdm.h主要是通过udp跟flightgear通信的接口
- * Sim_Multicopter计算得到的模型数据发送到这个接口，
- * 然后flightgear就能根据这些数据表现出四旋翼应该有的飞行姿态
- * flightgear只是作为显示飞机三维图像姿态的作用，没有其他任何作用
- */
-#include "fdm.h"
 
 //udp用来跟flightgear通信
 #include "udp.h"
 
-//四旋翼独立的数学模型，输入是四个电机的转速，输出是飞行状态
-//四旋翼自身利用SIM_Multicopter这个文件中的公式计算从螺旋桨转速到飞行12个状态
-#include "SIM_Multicopter.h"
-#include "SITL.h"
+
 
 //这个uart主要是模拟打开电台串口，发送实时数据到无人船地面站做测试
 #include "uart.h"
@@ -1521,16 +1527,6 @@ extern Copter copter;
 
 #endif
 
-
-
-
-#ifdef LINUX_OS
-#include <fcntl.h>//创建文件
-#include <pthread.h>
-#include <semaphore.h>
-#include <sys/stat.h>
-#endif
-
 #ifdef LINUX_OS
 #include <unistd.h>
 #include <fcntl.h>//创建文件
@@ -1539,27 +1535,24 @@ extern Copter copter;
 #include <sys/stat.h>
 #endif
 
-
-
-
 #ifdef LINUX_OS
 /*转换int或者short的字节顺序，该程序arm平台为大端模式，地面站x86架构为小端模式*/
 #include <byteswap.h>
 #include<sys/socket.h>
 #include<netinet/in.h>
 #include<arpa/inet.h>
-#include <string.h>
 #endif
 
-
-
-
+#ifdef LINUX_OS
 extern struct AP2GCS_REAL ap2gcs;
 extern int fd_ap2gcs;
-//extern struct T_UART_DEVICE uart_device_ap2gcs;
-extern mavlink_system_t mavlink_system;
+#endif
 
-//void send_realdata_to_gcs();
+#ifdef LINUX_OS
+extern int fd_socket_generic;
+//extern int16_t             motor_out_flightgear[AP_MOTORS_MAX_NUM_MOTORS];
+#endif
+
 #ifdef LINUX_OS
 int read_radio_data(unsigned char *recv_buf,unsigned int recv_len);
 #endif
@@ -1567,7 +1560,5 @@ int read_radio_data(unsigned char *recv_buf,unsigned int recv_len);
 int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char len,\
                     unsigned int packet_cnt, unsigned char message_type,\
                     unsigned char commu_method, unsigned char ack_req);
-
-
 
 #endif /* COPTER_H_ */

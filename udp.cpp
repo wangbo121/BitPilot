@@ -5,6 +5,9 @@
  *      Author: wangbo
  */
 
+#include "global.h"
+#ifdef LINUX_OS
+
 #include<stdio.h>
 #include <stdint.h>
 #include<sys/types.h>
@@ -385,18 +388,6 @@ int read_udp_data(unsigned char *buf, unsigned int len)
     static int i_len=0;
 
 #if 0
-    static unsigned char valid_len=5;
-
-    /*
-     * 判断是否持续在接收
-     */
-    if(len > valid_len)
-    {
-        global_bool_boatpilot.udp_wait_time=0;
-    }
-#endif
-
-#if 1
     printf("wangbo 20170809 udp len=%d,udp data buf=\n",len);
     for(i=0;i<len;i++)
     {
@@ -417,14 +408,14 @@ int read_udp_data(unsigned char *buf, unsigned int len)
 
 
 
-//	fg2ap.pitch_deg=(double)(*((uint64_t*)(&fg2ap.pitch_deg)));
-//	fg2ap.heading_deg=(double)(*((uint64_t*)(&fg2ap.heading_deg)));
-//	fg2ap.longitude_deg=(double)(*(uint64_t*)&fg2ap.longitude_deg);
-//	fg2ap.latitude_deg=(double)(*(uint64_t*)&fg2ap.latitude_deg);
-//    fg2ap.pitch_deg=(double)__bswap_64(*(uint64_t*)&fg2ap.pitch_deg);
-//    fg2ap.heading_deg=(double)__bswap_64(*(uint64_t*)&fg2ap.heading_deg);
-//    fg2ap.longitude_deg=(double)__bswap_64(*(uint64_t*)&fg2ap.longitude_deg);
-//    fg2ap.latitude_deg=(double)__bswap_64(*(uint64_t*)&fg2ap.latitude_deg);
+	//fg2ap.pitch_deg=(double)(*((uint64_t*)(&fg2ap.pitch_deg)));
+	//fg2ap.heading_deg=(double)(*((uint64_t*)(&fg2ap.heading_deg)));
+	//fg2ap.longitude_deg=(double)(*(uint64_t*)&fg2ap.longitude_deg);
+	//fg2ap.latitude_deg=(double)(*(uint64_t*)&fg2ap.latitude_deg);
+	//fg2ap.pitch_deg=(double)__bswap_64(*(uint64_t*)&fg2ap.pitch_deg);
+	//fg2ap.heading_deg=(double)__bswap_64(*(uint64_t*)&fg2ap.heading_deg);
+	//fg2ap.longitude_deg=(double)__bswap_64(*(uint64_t*)&fg2ap.longitude_deg);
+	//fg2ap.latitude_deg=(double)__bswap_64(*(uint64_t*)&fg2ap.latitude_deg);
 
 
 
@@ -587,3 +578,4 @@ void *udp_recvbuf_and_process(void * ptr_udp_device)
 
 
 }
+#endif

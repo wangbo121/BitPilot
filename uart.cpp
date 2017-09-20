@@ -5,7 +5,8 @@
  *      Author: wangbo
  */
 
-
+#include "global.h"
+#ifdef LINUX_OS
 
 #include <stdio.h>
 #include <string.h>
@@ -28,6 +29,8 @@
 #include "uart.h"
 
 #include "global.h"
+
+
 
 #define UART_DEV_TOTAL 12
 #define UART_BUF_SIZE  512
@@ -414,3 +417,4 @@ int close_uart_dev(char *uart_name)
 
     return 0;
 }
+#endif
