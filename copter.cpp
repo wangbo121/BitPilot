@@ -695,10 +695,12 @@ void Copter::setup()
 	#ifdef LINUX_OS
 	//fd_ap2gcs=open_uart_dev("/dev/ttyUSB0");
 
-	string str_uart="/dev/ttyUSB0";
-	char char_uart[20];
-
-	strcpy(char_uart,str_uart.c_str());
+//	string str_uart="/dev/ttyUSB0";
+//	char char_uart[20];
+//
+//	strcpy(char_uart,str_uart.c_str());
+//
+	char *char_uart="/dev/ttyUSB0";
 
 
 	//open_uart_dev(UART_DEVICE_APGCS);

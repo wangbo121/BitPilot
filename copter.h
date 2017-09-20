@@ -8,119 +8,35 @@
 #ifndef COPTER_H_
 #define COPTER_H_
 
-
-/**************************************************************************/
-/*********最开始的这些头文件和定义跟飞控本身没有关系，
- * 跟flightgear和地面站仿真模拟有关系*********************/
-
-
-#ifndef LINUX_OS
-#define LINUX_OS //这个是在linux上测试时用的，比如udp和串口通信
-#endif
-
-#ifdef LINUX_OS
 /*
- * 四旋翼的飞行动力模型接口，需要跟flightgear的版本一致
- * Sim_Multicopter计算得到的模型数据发送到这个接口，
- * 然后flightgear就能根据这些数据表现出四旋翼应该有的飞行姿态
- * flightgear只是作为显示飞机三维图像姿态的作用，没有其他任何作用
- *
+ * 关于飞控的头文件，飞控独立跟系统没有关系
  */
-#include "fdm.h"
-
-//四旋翼自身利用SIM_Multicopter这个文件中的公式计算从螺旋桨转速到飞行12个状态
-#include "SIM_Multicopter.h"
-#include "SITL.h"
-#include "udp.h"
-
-//这个uart主要是模拟打开电台串口，发送实时数据到无人船地面站做测试
-#include "uart.h"
-/*
- * 下面这些是模拟打开电台串口把实时数据发送到地面站
- * 然后能从地面站上看出飞机飞行的经纬度
- * 这个已经在无人船的地面站上经过测试
- */
-
-#define UART_DEVICE_APGCS "/dev/ttyUSB0"
-
-#define UART_AP2GCS_BAUD 9600
-#define UART_AP2GCS_DATABITS 8 //8 data bit
-#define UART_AP2GCS_STOPBITS 1 //1 stop bit
-#define UART_AP2GCS_PARITY 0 //no parity
-#endif
-
-/***********/
-/**************************************************************/
-
-/*
- * 从下面开始是关于飞控的头文件
- */
-
 ////////////////////////////////////////////////////////////////////////////////
 // Header includes
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cmath>
+//C标准头文件
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <stdarg.h>
 
-#include "location.h"
-
-
+//C++标准头文件
+#include <iostream>
+#include <cmath>
 
 // Common dependencies
 
-
 // Application dependencies
-#include <iostream>
-using namespace std;
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#ifdef LINUX_OS
-#include <fcntl.h>//创建文件
-#include <pthread.h>
-#include <semaphore.h>
-#include <sys/stat.h>
-#endif
-
-
-#include <iostream>
-
-#include <stdio.h>
-#include <stdlib.h>
-
-
-#ifdef LINUX_OS
-#include <unistd.h>
-#include <fcntl.h>//创建文件
-#include <pthread.h>
-#include <semaphore.h>
-#include <sys/stat.h>
-#endif
-
-
-#include <string.h>
-
-#ifdef LINUX_OS
-/*转换int或者short的字节顺序，该程序arm平台为大端模式，地面站x86架构为小端模式*/
-#include <byteswap.h>
-#include<sys/socket.h>
-#include<netinet/in.h>
-#include<arpa/inet.h>
-#include <string.h>
-#endif
-
-#include "BIT_HAL.h"
-
+//飞控自身头文件
 // Libraries
+#include "BIT_HAL.h"
+#include "location.h"
 #include "vector2.h"
 #include "vector3.h"
 #include "matrix3.h"
 #include "utility.h"
-
 #include "gps.h"        // ArduPilot GPS library
 #include "gps_nmea.h"
 #include "compass.h"     // ArduPilot Mega Magnetometer Library
@@ -134,19 +50,14 @@ using namespace std;
 #include "rc_channel.h"     // RC Channel Library
 #include "motors.h"
 
+//飞控除了库文件，主程序所需要的文件，比如全局，导航，地面站等
 // Local modules
 #include "global.h"
-//#include "GCS.h"
-
 #include "mavlink.h"//这个是基本的mavlink协议库1.0版本
 //#include "GCS_MAVLink.h"
 #include "GCS.h"
 
-#ifdef LINUX_OS
-#include "boatlink.h"
-#endif
-
-
+//飞控所需要的外部设备数据和计划最终输出给外部设备的数据都从这个all_external_device接口进出
 #include "all_external_device.h"
 
 
@@ -1545,6 +1456,101 @@ private:
 
 extern const AP_HAL::HAL& hal;
 extern Copter copter;
+
+/**********到此飞控自身所需头文件结束***************/
+/**********************************************************************************/
+
+
+
+
+
+
+
+
+/**********************************************************************************/
+/*************************************/
+/*********下面的是用于在定义LIINUX_OS时的，
+/***在linux上模拟测试用的，实际并不需要*/
+
+
+
+
+/**************************************************************************/
+/****这些头文件和定义跟飞控本身没有关系，
+****跟flightgear和地面站仿真模拟有关系*/
+
+
+#ifndef LINUX_OS
+#define LINUX_OS //这个是在linux上测试时用的，比如udp和串口通信
+#endif
+
+#ifdef LINUX_OS
+#include "boatlink.h"
+#endif
+
+#ifdef LINUX_OS
+/*
+ * 四旋翼的飞行动力模型接口，需要跟flightgear的版本一致，fdm.h主要是通过udp跟flightgear通信的接口
+ * Sim_Multicopter计算得到的模型数据发送到这个接口，
+ * 然后flightgear就能根据这些数据表现出四旋翼应该有的飞行姿态
+ * flightgear只是作为显示飞机三维图像姿态的作用，没有其他任何作用
+ */
+#include "fdm.h"
+
+//udp用来跟flightgear通信
+#include "udp.h"
+
+//四旋翼独立的数学模型，输入是四个电机的转速，输出是飞行状态
+//四旋翼自身利用SIM_Multicopter这个文件中的公式计算从螺旋桨转速到飞行12个状态
+#include "SIM_Multicopter.h"
+#include "SITL.h"
+
+//这个uart主要是模拟打开电台串口，发送实时数据到无人船地面站做测试
+#include "uart.h"
+
+/*
+ * 下面这些是模拟打开电台串口把实时数据发送到地面站
+ * 然后能从地面站上看出飞机飞行的经纬度
+ * 这个已经在无人船的地面站上经过测试
+ */
+#define UART_DEVICE_APGCS "/dev/ttyUSB0"
+#define UART_AP2GCS_BAUD 9600
+#define UART_AP2GCS_DATABITS 8 //8 data bit
+#define UART_AP2GCS_STOPBITS 1 //1 stop bit
+#define UART_AP2GCS_PARITY 0 //no parity
+
+#endif
+
+
+
+
+#ifdef LINUX_OS
+#include <fcntl.h>//创建文件
+#include <pthread.h>
+#include <semaphore.h>
+#include <sys/stat.h>
+#endif
+
+#ifdef LINUX_OS
+#include <unistd.h>
+#include <fcntl.h>//创建文件
+#include <pthread.h>
+#include <semaphore.h>
+#include <sys/stat.h>
+#endif
+
+
+
+
+#ifdef LINUX_OS
+/*转换int或者short的字节顺序，该程序arm平台为大端模式，地面站x86架构为小端模式*/
+#include <byteswap.h>
+#include<sys/socket.h>
+#include<netinet/in.h>
+#include<arpa/inet.h>
+#include <string.h>
+#endif
+
 
 
 
