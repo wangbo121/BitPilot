@@ -353,64 +353,62 @@ Copter::get_rate_yaw(int32_t target_rate)
 {
 
 	int32_t p,i,d;                                                                      // used to capture pid values for logging
-		    int32_t rate_error;
-		    int32_t output;
+	int32_t rate_error;
+	int32_t output;
 
-		    // rate control
-		    rate_error              = target_rate - (omega.z * DEGX100);
+	// rate control
+	rate_error              = target_rate - (omega.z * DEGX100);
 
-		    // separately calculate p, i, d values for logging
-		    p = g.pid_rate_yaw.get_p(rate_error);
-		    // freeze I term if we've breached yaw limits
+	// separately calculate p, i, d values for logging
+	p = g.pid_rate_yaw.get_p(rate_error);
+	// freeze I term if we've breached yaw limits
 
-		        i = g.pid_rate_yaw.get_i(rate_error, G_Dt);
+	i = g.pid_rate_yaw.get_i(rate_error, G_Dt);
 
-		    d = g.pid_rate_yaw.get_d(rate_error, G_Dt);
+	d = g.pid_rate_yaw.get_d(rate_error, G_Dt);
 
-		    output  = p+i+d;
-		    output = constrain_value(output, -4500, 4500);
+	output  = p+i+d;
+	output = constrain_value(output, -4500, 4500);
 
-//			std::cout<<"rate yaw   :    rate_error="<<rate_error<<std::endl;
-//			std::cout<<"rate yaw   :    pid out="<<output<<std::endl;
-
-
-		    return  output;
+	//			std::cout<<"rate yaw   :    rate_error="<<rate_error<<std::endl;
+	//			std::cout<<"rate yaw   :    pid out="<<output<<std::endl;
 
 
+	return  output;
 }
 
 int16_t
 Copter::get_throttle_rate(int16_t z_target_speed)
 {
-	 int32_t p,i,d;      // used to capture pid values for logging
-	    int16_t z_rate_error, output;
+	int32_t p,i,d;      // used to capture pid values for logging
+	int16_t z_rate_error, output;
 
-	    z_rate_error    = z_target_speed - climb_rate;              // calc the speed error
-
-
-	    int32_t tmp     = (z_target_speed * z_target_speed * (int32_t)g.throttle_cruise) / 200000;
-
-	    if(z_target_speed < 0) tmp = -tmp;
-
-	    output                  = constrain_value(tmp, -3200, 3200);
-
-	    // separately calculate p, i, d values for logging
-	    p = g.pid_throttle.get_p(z_rate_error);
-	    // freeze I term if we've breached throttle limits
-
-	        i = g.pid_throttle.get_integrator();
-
-	        i = g.pid_throttle.get_i(z_rate_error, .02);
-
-	    d = g.pid_throttle.get_d(z_rate_error, .02);
-
-	    //
-	    // limit the rate
-	    output +=  constrain_value(p+i+d, -80, 120);
+	z_rate_error    = z_target_speed - climb_rate;              // calc the speed error
 
 
+	int32_t tmp     = (z_target_speed * z_target_speed * (int32_t)g.throttle_cruise) / 200000;
 
-	    return output;
+	if(z_target_speed < 0) tmp = -tmp;
+
+	output                  = constrain_value(tmp, -3200, 3200);
+
+	// separately calculate p, i, d values for logging
+	p = g.pid_throttle.get_p(z_rate_error);
+	// freeze I term if we've breached throttle limits
+
+	i = g.pid_throttle.get_integrator();
+
+	i = g.pid_throttle.get_i(z_rate_error, .02);
+
+	d = g.pid_throttle.get_d(z_rate_error, .02);
+
+	//
+	// limit the rate
+	output +=  constrain_value(p+i+d, -80, 120);
+
+
+
+	return output;
 
 }
 
@@ -763,7 +761,10 @@ Copter::update_throttle_mode_old()
 
 
 
-
+/*
+ * angle boost 角度加速器
+ * 这里的意思应该是俯仰和滚转角导致掉高，所以我们有需要加上这一部分损失的油门量 20170920
+ */
 int16_t Copter::get_angle_boost(int16_t value)
 {
 

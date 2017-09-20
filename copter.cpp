@@ -402,7 +402,6 @@ void Copter::setup()
 {
 	init_ardupilot();
 
-	float pid_p_1=1.0;
 	//第一级pid参数设置
 	float stabilize_roll_p=3.69;
 	float stabilize_roll_i=0.0;
@@ -412,6 +411,7 @@ void Copter::setup()
 	g.pi_stabilize_roll.set_kD(stabilize_roll_d);
 
 	float stabilize_pitch_p=3.69;
+	//float stabilize_pitch_p=0.69;
 	float stabilize_pitch_i=0.0;
 	float stabilize_pitch_d=0.0;
 	g.pi_stabilize_pitch.set_kP(stabilize_pitch_p);
@@ -427,30 +427,24 @@ void Copter::setup()
 
 
 	//第2级pid参数设置
-
-
-	float pid_p_2=5.0;
-
-	float stabilize_roll_rate_p=0.255;
-	float stabilize_roll_rate_i=0.122;
-	float stabilize_roll_rate_d=0.017;
+	float stabilize_roll_rate_p=0.15;//0.255;
+	float stabilize_roll_rate_i=0.1;//0.122;
+	float stabilize_roll_rate_d=0.004;//0.017;
 	g.pid_rate_roll.set_kP(stabilize_roll_rate_p);
 	g.pid_rate_roll.set_kI(stabilize_roll_rate_i);
 	g.pid_rate_roll.set_kD(stabilize_roll_rate_d);
 
-	float pid_p_pitch=5.0;
-
-	float stabilize_pitch_rate_p=0.255;
-	float stabilize_pitch_rate_i=0.122;
-	float stabilize_pitch_rate_d=0.017;
+	float stabilize_pitch_rate_p=0.15;//0.255;
+	float stabilize_pitch_rate_i=0.1;//0.122;
+	float stabilize_pitch_rate_d=0.004;//0.017;
 	g.pid_rate_pitch.set_kP(stabilize_pitch_rate_p);
 	g.pid_rate_pitch.set_kI(stabilize_pitch_rate_i);
 	g.pid_rate_pitch.set_kD(stabilize_pitch_rate_d);
 
 
-	float stabilize_yaw_rate_p=0.17;
-	float stabilize_yaw_rate_i=0.2;
-	float stabilize_yaw_rate_d=0.003;
+	float stabilize_yaw_rate_p=0.2;//0.17;
+	float stabilize_yaw_rate_i=0.02;//0.2;
+	float stabilize_yaw_rate_d=0.0;//0.003;
 	g.pid_rate_yaw.set_kP(stabilize_yaw_rate_p);
 	g.pid_rate_yaw.set_kI(stabilize_yaw_rate_i);
 	g.pid_rate_yaw.set_kD(stabilize_yaw_rate_d);
@@ -462,13 +456,15 @@ void Copter::setup()
 	float pid_p_3=2.0;
 	g.pid_nav_lon.set_kP(pid_p_3);
 	g.pid_nav_lon.set_kI(0.122);
-	g.pid_nav_lon.set_kD(0.017);
+	//g.pid_nav_lon.set_kD(0.017);
+	g.pid_nav_lon.set_kD(0.0);
 
 
 	//g.pid_nav_lat.set_kP(pid_p_3);
 	g.pid_nav_lat.set_kP(2.0);
 	g.pid_nav_lat.set_kI(0.122);//又犯了复制没有改名字的错误，set_kI写成了set_kP，导致p又改为了0
-	g.pid_nav_lat.set_kD(0.017);
+	//g.pid_nav_lat.set_kD(0.017);
+	g.pid_nav_lat.set_kD(0.0);
 
 	/*
 	* 油门控高
@@ -478,10 +474,11 @@ void Copter::setup()
 	g.pi_alt_hold.set_kI(0.0);
 	g.pi_alt_hold.set_kD(0.0);
 
-	g.pid_throttle.set_kP(pid_p_alt);
-	g.pid_throttle.set_kI(0.0);
+	g.pid_throttle.set_kP(0.5);
+	g.pid_throttle.set_kI(1.0);
 	g.pid_throttle.set_kD(0.0);
 
+	//上面一共10组pid控制器
 
 	/*
 	* 下面这些初始化，其实应该放在跟地面站连接时
@@ -1525,7 +1522,7 @@ void Copter::medium_loop()
 
 			// invalidate the throttle hold value
 			// ----------------------------------
-			invalid_throttle = true;
+			invalid_throttle = true;//为什么把油门无效了呢
 
 			break;
 
