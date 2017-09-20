@@ -36,6 +36,34 @@ const float   IMU::_gyro_temp_curve[3][3] = {
 	{1658,0,0}
 };
 
+IMU::IMU()
+{
+
+
+}
+ const float     IMU:: _gravity = 423.8;       ///< 1G in the raw data coming from the accelerometer
+														// Value based on actual sample data from 20 boards
+ const float      IMU::_accel_scale = 9.80665 / 423.8; ///< would like to use _gravity here, but cannot
+
+// IDG500 Sensitivity (from datasheet) => 2.0mV/degree/s, 0.8mV/ADC step => 0.8/3.33 .4
+// Tested values : 0.4026, ?, 0.4192
+//
+ const float      IMU::_gyro_gain_x = 0.4;     // X axis Gyro gain
+ const float      IMU::_gyro_gain_y = 0.41;    // Y axis Gyro gain
+ const float      IMU::_gyro_gain_z = 0.41;    // Z axis Gyro gain
+
+// Maximum possible value returned by an offset-corrected sensor channel
+//
+ const float     IMU:: _adc_constraint = 900;
+
+// Gyro and Accelerometer calibration criterial
+//
+ const float		IMU::_gyro_total_cal_change = 4.0;		// Experimentally derived - allows for some minor motion
+ const float		IMU::_gyro_max_cal_offset = 320.0;
+ const float		IMU::_accel_total_cal_change = 4.0;
+ const float		IMU::_accel_max_cal_offset = 250.0;
+
+
 void
 IMU::init()
 {

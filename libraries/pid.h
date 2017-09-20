@@ -50,6 +50,8 @@ public:
 
 	float	get_integrator() const	{ return _integrator; }
 
+	static const float        _filter ;//= 7.9577e-3; // Set to  "1 / ( 2 * PI * f_cut )";
+
 private:
 	float				_kp;
 	float				_ki;
@@ -64,7 +66,7 @@ private:
 
 	/// Low pass filter cut frequency for derivative calculation.
 	///
-	static const float        _filter = 7.9577e-3; // Set to  "1 / ( 2 * PI * f_cut )";
+    //static const float        _filter= 7.9577e-3; // Set to  "1 / ( 2 * PI * f_cut )";
 	// Examples for _filter:
 	// f_cut = 10 Hz -> _filter = 15.9155e-3
 	// f_cut = 15 Hz -> _filter = 10.6103e-3

@@ -69,13 +69,13 @@
 		command_nav_index=command_nav_index%(g.command_total -1);//20170919添加这个的目的主要是为了能够循环执行命令
 		if (command_nav_index < (g.command_total -1)) {
 
-			std::cout << "进入了command_nav_index < (g.command_total -1) "<<std::endl;
+			//std::cout << "进入了command_nav_index < (g.command_total -1) "<<std::endl;
 			command_nav_index++;
 			command_nav_queue = get_cmd_with_index(command_nav_index);
 
 
 			if (command_nav_queue.id <= MAV_CMD_NAV_LAST ){
-				std::cout<<"execute_nav_command();"<<std::endl;
+				//std::cout<<"execute_nav_command();"<<std::endl;
 				execute_nav_command();
 			} else{
 				// this is a conditional command so we skip it
@@ -94,7 +94,7 @@
 			 * 不知道为什么回不来了，难道还有啥设置，设置为1了，为啥还不能朝1走
 			 * 0821好像可以了，执行任务结束后直接回到航点1
 			 */
-			std::cout<<"任务已经完成，重新执行任务"<<std::endl;
+			//std::cout<<"任务已经完成，重新执行任务"<<std::endl;
 			init_commands();
 			g.command_index  = command_nav_index = 1;//255对应有符号是-1
 			command_nav_queue = get_cmd_with_index(command_nav_index);

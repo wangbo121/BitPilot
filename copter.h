@@ -65,6 +65,7 @@
 //飞控所需要的外部设备数据和计划最终输出给外部设备的数据都从这个all_external_device接口进出
 #include "all_external_device.h"
 
+
 //飞控模拟用的头文件
 /*
  * 四旋翼的飞行动力模型接口，需要跟flightgear的版本一致，fdm.h主要是通过udp跟flightgear通信的接口
@@ -74,10 +75,12 @@
  */
 #include "fdm.h"
 
+#ifdef LINUX_OS
 //四旋翼独立的数学模型，输入是四个电机的转速，输出是飞行状态
 //四旋翼自身利用SIM_Multicopter这个文件中的公式计算从螺旋桨转速到飞行12个状态
 #include "SIM_Multicopter.h"
 #include "SITL.h"
+#endif
 
 extern struct Location wp_total_array_temp[255];
 class Copter :public AP_HAL::HAL::Callbacks{

@@ -7,6 +7,7 @@
 
 #include "copter.h"
 
+#ifdef LINUX_OS
 //我们保留了fdm模拟部分，但是删除了把发送给无人船地面站和flightgear这2部分放在了最下面用#define LINUX_OS包含着
 /*
  * 四旋翼的飞行动力模型输入是4个电机的1000-2000的pwm值，输出是飞行的15个状态
@@ -14,6 +15,7 @@
  */
 //MultiCopter multi_copter("37.6136,-122.357,10,0","x");//x型机架，起始高度为10，yaw是0
 MultiCopter multi_copter("37.6136,-122.357,10,0","+");//+型机架，起始高度为10，yaw是0
+#endif
 
 //fdm是从四旋翼的simulate数学模型中获取数据，
 //然后fdm_send发送给flightgear，
@@ -22,10 +24,12 @@ T_FDM fdm;
 T_FDM fdm_send;
 T_FDM fdm_feed_back;//这个动力模型解算出来后，就把数据返回给imu，gps，compass等
 
+#ifdef LINUX_OS
 int16_t             motor_out_flightgear[AP_MOTORS_MAX_NUM_MOTORS];//这个不能删除，本来是输出给flightgear的但是这个1000-2000的量又得赋值给fdm模拟用的servos_set_out
 uint16_t servos_set_out[4];//这是驾驶仪计算的到的motor_out中的四个电机的转速，给电调的信号，1000～2000
 
 Aircraft::sitl_input input;//这个是4个电机的输入，然后用于multi_copter.update(input)更新出飞机的飞行状态
+#endif
 
 /*
  * wangbo20170802setup包括2部分，
@@ -245,6 +249,7 @@ void Copter::setup()
 	dTnav=100;//单位应该是毫秒  // Delta Time in milliseconds for navigation computations  因为pid的函数中计算积分所需要的时间就是以毫秒为单位的
 	//dTnav=0.1;//单位是秒,20170919应该按照gps更新的速度设置的,那么就应该是10hz或者5hz呀
 
+#ifdef LINUX_OS
 	/*
 	 * 下面是用来连接flightgear和地面站进行模拟测试的
 	 */
@@ -252,7 +257,7 @@ void Copter::setup()
 	input.servos[1]=1500;
 	input.servos[2]=1500;
 	input.servos[3]=1500;
-
+#endif
 
 #ifdef LINUX_OS
 	fast_loopTimer=clock_gettime_ms();//必须有这个初始化，否则第一次G_Dt的值会非常大，不过现在有没有都无所谓了，我已经把G_Dt固定为0.01
@@ -423,6 +428,7 @@ void Copter::loop_fast()
 	/* 5--把计算所得控制量输出给电机 */
 	motors_output();
 
+#ifdef LINUX_OS
 	/*
 	 * 其实到这里主程序也就结束了，我本来想把下面的都放在#define LINUX_OS中的
 	 * 但是ucos上将来是不是也需要模拟仿真呢，就先留着了20170920
@@ -451,7 +457,7 @@ void Copter::loop_fast()
 //	std::cout<<"fdm_feed_back.phidot="<<fdm_feed_back.phidot<<std::endl;
 //	std::cout<<"fdm_feed_back.thetadot="<<fdm_feed_back.thetadot<<std::endl;
 //	std::cout<<"fdm_feed_back.psidot="<<fdm_feed_back.psidot<<std::endl;
-
+#endif
 
 #ifdef LINUX_OS
 	memcpy(&fdm_send,&fdm,sizeof(fdm));//fdm_send是为了把这个飞行状态发送给flightgear使得flightgear能够三维动态显示飞行状态
@@ -1227,6 +1233,7 @@ void Copter::update_all_external_device_input( void )
 {
 	//如果跟王正阳的硬件驱动一起调试，则这个函数是不需要的，硬件驱动把数据赋值给all_external_device_input即可
 
+#ifdef LINUX_OS
 	/*
 	 * gps数据
 	 */
@@ -1246,7 +1253,7 @@ void Copter::update_all_external_device_input( void )
 	all_external_device_input._gyro_x    =    fdm_feed_back.phidot;
 	all_external_device_input._gyro_y    =    fdm_feed_back.thetadot;
 	all_external_device_input._gyro_z    =    fdm_feed_back.psidot;
-
+#endif
 	/*
 	 * 这里应该是获取遥控器的信号
 	 */

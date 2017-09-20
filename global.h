@@ -15,7 +15,7 @@
 #include "rc.h"
 
 #ifndef LINUX_OS
-//#define LINUX_OS //这个是在linux上测试时用的，比如udp和串口通信
+#define LINUX_OS //这个是在linux上测试时用的，比如udp和串口通信
 #endif
 
 #ifdef LINUX_OS
@@ -141,6 +141,8 @@ extern struct Location wp_total_array_temp[255];
                                         // WP following mode
 
 #ifdef LINUX_OS
+
+
 #else
 //#define	MAV_ROI_NONE 0 /* No region of interest. | */
 //	#define MAV_ROI_WPNEXT    1 /* Point toward next MISSION. | */
@@ -709,11 +711,7 @@ int8_t         tilt_comp;
 #define QUAD_MOTORS 4
 
 
-typedef struct tagGLOBAL
-{
-	double cnt;
 
-}T_GLOBAL;
 
 typedef struct tagAP2FG
 {

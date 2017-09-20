@@ -13,8 +13,10 @@
 #include "utility.h"
 
 #ifndef LINUX_OS
-#define LINUX_OS
+//#define LINUX_OS
 #endif
+
+#ifdef LINUX_OS
 
 #ifdef LINUX_OS
 #include <unistd.h>
@@ -133,3 +135,4 @@ float clock_gettime_us()
 
     return time_s*1e6;
 }
+#endif

@@ -244,19 +244,19 @@ AP_DCM::drift_correction(void)
 
 	// Dynamic weighting of accelerometer info (reliability filter)
 	// Weight for accelerometer info (<0.5G = 0.0, 1G = 1.0 , >1.5G = 0.0)
-	accel_weight = constrain(1 - 2 * fabs(1 - accel_magnitude), 0, 1);	//
+	accel_weight = dcm_constrain(1 - 2 * fabs(1 - accel_magnitude), 0, 1);	//
 
 	//	We monitor the amount that the accelerometer based drift correction is deweighted for performance reporting
-	_health = constrain(_health+(0.02 * (accel_weight - .5)), 0, 1);
+	_health = dcm_constrain(_health+(0.02 * (accel_weight - .5)), 0, 1);
 
 	// adjust the ground of reference
 	_error_roll_pitch =  _dcm_matrix.c % _accel_vector;			// Equation 27  *** sign changed from prev implementation???
 
 	// error_roll_pitch are in Accel m/s^2 units
 	// Limit max error_roll_pitch to limit max omega_P and omega_I
-	_error_roll_pitch.x = constrain(_error_roll_pitch.x, -1.17f, 1.17f);
-	_error_roll_pitch.y = constrain(_error_roll_pitch.y, -1.17f, 1.17f);
-	_error_roll_pitch.z = constrain(_error_roll_pitch.z, -1.17f, 1.17f);
+	_error_roll_pitch.x = dcm_constrain(_error_roll_pitch.x, -1.17f, 1.17f);
+	_error_roll_pitch.y = dcm_constrain(_error_roll_pitch.y, -1.17f, 1.17f);
+	_error_roll_pitch.z = dcm_constrain(_error_roll_pitch.z, -1.17f, 1.17f);
 
 	_omega_P = _error_roll_pitch * (Kp_ROLLPITCH * accel_weight);
 	_omega_I += _error_roll_pitch * (Ki_ROLLPITCH * accel_weight);
@@ -391,7 +391,7 @@ AP_DCM::degrees(float rad)
 
 
 float
-AP_DCM::constrain(float m,float a,float b)
+AP_DCM::dcm_constrain(float m,float a,float b)
 {
 	if(m<=a)        m=a;
 	else if(m>=b)   m=b;

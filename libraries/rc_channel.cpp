@@ -104,7 +104,7 @@ AP_RC_Channel::set_pwm(int pwm)
 int
 AP_RC_Channel::control_mix(float value)
 {
-	return (1 - fabs(control_in / _high)) * value + control_in;
+	return (1 - fabs((float)control_in /(float) _high)) * value + control_in;
 }
 
 // are we below a threshold?

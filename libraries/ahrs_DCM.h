@@ -21,6 +21,11 @@
 #include "gps.h"
 #include "imu.h"
 
+#ifndef  M_PI
+# define M_PI		3.14159265358979323846	/* pi */
+# define M_PI_2		1.57079632679489661923	/* pi/2 */
+#endif
+
 #define DEG_TO_RAD      (M_PI / 180.0f)
 #define RAD_TO_DEG      (180.0f / M_PI)
 
@@ -56,7 +61,7 @@ public:
 
 	float radians(float deg);
 	float degrees(float rad);
-	float constrain(float m,float a,float b);
+	float dcm_constrain(float m,float a,float b);
 
 
 	// Methods

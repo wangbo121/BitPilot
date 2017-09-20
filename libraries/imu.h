@@ -28,7 +28,8 @@ class IMU
 
 public:
 	/// Constructor
-	IMU() {}
+	//IMU() {}
+	IMU() ;
 
 	enum Start_style {
 		COLD_START ,
@@ -135,27 +136,27 @@ private:
 	// ADXL335 Sensitivity(from datasheet) => 330mV/g, 0.8mV/ADC step => 330/0.8 = 412
 	// Tested value : 418
 	//
-	static const float      _gravity = 423.8;       ///< 1G in the raw data coming from the accelerometer
+	static const float      _gravity ;       ///< 1G in the raw data coming from the accelerometer
 													// Value based on actual sample data from 20 boards
-	static const float      _accel_scale = 9.80665 / 423.8; ///< would like to use _gravity here, but cannot
+	static const float      _accel_scale ; ///< would like to use _gravity here, but cannot
 
 	// IDG500 Sensitivity (from datasheet) => 2.0mV/degree/s, 0.8mV/ADC step => 0.8/3.33 .4
 	// Tested values : 0.4026, ?, 0.4192
 	//
-	static const float      _gyro_gain_x = 0.4;     // X axis Gyro gain
-	static const float      _gyro_gain_y = 0.41;    // Y axis Gyro gain
-	static const float      _gyro_gain_z = 0.41;    // Z axis Gyro gain
+	static const float      _gyro_gain_x ;     // X axis Gyro gain
+	static const float      _gyro_gain_y ;    // Y axis Gyro gain
+	static const float      _gyro_gain_z ;    // Z axis Gyro gain
 
 	// Maximum possible value returned by an offset-corrected sensor channel
 	//
-	static const float      _adc_constraint = 900;
+	static const float      _adc_constraint ;
 
 	// Gyro and Accelerometer calibration criterial
 	//
-	static const float		_gyro_total_cal_change = 4.0;		// Experimentally derived - allows for some minor motion
-	static const float		_gyro_max_cal_offset = 320.0;
-	static const float		_accel_total_cal_change = 4.0;
-	static const float		_accel_max_cal_offset = 250.0;
+	static const float		_gyro_total_cal_change ;		// Experimentally derived - allows for some minor motion
+	static const float		_gyro_max_cal_offset ;
+	static const float		_accel_total_cal_change;
+	static const float		_accel_max_cal_offset ;
 };
 
 

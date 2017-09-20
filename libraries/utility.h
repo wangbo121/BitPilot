@@ -8,6 +8,11 @@
 #ifndef UTILITY_H_
 #define UTILITY_H_
 
+#ifndef LINUX_OS
+#define LINUX_OS
+#endif
+
+#ifdef LINUX_OS
 /*
  * 延时函数，如果更换操作系统需要重新改写
  */
@@ -33,6 +38,6 @@ float diff_gettimeofday_value(float start,float end);
 float clock_gettime_s();    //获取系统开启后（主程序开始运行）到当前时刻的时间计数[s]秒
 float clock_gettime_ms();//获取系统开启后（主程序开始运行）到当前时刻的时间计数[ms]毫秒
 float clock_gettime_us(); //获取系统开启后（主程序开始运行）到当前时刻的时间计数[us]微秒
-
+#endif
 
 #endif /* UTILITY_H_ */

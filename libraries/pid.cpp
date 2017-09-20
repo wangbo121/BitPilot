@@ -7,10 +7,16 @@
 
 #include "pid.h"
 
+#ifndef  M_PI
+# define M_PI		3.14159265358979323846	/* pi */
+# define M_PI_2		1.57079632679489661923	/* pi/2 */
+#endif
+
 AP_PID::AP_PID()
 {
-}
 
+}
+const float        AP_PID::_filter = 7.9577e-3; // Set to  "1 / ( 2 * PI * f_cut )";
 float
 AP_PID::get_pid(int32_t error, uint16_t dt, float scaler)
 {

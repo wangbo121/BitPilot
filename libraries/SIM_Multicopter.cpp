@@ -305,7 +305,7 @@ void MultiCopter::update(const struct sitl_input &input)
     // constrain height to the ground
     if (on_ground(position)) {
 
-    	std::cout<<"莫不是进了on ground"<<std::endl;
+    	//std::cout<<"莫不是进了on ground"<<std::endl;
 
         if (!on_ground(old_position)) {
             printf("Hit ground at %f m/s\n", velocity_ef.z);
