@@ -137,6 +137,7 @@ void Copter::loop()
 
 void send_heartbeat_to_gcs( void )
 {
+#ifdef LINUX_OS
 	// 发送心跳包
 	send_heartbeat_to_gcs();
 	mavlink_system.sysid=1;
@@ -160,10 +161,12 @@ void send_heartbeat_to_gcs( void )
 #ifdef LINUX_OS
 	send_uart_data(uart_device_ap2gcs.uart_name, (char *)mav_send_buf,len);
 #endif
+#endif
 }
 
 void send_attitude_to_gcs( void )
 {
+#ifdef LINUX_OS
 	mavlink_system.sysid=1;
 	mavlink_system.compid=1;
 
@@ -182,6 +185,7 @@ void send_attitude_to_gcs( void )
 	len = mavlink_msg_to_send_buffer(mav_send_buf, &msg);
 #ifdef LINUX_OS
 	send_uart_data(uart_device_ap2gcs.uart_name, (char *)mav_send_buf,len);
+#endif
 #endif
 }
 

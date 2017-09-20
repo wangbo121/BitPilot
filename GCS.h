@@ -9,7 +9,7 @@
 #define GCS_H_
 
 #include "copter.h"
-
+#ifdef LINUX_OS
 //#include <FastSerial.h>
 //#include <AP_Common.h>
 //#include <GCS_MAVLink.h>
@@ -188,7 +188,7 @@ private:
 
 
 
-
+#endif
 
 
 

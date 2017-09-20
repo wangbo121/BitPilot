@@ -1323,7 +1323,9 @@ void Copter::super_slow_loop()
 
 const AP_HAL::HAL& hal = AP_HAL::get_HAL();
 Copter copter;
+#ifdef LINUX_OS
 mavlink_system_t mavlink_system;
+#endif
 struct Location wp_total_array_temp[255]={0};
 
 

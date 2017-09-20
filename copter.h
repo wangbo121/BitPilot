@@ -53,9 +53,14 @@
 //飞控除了库文件，主程序所需要的文件，比如全局，导航，地面站等
 // Local modules
 #include "global.h"
+
+#ifdef LINUX_OS
+//本来这个是需要的，但是移植过程mavlink协议有一些问题，mdk不认，所以先不要mavlink了
 #include "mavlink.h"//这个是基本的mavlink协议库1.0版本
 //#include "GCS_MAVLink.h"
+
 #include "GCS.h"
+#endif
 
 //飞控所需要的外部设备数据和计划最终输出给外部设备的数据都从这个all_external_device接口进出
 #include "all_external_device.h"
@@ -1455,9 +1460,10 @@ private:
 	  * 20170918开始添加地面站与飞控的通信
 	  * mavlink协议1.0
 	  */
+#ifdef LINUX_OS
 	 void send_heartbeat(mavlink_channel_t chan);
 	 void send_attitude(mavlink_channel_t chan);
-
+#endif
 	 void update_all_external_device_input( void );
 
 
@@ -1471,8 +1477,9 @@ private:
 extern const AP_HAL::HAL& hal;
 extern Copter copter;
 
+#ifdef LINUX_OS
 extern mavlink_system_t mavlink_system;
-
+#endif
 /**********到此飞控自身所需头文件结束***************/
 /**********************************************************************************/
 

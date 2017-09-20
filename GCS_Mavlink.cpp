@@ -7,6 +7,7 @@
 
 #include "copter.h"
 
+#ifdef LINUX_OS
 // use this to prevent recursion during sensor init
 static bool in_mavlink_delay;
 
@@ -1891,5 +1892,7 @@ static void gcs_send_text_fmt(const prog_char_t *fmt, ...)
     }
 }
 
+
+#endif
 
 #endif
