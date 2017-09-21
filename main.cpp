@@ -158,10 +158,12 @@ void send_heartbeat_to_gcs( void )
 	mavlink_system.compid = MAV_COMP_ID_ALL;
 	mavlink_msg_heartbeat_pack(mavlink_system.sysid, mavlink_system.compid, &msg, system_type,autopilot_type, system_mode, custom_mode, system_state);
 	len = mavlink_msg_to_send_buffer(mav_send_buf, &msg);
+#endif
+
 #ifdef LINUX_OS
 	send_uart_data(uart_device_ap2gcs.uart_name, (char *)mav_send_buf,len);
 #endif
-#endif
+
 }
 
 void send_attitude_to_gcs( void )
@@ -183,10 +185,12 @@ void send_attitude_to_gcs( void )
 														fdm_feed_back.phidot,fdm_feed_back.thetadot,fdm_feed_back.psidot);
 
 	len = mavlink_msg_to_send_buffer(mav_send_buf, &msg);
+#endif
+
 #ifdef LINUX_OS
 	send_uart_data(uart_device_ap2gcs.uart_name, (char *)mav_send_buf,len);
 #endif
-#endif
+
 }
 
 #ifdef  LINUX_OS

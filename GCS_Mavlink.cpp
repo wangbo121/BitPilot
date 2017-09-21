@@ -69,6 +69,7 @@ void send_heartbeat(mavlink_channel_t chan)
 	uint8_t system_state=MAV_STATE_STANDBY;
 
 
+	mavlink_system.compid=0;
 
 	int len;
 	//send heart beat
@@ -590,6 +591,10 @@ packet_drops(0),
 waypoint_send_timeout(1000), // 1 second
 waypoint_receive_timeout(1000), // 1 second
 
+
+/*
+ * 这些个初始值都是0，AP_VAR 第一个参数是引用地址，第二个参数是下标，第3个参数是初始值
+ */
 // stream rates
 _group	(key, key == Parameters::k_param_streamrates_port0 ? PSTR("SR0_"): PSTR("SR3_")),
 				// AP_VAR					//ref	 //index, default, 	name

@@ -57,8 +57,6 @@
 #ifdef LINUX_OS
 //本来这个是需要的，但是移植过程mavlink协议有一些问题，mdk不认，所以先不要mavlink了
 #include "mavlink.h"//这个是基本的mavlink协议库1.0版本
-//#include "GCS_MAVLink.h"
-
 #include "GCS.h"
 #endif
 
