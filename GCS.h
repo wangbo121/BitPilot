@@ -126,6 +126,8 @@ public:
 	//20170921
 	bool try_send_message(enum ap_message id);
 	void data_stream_send(void);
+	void send_message(enum ap_message id);
+	void mavlink_send_message(mavlink_channel_t chan, enum ap_message id, uint16_t packet_drops);
 
 private:
 	void 	handleMessage(mavlink_message_t * msg);
