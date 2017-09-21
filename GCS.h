@@ -113,6 +113,7 @@ class GCS_MAVLINK : public GCS_Class
 {
 public:
 //	GCS_MAVLINK(AP_Var::Key key);
+	GCS_MAVLINK(){}
 	void    update(void);
 	//void	init(FastSerial *port);
 //	void	send_message(enum ap_message id);

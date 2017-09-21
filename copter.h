@@ -441,6 +441,7 @@ private:
 
     // GCS
     // ---
+    GCS_MAVLINK gcs;
     char GCS_buffer[53];
     char display_PID = -1;						// Flag used by DebugTerminal to indicate that the next PID calculation with this index should be displayed
 
