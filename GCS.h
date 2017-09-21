@@ -123,6 +123,10 @@ public:
 	void    queued_param_send();
 	void    queued_waypoint_send();
 
+	//20170921
+	bool try_send_message(enum ap_message id);
+	void data_stream_send(void);
+
 private:
 	void 	handleMessage(mavlink_message_t * msg);
 

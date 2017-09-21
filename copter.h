@@ -848,8 +848,8 @@ private:
     void auto_takeoff_attitude_run(float target_yaw_rate);
     void set_accel_throttle_I_from_pilot_throttle();
     void rotate_body_frame_to_NE(float &x, float &y);
-    void gcs_send_heartbeat(void);
-    void gcs_send_deferred(void);
+   // void gcs_send_heartbeat(void);
+   // void gcs_send_deferred(void);
 
     void rpm_update();
     void button_update();
@@ -1463,8 +1463,8 @@ private:
 	  * mavlink协议1.0
 	  */
 #ifdef LINUX_OS
-	 void send_heartbeat(mavlink_channel_t chan);
-	 void send_attitude(mavlink_channel_t chan);
+	 //void send_heartbeat(mavlink_channel_t chan);
+	// void send_attitude(mavlink_channel_t chan);
 #endif
 	 void update_all_external_device_input( void );
 
@@ -1472,6 +1472,115 @@ private:
 
 	 void send_realdata_to_gcs( void );
 
+
+
+	 /*
+	  * 20170920开始添加mavlink1.0的地面站协议
+	  */
+	 void gcs_send_message(enum ap_message id);
+
+
+	 void gcs_send_heartbeat(void);
+
+	 void gcs_send_deferred(void);
+
+	 /*
+	  *  !!NOTE!!
+	  *
+	  *  the use of NOINLINE separate functions for each message type avoids
+	  *  a compiler bug in gcc that would cause it to use far more stack
+	  *  space than is needed. Without the NOINLINE we use the sum of the
+	  *  stack needed for each message type. Please be careful to follow the
+	  *  pattern below when adding any new messages
+	  */
+
+	 NOINLINE void send_heartbeat(mavlink_channel_t chan);
+
+	 NOINLINE void send_attitude(mavlink_channel_t chan);
+
+
+	 NOINLINE void send_limits_status(mavlink_channel_t chan);
+
+
+	 NOINLINE void send_extended_status1(mavlink_channel_t chan);
+
+	 void NOINLINE send_location(mavlink_channel_t chan);
+
+	 void NOINLINE send_nav_controller_output(mavlink_channel_t chan);
+
+	 // report simulator state
+	 void NOINLINE send_simstate(mavlink_channel_t chan);
+
+	 void NOINLINE send_hwstatus(mavlink_channel_t chan);
+
+	 void NOINLINE send_servo_out(mavlink_channel_t chan);
+	 void NOINLINE send_radio_out(mavlink_channel_t chan);
+	 void NOINLINE send_vfr_hud(mavlink_channel_t chan);
+	 void NOINLINE send_current_waypoint(mavlink_channel_t chan);
+
+	 void NOINLINE send_rangefinder(mavlink_channel_t chan);
+	 /*
+	   send RPM packet
+	  */
+	 void NOINLINE send_rpm(mavlink_channel_t chan);
+	 /*
+	   send PID tuning message
+	  */
+	 void send_pid_tuning(mavlink_channel_t chan);
+	 void NOINLINE send_statustext(mavlink_channel_t chan);
+
+	 // are we still delaying telemetry to try to avoid Xbee bricking?
+	 bool telemetry_delayed(mavlink_channel_t chan);
+
+
+	 //void GCS_MAVLINK::handle_guided_request(AP_Mission::Mission_Command &cmd);
+
+	 //void GCS_MAVLINK::handle_change_alt_request(AP_Mission::Mission_Command &cmd);
+
+	 //void GCS_MAVLINK::handleMessage(mavlink_message_t* msg);
+
+
+	 /*
+	  *  a delay() callback that processes MAVLink packets. We set this as the
+	  *  callback in long running library initialisation routines to allow
+	  *  MAVLink to process packets while waiting for the initialisation to
+	  *  complete
+	  */
+	 //void mavlink_delay_cb();
+
+	 ///*
+	 // *  send a message on both GCS links
+	 // */
+	 //void gcs_send_message(enum ap_message id)
+	 //{
+	 //    for (uint8_t i=0; i<num_gcs; i++) {
+	 //        if (gcs[i].initialised) {
+	 //            gcs[i].send_message(id);
+	 //        }
+	 //    }
+	 //}
+
+	 /*
+	  *  send a mission item reached message and load the index before the send attempt in case it may get delayed
+	  */
+	// void gcs_send_mission_item_reached_message(uint16_t mission_index);
+	 /*
+	  *  send data streams in the given rate range on both links
+	  */
+	// void gcs_data_stream_send(void);
+	 /*
+	  *  look for incoming commands on the GCS links
+	  */
+	 //void gcs_check_input(void);
+
+	 void gcs_send_text_P(gcs_severity severity, const char *str);
+
+	 /*
+	  *  send a low priority formatted message to the GCS
+	  *  only one fits in the queue, so if you send more than one before the
+	  *  last one gets into the serial buffer then the old one will be lost
+	  */
+	 //void gcs_send_text_fmt(const prog_char_t *fmt, ...);
 
 };
 
