@@ -210,6 +210,10 @@ private:
 
     // number of extra ticks to add to slow things down for the radio
     uint8_t stream_slowdown;
+
+    // true when we have received at least 1 MAVLink packet
+    bool mavlink_active;
+
 };
 
 

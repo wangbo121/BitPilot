@@ -6,6 +6,7 @@
  */
 
 #include "copter.h"
+#include "GCS_Mavlink.h"
 #include <limits.h>
 
 #ifdef LINUX_OS
@@ -52,15 +53,16 @@ void Copter::gcs_send_deferred(void)
 
 NOINLINE void Copter::send_heartbeat(mavlink_channel_t chan)
 {
-#if 0
+
     uint8_t base_mode = MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
-    uint8_t system_status = ap.land_complete ? MAV_STATE_STANDBY : MAV_STATE_ACTIVE;
+//    uint8_t system_status = ap.land_complete ? MAV_STATE_STANDBY : MAV_STATE_ACTIVE;
+    uint8_t system_status =MAV_STATE_ACTIVE;
     uint32_t custom_mode = control_mode;
 
-    // set system as critical if any failsafe have triggered
-    if (failsafe.radio || failsafe.battery || failsafe.gcs || failsafe.ekf)  {
-        system_status = MAV_STATE_CRITICAL;
-    }
+//    // set system as critical if any failsafe have triggered
+//    if (failsafe.radio || failsafe.battery || failsafe.gcs || failsafe.ekf)  {
+//        system_status = MAV_STATE_CRITICAL;
+//    }
 
     // work out the base_mode. This value is not very useful
     // for APM, but we calculate it as best we can so a generic
@@ -77,8 +79,8 @@ NOINLINE void Copter::send_heartbeat(mavlink_channel_t chan)
     case LOITER:
     case GUIDED:
     case CIRCLE:
-    case POSHOLD:
-    case BRAKE:
+//    case POSHOLD:
+//    case BRAKE:
         base_mode |= MAV_MODE_FLAG_GUIDED_ENABLED;
         // note that MAV_MODE_FLAG_AUTO_ENABLED does not match what
         // APM does in any mode, as that is defined as "system finds its own goal
@@ -102,30 +104,44 @@ NOINLINE void Copter::send_heartbeat(mavlink_channel_t chan)
     // indicate we have set a custom mode
     base_mode |= MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
 
-    mavlink_msg_heartbeat_send(
-        chan,
-#if (FRAME_CONFIG == QUAD_FRAME)
-        MAV_TYPE_QUADROTOR,
-#elif (FRAME_CONFIG == TRI_FRAME)
-        MAV_TYPE_TRICOPTER,
-#elif (FRAME_CONFIG == HEXA_FRAME || FRAME_CONFIG == Y6_FRAME)
-        MAV_TYPE_HEXAROTOR,
-#elif (FRAME_CONFIG == OCTA_FRAME || FRAME_CONFIG == OCTA_QUAD_FRAME)
-        MAV_TYPE_OCTOROTOR,
-#elif (FRAME_CONFIG == HELI_FRAME)
-        MAV_TYPE_HELICOPTER,
-#elif (FRAME_CONFIG == SINGLE_FRAME)  //because mavlink did not define a singlecopter, we use a rocket
-        MAV_TYPE_ROCKET,
-#elif (FRAME_CONFIG == COAX_FRAME)  //because mavlink did not define a singlecopter, we use a rocket
-        MAV_TYPE_ROCKET,
-#else
-  #error Unrecognised frame type
-#endif
-        MAV_AUTOPILOT_ARDUPILOTMEGA,
-        base_mode,
-        custom_mode,
-        system_status);
-#endif
+
+    mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+    mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+
+    // Define the system type, in this case an airplane
+    uint8_t system_type = MAV_TYPE_FIXED_WING;
+    uint8_t autopilot_type = MAV_AUTOPILOT_GENERIC;
+
+    uint8_t system_mode = MAV_MODE_PREFLIGHT; ///< Booting up
+    //uint32_t custom_mode = 0;                 ///< Custom mode, can be defined by user/adopter
+    uint8_t system_state = MAV_STATE_STANDBY; ///< System ready for flight
+
+   // mavlink_msg_heartbeat_send(
+//
+//        chan,
+//        MAV_TYPE_QUADROTOR,
+//        MAV_AUTOPILOT_ARDUPILOTMEGA,
+//        base_mode,
+//        custom_mode,
+//        system_status);
+
+    // Initialize the required buffers
+    mavlink_message_t msg;
+    uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+
+        mavlink_msg_heartbeat_pack( mavlink_system.sysid,mavlink_system.compid,&msg,system_type,autopilot_type,system_mode,custom_mode,system_state);
+
+
+        // Copy the message to the send buffer
+        uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+
+        // Send the message with the standard UART send function
+        // uart0_send might be named differently depending on
+        // the individual microcontroller / library in use.
+        //uart0_send(buf, len);
+        send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+
 }
 
 NOINLINE void Copter::send_attitude(mavlink_channel_t chan)
@@ -642,24 +658,735 @@ GCS_MAVLINK::data_stream_send(void)
 //    // To-Do: update target altitude for loiter or waypoint controller depending upon nav mode
 //}
 
+void Copter::gcs_update(void)
+{
+	//先放在这里，应该是重新建立一个文件gcs_mavlink.cpp放在这个源文件里
+
+
+	gcs0.update();
+
+
+
+}
+
+void GCS_MAVLINK::update(void)
+{
+	// receive new packets
+	mavlink_message_t msg;
+	mavlink_status_t status;
+	status.packet_rx_drop_count = 0;
+
+	// process received bytes
+	//因为comm_get_available(chan)返回值一直是1，所以这个循环是永久的
+	while(comm_get_available(chan))
+	{
+		//关键是这个函数需要从串口读取一个字节的数据，这个要改写以下底层
+		uint8_t c = comm_receive_ch(chan);
+
+
+		// Try to get a new message
+		if (mavlink_parse_char(chan, c, &msg, &status)) {
+			mavlink_active = true;
+			handleMessage(&msg);
+		}
+	}
+
+	// Update packet drops counter
+	packet_drops += status.packet_rx_drop_count;
+
+	/*
+	 * 20170922下面的其实先不需要了，是关于航点于这个数据的互斥发送
+	 */
+
+
+	if (!waypoint_receiving && !waypoint_sending) {
+		return;
+	}
+
+	uint32_t tnow = clock_gettime_ms();
+
+	if (waypoint_receiving &&
+		waypoint_request_i <= (unsigned)copter.g.command_total &&
+		tnow > waypoint_timelast_request + 500 + (stream_slowdown*20)) {
+		waypoint_timelast_request = tnow;
+		send_message(MSG_NEXT_WAYPOINT);
+	}
+
+	// stop waypoint sending if timeout
+	if (waypoint_sending && (tnow - waypoint_timelast_send) > waypoint_send_timeout){
+		waypoint_sending = false;
+	}
+
+	// stop waypoint receiving if timeout
+	if (waypoint_receiving && (tnow - waypoint_timelast_receive) > waypoint_receive_timeout){
+		waypoint_receiving = false;
+	}
+
+}
+
+
+/*
+ *  a delay() callback that processes MAVLink packets. We set this as the
+ *  callback in long running library initialisation routines to allow
+ *  MAVLink to process packets while waiting for the initialisation to
+ *  complete
+ */
+void Copter::mavlink_delay_cb()
+{
+
+}
+
+///*
+// *  send a message on both GCS links
+// */
+//void Copter::gcs_send_message(enum ap_message id)
+//{
+//    for (uint8_t i=0; i<num_gcs; i++) {
+//        if (gcs[i].initialised) {
+//            gcs[i].send_message(id);
+//        }
+//    }
+//}
+
+/*
+ *  send a mission item reached message and load the index before the send attempt in case it may get delayed
+ */
+void Copter::gcs_send_mission_item_reached_message(uint16_t mission_index)
+{
+
+}
+
+/*
+ *  send data streams in the given rate range on both links
+ */
+void Copter::gcs_data_stream_send(void)
+{
+//    for (uint8_t i=0; i<num_gcs; i++) {
+//        if (gcs[i].initialised) {
+//            gcs[i].data_stream_send();
+//        }
+//    }
+
+	gcs0.data_stream_send();
+}
+
+/*
+ *  look for incoming commands on the GCS links
+ */
+void Copter::gcs_check_input(void)
+{
+//    for (uint8_t i=0; i<num_gcs; i++) {
+//        if (gcs[i].initialised) {
+//#if CLI_ENABLED == ENABLED
+//            gcs[i].update(g.cli_enabled==1?FUNCTOR_BIND_MEMBER(&Copter::run_cli, void, AP_HAL::UARTDriver *):NULL);
+//#else
+//            gcs[i].update(NULL);
+//#endif
+//        }
+//    }
+}
+
+//void Copter::gcs_send_text_P(gcs_severity severity, const prog_char_t *str)
+//{
+////    for (uint8_t i=0; i<num_gcs; i++) {
+////        if (gcs[i].initialised) {
+////            gcs[i].send_text_P(severity, str);
+////        }
+////    }
+//}
+
+/*
+ *  send a low priority formatted message to the GCS
+ *  only one fits in the queue, so if you send more than one before the
+ *  last one gets into the serial buffer then the old one will be lost
+ */
+//void Copter::gcs_send_text_fmt(const prog_char_t *fmt, ...)
+//{
+//    va_list arg_list;
+//    gcs[0].pending_status.severity = (uint8_t)SEVERITY_LOW;
+//    va_start(arg_list, fmt);
+//    hal.util->vsnprintf_P((char *)gcs[0].pending_status.text,
+//            sizeof(gcs[0].pending_status.text), fmt, arg_list);
+//    va_end(arg_list);
+//    gcs[0].send_message(MSG_STATUSTEXT);
+//    for (uint8_t i=1; i<num_gcs; i++) {
+//        if (gcs[i].initialised) {
+//            gcs[i].pending_status = gcs[0].pending_status;
+//            gcs[i].send_message(MSG_STATUSTEXT);
+//        }
+//    }
+//}
+
+
+void
+GCS_MAVLINK::send_message(enum ap_message id)
+{
+	//chan我默认为0了 那这个packet_drops呢
+    mavlink_send_message(chan,id, packet_drops);
+}
+
+
+#define MAX_DEFERRED_MESSAGES MSG_RETRY_DEFERRED
+static struct mavlink_queue {
+    enum ap_message deferred_messages[MAX_DEFERRED_MESSAGES];
+    uint8_t next_deferred_message;
+    uint8_t num_deferred_messages;
+} mavlink_queue[2];//这个数组大小为2也就决定了最多有2个串口
+// send a message using mavlink
+void GCS_MAVLINK::mavlink_send_message(mavlink_channel_t chan, enum ap_message id, uint16_t packet_drops)
+{
+    uint8_t i, nextid;
+    struct mavlink_queue *q = &mavlink_queue[(uint8_t)chan];
+
+    /*
+     * 什么时候这个num_deferred_messages不等于0呢，只有不等于0才能发送呀
+     * 初始化时这些
+     */
+    // see if we can send the deferred messages, if any
+    while (q->num_deferred_messages != 0) {
+        if (!mavlink_try_send_message(chan,
+                                      q->deferred_messages[q->next_deferred_message],
+                                      packet_drops)) {
+            break;
+        }
+        q->next_deferred_message++;
+        if (q->next_deferred_message == MAX_DEFERRED_MESSAGES) {
+            q->next_deferred_message = 0;
+        }
+        q->num_deferred_messages--;
+    }
+
+    if (id == MSG_RETRY_DEFERRED) {
+        return;
+    }
+
+    // this message id might already be deferred
+    for (i=0, nextid = q->next_deferred_message; i < q->num_deferred_messages; i++) {
+        if (q->deferred_messages[nextid] == id) {
+            // its already deferred, discard
+            return;
+        }
+        nextid++;
+        if (nextid == MAX_DEFERRED_MESSAGES) {
+            nextid = 0;
+        }
+    }
+
+    /*
+     * 上面的代码在初始状态时，num_deferred_messages=0的情况下都是没啥用的，下面这个语句在num_deferred_messages=0时也会发送一条信息
+     */
+    if (q->num_deferred_messages != 0 ||
+        !mavlink_try_send_message(chan, id, packet_drops)) {
+        // can't send it now, so defer it
+        if (q->num_deferred_messages == MAX_DEFERRED_MESSAGES) {
+            // the defer buffer is full, discard
+            return;
+        }
+        nextid = q->next_deferred_message + q->num_deferred_messages;
+        if (nextid >= MAX_DEFERRED_MESSAGES) {
+            nextid -= MAX_DEFERRED_MESSAGES;
+        }
+        q->deferred_messages[nextid] = id;
+        q->num_deferred_messages++;
+    }
+}
+
+
+// check if a message will fit in the payload space available
+#define CHECK_PAYLOAD_SIZE(id) if (payload_space < MAVLINK_MSG_ID_ ## id ## _LEN) return false
+// try to send a message, return false if it won't fit in the serial tx buffer
+bool GCS_MAVLINK::mavlink_try_send_message(mavlink_channel_t chan, enum ap_message id, uint16_t packet_drops)
+{
+//    int payload_space = comm_get_txspace(chan) - MAVLINK_NUM_NON_PAYLOAD_BYTES;
+//
+//    if (chan == MAVLINK_COMM_1 && millis() < MAVLINK_TELEMETRY_PORT_DELAY) {
+//        // defer any messages on the telemetry port for 1 second after
+//        // bootup, to try to prevent bricking of Xbees
+//        return false;
+//    }
+
+	int payload_space=INT_MAX;//comm_get_txspace这个函数的返回值本来的意思是串口还剩下多少空间，但是这里直接返回最大值，意思就是串口总是有空闲的空间的
+	switch(id) {
+    case MSG_HEARTBEAT:
+        CHECK_PAYLOAD_SIZE(HEARTBEAT);
+        //send_message(MSG_HEARTBEAT);
+        copter.send_heartbeat(chan);
+        return true;
+
+//    case MSG_EXTENDED_STATUS1:
+//        CHECK_PAYLOAD_SIZE(SYS_STATUS);
+//        send_extended_status1(chan, packet_drops);
+//        break;
+//
+//    case MSG_EXTENDED_STATUS2:
+//        CHECK_PAYLOAD_SIZE(MEMINFO);
+//        send_meminfo(chan);
+//        break;
+
+    case MSG_ATTITUDE:
+        CHECK_PAYLOAD_SIZE(ATTITUDE);
+        copter.send_attitude(chan);
+        break;
+
+//    case MSG_LOCATION:
+//        CHECK_PAYLOAD_SIZE(GLOBAL_POSITION_INT);
+//        send_location(chan);
+//        break;
+//
+//    case MSG_NAV_CONTROLLER_OUTPUT:
+//        CHECK_PAYLOAD_SIZE(NAV_CONTROLLER_OUTPUT);
+//        send_nav_controller_output(chan);
+//        break;
+//
+//    case MSG_GPS_RAW:
+//#if MAVLINK10 == ENABLED
+//        CHECK_PAYLOAD_SIZE(GPS_RAW_INT);
+//#else
+//        CHECK_PAYLOAD_SIZE(GPS_RAW);
+//#endif
+//        send_gps_raw(chan);
+//        break;
+//
+//    case MSG_SERVO_OUT:
+//        CHECK_PAYLOAD_SIZE(RC_CHANNELS_SCALED);
+//        send_servo_out(chan);
+//        break;
+//
+//    case MSG_RADIO_IN:
+//        CHECK_PAYLOAD_SIZE(RC_CHANNELS_RAW);
+//        send_radio_in(chan);
+//        break;
+//
+//    case MSG_RADIO_OUT:
+//        CHECK_PAYLOAD_SIZE(SERVO_OUTPUT_RAW);
+//        send_radio_out(chan);
+//        break;
+//
+//    case MSG_VFR_HUD:
+//        CHECK_PAYLOAD_SIZE(VFR_HUD);
+//        send_vfr_hud(chan);
+//        break;
+//
+//    case MSG_RAW_IMU1:
+//        CHECK_PAYLOAD_SIZE(RAW_IMU);
+//        send_raw_imu1(chan);
+//        break;
+//
+//    case MSG_RAW_IMU2:
+//        CHECK_PAYLOAD_SIZE(SCALED_PRESSURE);
+//        send_raw_imu2(chan);
+//        break;
+//
+//    case MSG_RAW_IMU3:
+//        CHECK_PAYLOAD_SIZE(SENSOR_OFFSETS);
+//        send_raw_imu3(chan);
+//        break;
+//
+//    case MSG_GPS_STATUS:
+//        CHECK_PAYLOAD_SIZE(GPS_STATUS);
+//        send_gps_status(chan);
+//        break;
+//
+//    case MSG_CURRENT_WAYPOINT:
+//        CHECK_PAYLOAD_SIZE(WAYPOINT_CURRENT);
+//        send_current_waypoint(chan);
+//        break;
+//
+//    case MSG_NEXT_PARAM:
+//        CHECK_PAYLOAD_SIZE(PARAM_VALUE);
+//        if (chan == MAVLINK_COMM_0) {
+//            gcs0.queued_param_send();
+//        } else if (gcs3.initialised) {
+//            gcs3.queued_param_send();
+//        }
+//        break;
+//
+//    case MSG_NEXT_WAYPOINT:
+//        CHECK_PAYLOAD_SIZE(WAYPOINT_REQUEST);
+//        if (chan == MAVLINK_COMM_0) {
+//            gcs0.queued_waypoint_send();
+//        } else {
+//            gcs3.queued_waypoint_send();
+//        }
+//        break;
+//
+//    case MSG_STATUSTEXT:
+//        CHECK_PAYLOAD_SIZE(STATUSTEXT);
+//        send_statustext(chan);
+//        break;
+//
+//    case MSG_AHRS:
+//        CHECK_PAYLOAD_SIZE(AHRS);
+//        send_ahrs(chan);
+//
+//        break;
+//
+//
+//    case MSG_RETRY_DEFERRED:
+//        break; // just here to prevent a warning
+	}
+    return true;
+}
+
+
+/*
+ *
+ * 20170922下面是从我编译的apm3.3中抄过来的
+ */
+
+
+
+NOINLINE void Copter::send_fence_status(mavlink_channel_t chan)
+{
+
+}
+
+
+
+void NOINLINE Copter::send_proximity(mavlink_channel_t chan, uint16_t count_max)
+{
+
+}
+
+void
+GCS_MAVLINK::init(char * port)
+{
+
+	chan = MAVLINK_COMM_0;//20170922
+//    GCS_Class::init(port);
+//    if (port == &Serial) {
+//        mavlink_comm_0_port = port;
+//        chan = MAVLINK_COMM_0;
+//    }else{
+//        mavlink_comm_1_port = port;
+//        chan = MAVLINK_COMM_1;
+//    }
+//    _queued_parameter = NULL;
+}
+
+
+uint8_t mavlink_check_target(uint8_t sysid, uint8_t compid)
+{
+    if (sysid != mavlink_system.sysid)
+        return 1;
+    // Currently we are not checking for correct compid since APM is not passing mavlink info to any subsystem
+    // If it is addressed to our system ID we assume it is for us
+    return 0; // no error
+}
+
 void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 {
+	struct Location tell_command = {};				// command for telemetry
+	static uint8_t mav_nav = 255;							// For setting mode (some require receipt of 2 messages...)
+
     uint8_t result = MAV_RESULT_FAILED;         // assume failure.  Each messages id is responsible for return ACK or NAK if required
 
     switch (msg->msgid) {
+    case MAVLINK_MSG_ID_REQUEST_DATA_STREAM: //66
+		{
+			// decode
+			mavlink_request_data_stream_t packet;
+			mavlink_msg_request_data_stream_decode(msg, &packet);
 
-    case MAVLINK_MSG_ID_HEARTBEAT:      // MAV ID: 0
-    {
-        // We keep track of the last time we received a heartbeat from our GCS for failsafe purposes
-       // if(msg->sysid != copter.g.sysid_my_gcs) break;
-        //copter.failsafe.last_heartbeat_ms = hal.scheduler->millis();
-        //copter.pmTest1++;
-        break;
-    }
+			if (mavlink_check_target(packet.target_system, packet.target_component))
+				break;
+
+			int freq = 0; // packet frequency
+
+			if (packet.start_stop == 0)
+				freq = 0; // stop sending
+			else if (packet.start_stop == 1)
+				freq = packet.req_message_rate; // start sending
+			else
+				break;
+
+			switch(packet.req_stream_id){
+
+				case MAV_DATA_STREAM_ALL:
+					streamRateRawSensors		= freq;
+					streamRateExtendedStatus	= freq;
+					streamRateRCChannels		= freq;
+					streamRateRawController		= freq;
+					streamRatePosition			= freq;
+					streamRateExtra1			= freq;
+					streamRateExtra2			= freq;
+					//streamRateExtra3.set_and_save(freq);	// We just do set and save on the last as it takes care of the whole group.
+					streamRateExtra3			= freq;	// Don't save!!
+					break;
+
+				case MAV_DATA_STREAM_RAW_SENSORS:
+					streamRateRawSensors = freq;		// We do not set and save this one so that if HIL is shut down incorrectly
+														// we will not continue to broadcast raw sensor data at 50Hz.
+					break;
+				case MAV_DATA_STREAM_EXTENDED_STATUS:
+					//streamRateExtendedStatus.set_and_save(freq);
+					streamRateExtendedStatus = freq;
+					break;
+
+				case MAV_DATA_STREAM_RC_CHANNELS:
+					streamRateRCChannels  = freq;
+					break;
+
+				case MAV_DATA_STREAM_RAW_CONTROLLER:
+					streamRateRawController = freq;
+					break;
+
+				//case MAV_DATA_STREAM_RAW_SENSOR_FUSION:
+				//	streamRateRawSensorFusion.set_and_save(freq);
+				//	break;
+
+				case MAV_DATA_STREAM_POSITION:
+					streamRatePosition = freq;
+					break;
+
+				case MAV_DATA_STREAM_EXTRA1:
+					streamRateExtra1 = freq;
+					break;
+
+				case MAV_DATA_STREAM_EXTRA2:
+					streamRateExtra2 = freq;
+					break;
+
+				case MAV_DATA_STREAM_EXTRA3:
+					streamRateExtra3 = freq;
+					break;
+
+				default:
+					break;
+			}
+			break;
+		}
+
+    case MAVLINK_MSG_ID_WAYPOINT_REQUEST_LIST: //43
+	{
+		//send_text_P(SEVERITY_LOW,PSTR("waypoint request list"));
+
+		// decode
+		mavlink_waypoint_request_list_t packet;
+		mavlink_msg_waypoint_request_list_decode(msg, &packet);
+		if (mavlink_check_target(packet.target_system, packet.target_component))
+			break;
+
+		// Start sending waypoints
+//		mavlink_msg_waypoint_count_send(
+//			chan,msg->sysid,
+//			msg->compid,
+//			copter.g.command_total); // includes home
+
+		waypoint_timelast_send		= gettimeofday_ms();
+		waypoint_sending			= true;
+		waypoint_receiving			= false;
+		waypoint_dest_sysid			= msg->sysid;
+		waypoint_dest_compid		= msg->compid;
+		break;
+	}
+
+	// XXX read a WP from EEPROM and send it to the GCS
+		case MAVLINK_MSG_ID_WAYPOINT_REQUEST: // 40
+		{
+			//send_text_P(SEVERITY_LOW,PSTR("waypoint request"));
+
+			// Check if sending waypiont
+			//if (!waypoint_sending) break;
+			// 5/10/11 - We are trying out relaxing the requirement that we be in waypoint sending mode to respond to a waypoint request.  DEW
+
+			// decode
+			mavlink_waypoint_request_t packet;
+			mavlink_msg_waypoint_request_decode(msg, &packet);
+
+			if (mavlink_check_target(packet.target_system, packet.target_component))
+				break;
+
+			// send waypoint
+			tell_command = copter.get_cmd_with_index(packet.seq);
+
+			// set frame of waypoint
+			uint8_t frame;
+
+			if (tell_command.options & MASK_OPTIONS_RELATIVE_ALT) {
+				frame = MAV_FRAME_GLOBAL_RELATIVE_ALT; // reference frame
+			} else {
+				frame = MAV_FRAME_GLOBAL; // reference frame
+			}
+
+			float param1 = 0, param2 = 0 , param3 = 0, param4 = 0;
+
+			// time that the mav should loiter in milliseconds
+			uint8_t current = 0; // 1 (true), 0 (false)
+
+			if (packet.seq == (uint16_t)copter.g.command_index)
+				current = 1;
+
+			uint8_t autocontinue = 1; // 1 (true), 0 (false)
+
+			float x = 0, y = 0, z = 0;
+
+			if (tell_command.id < MAV_CMD_NAV_LAST) {
+				// command needs scaling
+				x = tell_command.lat/1.0e7; // local (x), global (latitude)
+				y = tell_command.lng/1.0e7; // local (y), global (longitude)
+				// ACM is processing alt inside each command. so we save and load raw values. - this is diffrent to APM
+				z = tell_command.alt/1.0e2; // local (z), global/relative (altitude)
+			}
+
+			// Switch to map APM command fields inot MAVLink command fields
+			switch (tell_command.id) {
+
+				case MAV_CMD_NAV_LOITER_TURNS:
+				case MAV_CMD_CONDITION_CHANGE_ALT:
+				case MAV_CMD_DO_SET_HOME:
+					param1 = tell_command.p1;
+					break;
+
+				case MAV_CMD_CONDITION_YAW:
+					param3 = tell_command.p1;
+					param1 = tell_command.alt;
+					param2 = tell_command.lat;
+					param4 = tell_command.lng;
+					break;
+
+				case MAV_CMD_NAV_TAKEOFF:
+					param1 = 0;
+					break;
+
+				case MAV_CMD_NAV_LOITER_TIME:
+					param1 = tell_command.p1;	// ACM loiter time is in 1 second increments
+					break;
+
+				case MAV_CMD_CONDITION_DELAY:
+				case MAV_CMD_CONDITION_DISTANCE:
+					param1 = tell_command.lat;
+					break;
+
+				case MAV_CMD_DO_JUMP:
+					param2 = tell_command.lat;
+					param1 = tell_command.p1;
+					break;
+
+				case MAV_CMD_DO_REPEAT_SERVO:
+					param4 = tell_command.lng;
+				case MAV_CMD_DO_REPEAT_RELAY:
+				case MAV_CMD_DO_CHANGE_SPEED:
+					param3 = tell_command.lat;
+					param2 = tell_command.alt;
+					param1 = tell_command.p1;
+					break;
+
+				case MAV_CMD_NAV_WAYPOINT:
+					param1 = tell_command.p1;
+					break;
+
+				case MAV_CMD_DO_SET_PARAMETER:
+				case MAV_CMD_DO_SET_RELAY:
+				case MAV_CMD_DO_SET_SERVO:
+					param2 = tell_command.alt;
+					param1 = tell_command.p1;
+					break;
+			}
+
+//			mavlink_msg_waypoint_send(chan,msg->sysid,
+//										msg->compid,
+//										packet.seq,
+//										frame,
+//										tell_command.id,
+//										current,
+//										autocontinue,
+//										param1,
+//										param2,
+//										param3,
+//										param4,
+//										x,
+//										y,
+//										z);
+
+			// update last waypoint comm stamp
+			//waypoint_timelast_send = millis();
+			waypoint_timelast_send = gettimeofday_ms();
+			break;
+		}
+
+		case MAVLINK_MSG_ID_WAYPOINT_ACK: //47
+		{
+			//send_text_P(SEVERITY_LOW,PSTR("waypoint ack"));
+
+			// decode
+			mavlink_waypoint_ack_t packet;
+			mavlink_msg_waypoint_ack_decode(msg, &packet);
+			if (mavlink_check_target(packet.target_system,packet.target_component)) break;
+
+			// turn off waypoint send
+			waypoint_sending = false;
+			break;
+		}
+
+		case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: // 21
+		{
+			// gcs_send_text_P(SEVERITY_LOW,PSTR("param request list"));
+
+			// decode
+			mavlink_param_request_list_t packet;
+			mavlink_msg_param_request_list_decode(msg, &packet);
+			if (mavlink_check_target(packet.target_system,packet.target_component)) break;
+
+			// Start sending parameters - next call to ::update will kick the first one out
+
+			//_queued_parameter = AP_Param::first(&_queued_parameter_token, &_queued_parameter_type);
+			_queued_parameter_index = 0;
+			//_queued_parameter_count = _count_parameters();
+			break;
+		}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//    case MAVLINK_MSG_ID_HEARTBEAT:      // MAV ID: 0
+//    {
+//        // We keep track of the last time we received a heartbeat from our GCS for failsafe purposes
+//       // if(msg->sysid != copter.g.sysid_my_gcs) break;
+//        //copter.failsafe.last_heartbeat_ms = hal.scheduler->millis();
+//        //copter.pmTest1++;
+//        break;
+//    }
 
 //    case MAVLINK_MSG_ID_SET_MODE:       // MAV ID: 11
 //    {
-//        handle_set_mode(msg, FUNCTOR_BIND(&copter, &Copter::set_mode, bool, uint8_t));
+//        //handle_set_mode(msg, FUNCTOR_BIND(&copter, &Copter::set_mode, bool, uint8_t));
 //        break;
 //    }
 //
@@ -1460,345 +2187,6 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
     }     // end switch
 } // end handle mavlink
 
-
-/*
- *  a delay() callback that processes MAVLink packets. We set this as the
- *  callback in long running library initialisation routines to allow
- *  MAVLink to process packets while waiting for the initialisation to
- *  complete
- */
-void Copter::mavlink_delay_cb()
-{
-
-}
-
-///*
-// *  send a message on both GCS links
-// */
-//void Copter::gcs_send_message(enum ap_message id)
-//{
-//    for (uint8_t i=0; i<num_gcs; i++) {
-//        if (gcs[i].initialised) {
-//            gcs[i].send_message(id);
-//        }
-//    }
-//}
-
-/*
- *  send a mission item reached message and load the index before the send attempt in case it may get delayed
- */
-void Copter::gcs_send_mission_item_reached_message(uint16_t mission_index)
-{
-
-}
-
-/*
- *  send data streams in the given rate range on both links
- */
-void Copter::gcs_data_stream_send(void)
-{
-//    for (uint8_t i=0; i<num_gcs; i++) {
-//        if (gcs[i].initialised) {
-//            gcs[i].data_stream_send();
-//        }
-//    }
-
-	gcs0.data_stream_send();
-}
-
-/*
- *  look for incoming commands on the GCS links
- */
-void Copter::gcs_check_input(void)
-{
-//    for (uint8_t i=0; i<num_gcs; i++) {
-//        if (gcs[i].initialised) {
-//#if CLI_ENABLED == ENABLED
-//            gcs[i].update(g.cli_enabled==1?FUNCTOR_BIND_MEMBER(&Copter::run_cli, void, AP_HAL::UARTDriver *):NULL);
-//#else
-//            gcs[i].update(NULL);
-//#endif
-//        }
-//    }
-}
-
-//void Copter::gcs_send_text_P(gcs_severity severity, const prog_char_t *str)
-//{
-////    for (uint8_t i=0; i<num_gcs; i++) {
-////        if (gcs[i].initialised) {
-////            gcs[i].send_text_P(severity, str);
-////        }
-////    }
-//}
-
-/*
- *  send a low priority formatted message to the GCS
- *  only one fits in the queue, so if you send more than one before the
- *  last one gets into the serial buffer then the old one will be lost
- */
-//void Copter::gcs_send_text_fmt(const prog_char_t *fmt, ...)
-//{
-//    va_list arg_list;
-//    gcs[0].pending_status.severity = (uint8_t)SEVERITY_LOW;
-//    va_start(arg_list, fmt);
-//    hal.util->vsnprintf_P((char *)gcs[0].pending_status.text,
-//            sizeof(gcs[0].pending_status.text), fmt, arg_list);
-//    va_end(arg_list);
-//    gcs[0].send_message(MSG_STATUSTEXT);
-//    for (uint8_t i=1; i<num_gcs; i++) {
-//        if (gcs[i].initialised) {
-//            gcs[i].pending_status = gcs[0].pending_status;
-//            gcs[i].send_message(MSG_STATUSTEXT);
-//        }
-//    }
-//}
-
-
-void
-GCS_MAVLINK::send_message(enum ap_message id)
-{
-	//chan我默认为0了 那这个packet_drops呢
-    mavlink_send_message(chan,id, packet_drops);
-}
-
-
-#define MAX_DEFERRED_MESSAGES MSG_RETRY_DEFERRED
-static struct mavlink_queue {
-    enum ap_message deferred_messages[MAX_DEFERRED_MESSAGES];
-    uint8_t next_deferred_message;
-    uint8_t num_deferred_messages;
-} mavlink_queue[2];//这个数组大小为2也就决定了最多有2个串口
-// send a message using mavlink
-void GCS_MAVLINK::mavlink_send_message(mavlink_channel_t chan, enum ap_message id, uint16_t packet_drops)
-{
-    uint8_t i, nextid;
-    struct mavlink_queue *q = &mavlink_queue[(uint8_t)chan];
-
-    /*
-     * 什么时候这个num_deferred_messages不等于0呢，只有不等于0才能发送呀
-     * 初始化时这些
-     */
-    // see if we can send the deferred messages, if any
-    while (q->num_deferred_messages != 0) {
-        if (!mavlink_try_send_message(chan,
-                                      q->deferred_messages[q->next_deferred_message],
-                                      packet_drops)) {
-            break;
-        }
-        q->next_deferred_message++;
-        if (q->next_deferred_message == MAX_DEFERRED_MESSAGES) {
-            q->next_deferred_message = 0;
-        }
-        q->num_deferred_messages--;
-    }
-
-    if (id == MSG_RETRY_DEFERRED) {
-        return;
-    }
-
-    // this message id might already be deferred
-    for (i=0, nextid = q->next_deferred_message; i < q->num_deferred_messages; i++) {
-        if (q->deferred_messages[nextid] == id) {
-            // its already deferred, discard
-            return;
-        }
-        nextid++;
-        if (nextid == MAX_DEFERRED_MESSAGES) {
-            nextid = 0;
-        }
-    }
-
-    /*
-     * 上面的代码在初始状态时，num_deferred_messages=0的情况下都是没啥用的，下面这个语句在num_deferred_messages=0时也会发送一条信息
-     */
-    if (q->num_deferred_messages != 0 ||
-        !mavlink_try_send_message(chan, id, packet_drops)) {
-        // can't send it now, so defer it
-        if (q->num_deferred_messages == MAX_DEFERRED_MESSAGES) {
-            // the defer buffer is full, discard
-            return;
-        }
-        nextid = q->next_deferred_message + q->num_deferred_messages;
-        if (nextid >= MAX_DEFERRED_MESSAGES) {
-            nextid -= MAX_DEFERRED_MESSAGES;
-        }
-        q->deferred_messages[nextid] = id;
-        q->num_deferred_messages++;
-    }
-}
-
-
-// check if a message will fit in the payload space available
-#define CHECK_PAYLOAD_SIZE(id) if (payload_space < MAVLINK_MSG_ID_ ## id ## _LEN) return false
-// try to send a message, return false if it won't fit in the serial tx buffer
-bool GCS_MAVLINK::mavlink_try_send_message(mavlink_channel_t chan, enum ap_message id, uint16_t packet_drops)
-{
-//    int payload_space = comm_get_txspace(chan) - MAVLINK_NUM_NON_PAYLOAD_BYTES;
-//
-//    if (chan == MAVLINK_COMM_1 && millis() < MAVLINK_TELEMETRY_PORT_DELAY) {
-//        // defer any messages on the telemetry port for 1 second after
-//        // bootup, to try to prevent bricking of Xbees
-//        return false;
-//    }
-
-	int payload_space=INT_MAX;//comm_get_txspace这个函数的返回值本来的意思是串口还剩下多少空间，但是这里直接返回最大值，意思就是串口总是有空闲的空间的
-	switch(id) {
-    case MSG_HEARTBEAT:
-        CHECK_PAYLOAD_SIZE(HEARTBEAT);
-        //send_message(MSG_HEARTBEAT);
-        copter.send_heartbeat(chan);
-        return true;
-
-//    case MSG_EXTENDED_STATUS1:
-//        CHECK_PAYLOAD_SIZE(SYS_STATUS);
-//        send_extended_status1(chan, packet_drops);
-//        break;
-//
-//    case MSG_EXTENDED_STATUS2:
-//        CHECK_PAYLOAD_SIZE(MEMINFO);
-//        send_meminfo(chan);
-//        break;
-
-    case MSG_ATTITUDE:
-        CHECK_PAYLOAD_SIZE(ATTITUDE);
-        copter.send_attitude(chan);
-        break;
-
-//    case MSG_LOCATION:
-//        CHECK_PAYLOAD_SIZE(GLOBAL_POSITION_INT);
-//        send_location(chan);
-//        break;
-//
-//    case MSG_NAV_CONTROLLER_OUTPUT:
-//        CHECK_PAYLOAD_SIZE(NAV_CONTROLLER_OUTPUT);
-//        send_nav_controller_output(chan);
-//        break;
-//
-//    case MSG_GPS_RAW:
-//#if MAVLINK10 == ENABLED
-//        CHECK_PAYLOAD_SIZE(GPS_RAW_INT);
-//#else
-//        CHECK_PAYLOAD_SIZE(GPS_RAW);
-//#endif
-//        send_gps_raw(chan);
-//        break;
-//
-//    case MSG_SERVO_OUT:
-//        CHECK_PAYLOAD_SIZE(RC_CHANNELS_SCALED);
-//        send_servo_out(chan);
-//        break;
-//
-//    case MSG_RADIO_IN:
-//        CHECK_PAYLOAD_SIZE(RC_CHANNELS_RAW);
-//        send_radio_in(chan);
-//        break;
-//
-//    case MSG_RADIO_OUT:
-//        CHECK_PAYLOAD_SIZE(SERVO_OUTPUT_RAW);
-//        send_radio_out(chan);
-//        break;
-//
-//    case MSG_VFR_HUD:
-//        CHECK_PAYLOAD_SIZE(VFR_HUD);
-//        send_vfr_hud(chan);
-//        break;
-//
-//    case MSG_RAW_IMU1:
-//        CHECK_PAYLOAD_SIZE(RAW_IMU);
-//        send_raw_imu1(chan);
-//        break;
-//
-//    case MSG_RAW_IMU2:
-//        CHECK_PAYLOAD_SIZE(SCALED_PRESSURE);
-//        send_raw_imu2(chan);
-//        break;
-//
-//    case MSG_RAW_IMU3:
-//        CHECK_PAYLOAD_SIZE(SENSOR_OFFSETS);
-//        send_raw_imu3(chan);
-//        break;
-//
-//    case MSG_GPS_STATUS:
-//        CHECK_PAYLOAD_SIZE(GPS_STATUS);
-//        send_gps_status(chan);
-//        break;
-//
-//    case MSG_CURRENT_WAYPOINT:
-//        CHECK_PAYLOAD_SIZE(WAYPOINT_CURRENT);
-//        send_current_waypoint(chan);
-//        break;
-//
-//    case MSG_NEXT_PARAM:
-//        CHECK_PAYLOAD_SIZE(PARAM_VALUE);
-//        if (chan == MAVLINK_COMM_0) {
-//            gcs0.queued_param_send();
-//        } else if (gcs3.initialised) {
-//            gcs3.queued_param_send();
-//        }
-//        break;
-//
-//    case MSG_NEXT_WAYPOINT:
-//        CHECK_PAYLOAD_SIZE(WAYPOINT_REQUEST);
-//        if (chan == MAVLINK_COMM_0) {
-//            gcs0.queued_waypoint_send();
-//        } else {
-//            gcs3.queued_waypoint_send();
-//        }
-//        break;
-//
-//    case MSG_STATUSTEXT:
-//        CHECK_PAYLOAD_SIZE(STATUSTEXT);
-//        send_statustext(chan);
-//        break;
-//
-//    case MSG_AHRS:
-//        CHECK_PAYLOAD_SIZE(AHRS);
-//        send_ahrs(chan);
-//
-//        break;
-//
-//
-//    case MSG_RETRY_DEFERRED:
-//        break; // just here to prevent a warning
-	}
-    return true;
-}
-
-
-/*
- *
- * 20170922下面是从我编译的apm3.3中抄过来的
- */
-
-
-
-NOINLINE void Copter::send_fence_status(mavlink_channel_t chan)
-{
-
-}
-
-
-
-void NOINLINE Copter::send_proximity(mavlink_channel_t chan, uint16_t count_max)
-{
-
-}
-
-void
-GCS_MAVLINK::init(char * port)
-{
-
-	chan = MAVLINK_COMM_0;//20170922
-//    GCS_Class::init(port);
-//    if (port == &Serial) {
-//        mavlink_comm_0_port = port;
-//        chan = MAVLINK_COMM_0;
-//    }else{
-//        mavlink_comm_1_port = port;
-//        chan = MAVLINK_COMM_1;
-//    }
-//    _queued_parameter = NULL;
-}
 
 
 

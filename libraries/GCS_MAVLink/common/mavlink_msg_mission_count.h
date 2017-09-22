@@ -145,6 +145,7 @@ static inline uint16_t mavlink_msg_mission_count_encode_chan(uint8_t system_id, 
  * @param target_component Component ID
  * @param count Number of mission items in the sequence
  */
+//#define MAVLINK_USE_CONVENIENCE_FUNCTIONS
 #ifdef MAVLINK_USE_CONVENIENCE_FUNCTIONS
 
 static inline void mavlink_msg_mission_count_send(mavlink_channel_t chan, uint8_t target_system, uint8_t target_component, uint16_t count)

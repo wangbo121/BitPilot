@@ -1285,9 +1285,7 @@ void Copter::update_all_external_device_input( void )
 	 */
 }
 
-void Copter::gcs_update(void){
-	//先放在这里，应该是重新建立一个文件gcs_mavlink.cpp放在这个源文件里
-}
+
 
 #define AUTO_ARMING_DELAY 60
 // 1Hz loop

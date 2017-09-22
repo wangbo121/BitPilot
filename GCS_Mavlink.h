@@ -78,10 +78,13 @@ static inline void comm_send_ch(mavlink_channel_t chan, uint8_t ch)
 static inline uint8_t comm_receive_ch(mavlink_channel_t chan)
 {
     uint8_t data = 0;
+    //char rcv_buf[512];
+    char rcv_buf[2];
 
     switch(chan) {
 	case MAVLINK_COMM_0:
 		//data = mavlink_comm_0_port->read();
+		data=read_uart_data(uart_device_ap2gcs.uart_name, rcv_buf, 200, 1);
 		break;
 	case MAVLINK_COMM_1:
 		//data = mavlink_comm_1_port->read();
@@ -101,10 +104,12 @@ static inline uint16_t comm_get_available(mavlink_channel_t chan)
     uint16_t bytes = 0;
     switch(chan) {
 	case MAVLINK_COMM_0:
-		//bytes = mavlink_comm_0_port->available();
+		//bytes = mavlink_comm_0_port->available();//20170922available函数的返回值就是1
+		bytes=1;
 		break;
 	case MAVLINK_COMM_1:
 		//bytes = mavlink_comm_1_port->available();
+		bytes=1;
 		break;
 	default:
 		break;
@@ -135,7 +140,7 @@ static inline int comm_get_txspace(mavlink_channel_t chan)
     return -1;
 }
 
-//#define MAVLINK_USE_CONVENIENCE_FUNCTIONS
+#define MAVLINK_USE_CONVENIENCE_FUNCTIONS
 //#if MAVLINK10==ENABLED
 //# include "include/mavlink/v1.0/ardupilotmega/mavlink.h"
 //#else
