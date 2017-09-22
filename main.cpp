@@ -73,6 +73,11 @@ int main(int argc,char * const argv[])
 
 void Copter::loop()
 {
+
+    // try to send any deferred messages if the serial port now has
+    // some space available
+    gcs_send_message(MSG_RETRY_DEFERRED);
+
 	/*
 	 * 快循环，用来保证增稳，即使没有gps也应该可以手动遥控增稳飞行
 	 */

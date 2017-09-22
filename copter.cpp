@@ -1224,8 +1224,15 @@ void Copter::fifty_hz_loop()
 
 	  //接收来自地面站的数据，更新命令
 	// kick the GCS to process uplink data
-	gcs_update();
+	//gcs_update();
     //gcs_data_stream_send(45,1000);
+
+	  /*
+	   * 20170922
+	   */
+	// kick the GCS to process uplink data
+	gcs_update();
+	gcs_data_stream_send();
 
 }
 
@@ -1308,6 +1315,7 @@ void Copter::super_slow_loop()
     //gcs_send_message(MSG_HEARTBEAT);
     //gcs_data_stream_send(1,3);
 
+    gcs_send_message(MSG_HEARTBEAT);
 
 	// agmatthews - USERHOOKS
 	#ifdef USERHOOK_SUPERSLOWLOOP

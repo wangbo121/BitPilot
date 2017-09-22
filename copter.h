@@ -442,7 +442,8 @@ private:
 
     // GCS
     // ---
-    GCS_MAVLINK gcs;
+    //GCS_MAVLINK gcs;
+    GCS_MAVLINK gcs0;
     char GCS_buffer[53];
     char display_PID = -1;						// Flag used by DebugTerminal to indicate that the next PID calculation with this index should be displayed
 
@@ -1582,6 +1583,38 @@ private:
 	  *  last one gets into the serial buffer then the old one will be lost
 	  */
 	 //void gcs_send_text_fmt(const prog_char_t *fmt, ...);
+
+	 /*
+	  * 20170922从apm3.3复制过来的代码
+	  */
+//	 void gcs_send_heartbeat(void);
+//	 void gcs_send_deferred(void);
+//	 void send_heartbeat(mavlink_channel_t chan);
+//	 void send_attitude(mavlink_channel_t chan);
+	 void send_fence_status(mavlink_channel_t chan);
+//	 void send_extended_status1(mavlink_channel_t chan);
+//	 void send_location(mavlink_channel_t chan);
+//	 void send_nav_controller_output(mavlink_channel_t chan);
+//	 void send_simstate(mavlink_channel_t chan);
+//	 void send_hwstatus(mavlink_channel_t chan);
+//	 void send_vfr_hud(mavlink_channel_t chan);
+//	 void send_current_waypoint(mavlink_channel_t chan);
+	 void send_proximity(mavlink_channel_t chan, uint16_t count_max);
+//	 void send_rpm(mavlink_channel_t chan);
+//	 void rpm_update();
+//	 void button_update();
+//	 void init_proximity();
+//	 void update_proximity();
+//	 void stats_update();
+//	 void init_beacon();
+//	 void update_beacon();
+//	 void init_visual_odom();
+//	 void update_visual_odom();
+//	 void send_pid_tuning(mavlink_channel_t chan);
+//	 void gcs_send_message(enum ap_message id);
+//	 void gcs_send_mission_item_reached_message(uint16_t mission_index);
+//	 void gcs_data_stream_send(void);
+//	 void gcs_check_input(void);
 
 };
 

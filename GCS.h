@@ -90,6 +90,8 @@ public:
     // send streams which match frequency range
     void data_stream_send(uint16_t freqMin, uint16_t freqMax);
 
+
+
     // set to true if this GCS link is active
     bool initialised;
 
@@ -128,6 +130,8 @@ public:
 	void data_stream_send(void);
 	void send_message(enum ap_message id);
 	void mavlink_send_message(mavlink_channel_t chan, enum ap_message id, uint16_t packet_drops);
+	bool mavlink_try_send_message(mavlink_channel_t chan, enum ap_message id, uint16_t packet_drops);
+	//void try_send_message(enum ap_message id);
 
 private:
 	void 	handleMessage(mavlink_message_t * msg);

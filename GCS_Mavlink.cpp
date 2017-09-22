@@ -6,6 +6,7 @@
  */
 
 #include "copter.h"
+#include <limits.h>
 
 #ifdef LINUX_OS
 // -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
@@ -21,7 +22,7 @@
  */
 void Copter::gcs_send_message(enum ap_message id)
 {
-	gcs.send_message(id);
+	gcs0.send_message(id);
 //
 //    for (uint8_t i=0; i<num_gcs; i++) {
 //        if (gcs[i].initialised) {
@@ -1565,56 +1566,232 @@ GCS_MAVLINK::send_message(enum ap_message id)
     mavlink_send_message(chan,id, packet_drops);
 }
 
+
+#define MAX_DEFERRED_MESSAGES MSG_RETRY_DEFERRED
+static struct mavlink_queue {
+    enum ap_message deferred_messages[MAX_DEFERRED_MESSAGES];
+    uint8_t next_deferred_message;
+    uint8_t num_deferred_messages;
+} mavlink_queue[2];
 // send a message using mavlink
 void GCS_MAVLINK::mavlink_send_message(mavlink_channel_t chan, enum ap_message id, uint16_t packet_drops)
 {
-//    uint8_t i, nextid;
-//    struct mavlink_queue *q = &mavlink_queue[(uint8_t)chan];
-//
-//    // see if we can send the deferred messages, if any
-//    while (q->num_deferred_messages != 0) {
-//        if (!mavlink_try_send_message(chan,
-//                                      q->deferred_messages[q->next_deferred_message],
-//                                      packet_drops)) {
-//            break;
-//        }
-//        q->next_deferred_message++;
-//        if (q->next_deferred_message == MAX_DEFERRED_MESSAGES) {
-//            q->next_deferred_message = 0;
-//        }
-//        q->num_deferred_messages--;
-//    }
-//
-//    if (id == MSG_RETRY_DEFERRED) {
-//        return;
-//    }
-//
-//    // this message id might already be deferred
-//    for (i=0, nextid = q->next_deferred_message; i < q->num_deferred_messages; i++) {
-//        if (q->deferred_messages[nextid] == id) {
-//            // its already deferred, discard
-//            return;
-//        }
-//        nextid++;
-//        if (nextid == MAX_DEFERRED_MESSAGES) {
-//            nextid = 0;
-//        }
-//    }
-//
-//    if (q->num_deferred_messages != 0 ||
-//        !mavlink_try_send_message(chan, id, packet_drops)) {
-//        // can't send it now, so defer it
-//        if (q->num_deferred_messages == MAX_DEFERRED_MESSAGES) {
-//            // the defer buffer is full, discard
-//            return;
-//        }
-//        nextid = q->next_deferred_message + q->num_deferred_messages;
-//        if (nextid >= MAX_DEFERRED_MESSAGES) {
-//            nextid -= MAX_DEFERRED_MESSAGES;
-//        }
-//        q->deferred_messages[nextid] = id;
-//        q->num_deferred_messages++;
-//    }
+    uint8_t i, nextid;
+    struct mavlink_queue *q = &mavlink_queue[(uint8_t)chan];
+
+    // see if we can send the deferred messages, if any
+    while (q->num_deferred_messages != 0) {
+        if (!mavlink_try_send_message(chan,
+                                      q->deferred_messages[q->next_deferred_message],
+                                      packet_drops)) {
+            break;
+        }
+        q->next_deferred_message++;
+        if (q->next_deferred_message == MAX_DEFERRED_MESSAGES) {
+            q->next_deferred_message = 0;
+        }
+        q->num_deferred_messages--;
+    }
+
+    if (id == MSG_RETRY_DEFERRED) {
+        return;
+    }
+
+    // this message id might already be deferred
+    for (i=0, nextid = q->next_deferred_message; i < q->num_deferred_messages; i++) {
+        if (q->deferred_messages[nextid] == id) {
+            // its already deferred, discard
+            return;
+        }
+        nextid++;
+        if (nextid == MAX_DEFERRED_MESSAGES) {
+            nextid = 0;
+        }
+    }
+
+    if (q->num_deferred_messages != 0 ||
+        !mavlink_try_send_message(chan, id, packet_drops)) {
+        // can't send it now, so defer it
+        if (q->num_deferred_messages == MAX_DEFERRED_MESSAGES) {
+            // the defer buffer is full, discard
+            return;
+        }
+        nextid = q->next_deferred_message + q->num_deferred_messages;
+        if (nextid >= MAX_DEFERRED_MESSAGES) {
+            nextid -= MAX_DEFERRED_MESSAGES;
+        }
+        q->deferred_messages[nextid] = id;
+        q->num_deferred_messages++;
+    }
 }
+
+
+// check if a message will fit in the payload space available
+#define CHECK_PAYLOAD_SIZE(id) if (payload_space < MAVLINK_MSG_ID_ ## id ## _LEN) return false
+// try to send a message, return false if it won't fit in the serial tx buffer
+bool GCS_MAVLINK::mavlink_try_send_message(mavlink_channel_t chan, enum ap_message id, uint16_t packet_drops)
+{
+//    int payload_space = comm_get_txspace(chan) - MAVLINK_NUM_NON_PAYLOAD_BYTES;
+//
+//    if (chan == MAVLINK_COMM_1 && millis() < MAVLINK_TELEMETRY_PORT_DELAY) {
+//        // defer any messages on the telemetry port for 1 second after
+//        // bootup, to try to prevent bricking of Xbees
+//        return false;
+//    }
+
+	int payload_space=INT_MAX;//comm_get_txspace这个函数的返回值本来的意思是串口还剩下多少空间，但是这里直接返回最大值，意思就是串口总是有空闲的空间的
+	switch(id) {
+    case MSG_HEARTBEAT:
+        CHECK_PAYLOAD_SIZE(HEARTBEAT);
+        send_message(MSG_HEARTBEAT);
+        //send_heartbeat(chan);
+        return true;
+
+//    case MSG_EXTENDED_STATUS1:
+//        CHECK_PAYLOAD_SIZE(SYS_STATUS);
+//        send_extended_status1(chan, packet_drops);
+//        break;
+//
+//    case MSG_EXTENDED_STATUS2:
+//        CHECK_PAYLOAD_SIZE(MEMINFO);
+//        send_meminfo(chan);
+//        break;
+
+    case MSG_ATTITUDE:
+        CHECK_PAYLOAD_SIZE(ATTITUDE);
+       // send_attitude(chan);
+        break;
+
+//    case MSG_LOCATION:
+//        CHECK_PAYLOAD_SIZE(GLOBAL_POSITION_INT);
+//        send_location(chan);
+//        break;
+//
+//    case MSG_NAV_CONTROLLER_OUTPUT:
+//        CHECK_PAYLOAD_SIZE(NAV_CONTROLLER_OUTPUT);
+//        send_nav_controller_output(chan);
+//        break;
+//
+//    case MSG_GPS_RAW:
+//#if MAVLINK10 == ENABLED
+//        CHECK_PAYLOAD_SIZE(GPS_RAW_INT);
+//#else
+//        CHECK_PAYLOAD_SIZE(GPS_RAW);
+//#endif
+//        send_gps_raw(chan);
+//        break;
+//
+//    case MSG_SERVO_OUT:
+//        CHECK_PAYLOAD_SIZE(RC_CHANNELS_SCALED);
+//        send_servo_out(chan);
+//        break;
+//
+//    case MSG_RADIO_IN:
+//        CHECK_PAYLOAD_SIZE(RC_CHANNELS_RAW);
+//        send_radio_in(chan);
+//        break;
+//
+//    case MSG_RADIO_OUT:
+//        CHECK_PAYLOAD_SIZE(SERVO_OUTPUT_RAW);
+//        send_radio_out(chan);
+//        break;
+//
+//    case MSG_VFR_HUD:
+//        CHECK_PAYLOAD_SIZE(VFR_HUD);
+//        send_vfr_hud(chan);
+//        break;
+//
+//    case MSG_RAW_IMU1:
+//        CHECK_PAYLOAD_SIZE(RAW_IMU);
+//        send_raw_imu1(chan);
+//        break;
+//
+//    case MSG_RAW_IMU2:
+//        CHECK_PAYLOAD_SIZE(SCALED_PRESSURE);
+//        send_raw_imu2(chan);
+//        break;
+//
+//    case MSG_RAW_IMU3:
+//        CHECK_PAYLOAD_SIZE(SENSOR_OFFSETS);
+//        send_raw_imu3(chan);
+//        break;
+//
+//    case MSG_GPS_STATUS:
+//        CHECK_PAYLOAD_SIZE(GPS_STATUS);
+//        send_gps_status(chan);
+//        break;
+//
+//    case MSG_CURRENT_WAYPOINT:
+//        CHECK_PAYLOAD_SIZE(WAYPOINT_CURRENT);
+//        send_current_waypoint(chan);
+//        break;
+//
+//    case MSG_NEXT_PARAM:
+//        CHECK_PAYLOAD_SIZE(PARAM_VALUE);
+//        if (chan == MAVLINK_COMM_0) {
+//            gcs0.queued_param_send();
+//        } else if (gcs3.initialised) {
+//            gcs3.queued_param_send();
+//        }
+//        break;
+//
+//    case MSG_NEXT_WAYPOINT:
+//        CHECK_PAYLOAD_SIZE(WAYPOINT_REQUEST);
+//        if (chan == MAVLINK_COMM_0) {
+//            gcs0.queued_waypoint_send();
+//        } else {
+//            gcs3.queued_waypoint_send();
+//        }
+//        break;
+//
+//    case MSG_STATUSTEXT:
+//        CHECK_PAYLOAD_SIZE(STATUSTEXT);
+//        send_statustext(chan);
+//        break;
+//
+//    case MSG_AHRS:
+//        CHECK_PAYLOAD_SIZE(AHRS);
+//        send_ahrs(chan);
+//
+//        break;
+//
+//
+//    case MSG_RETRY_DEFERRED:
+//        break; // just here to prevent a warning
+	}
+    return true;
+}
+
+
+/*
+ *
+ * 20170922下面是从我编译的apm3.3中抄过来的
+ */
+
+
+
+NOINLINE void Copter::send_fence_status(mavlink_channel_t chan)
+{
+
+}
+
+
+
+void NOINLINE Copter::send_proximity(mavlink_channel_t chan, uint16_t count_max)
+{
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 #endif
