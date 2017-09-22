@@ -1782,7 +1782,21 @@ void NOINLINE Copter::send_proximity(mavlink_channel_t chan, uint16_t count_max)
 
 }
 
+void
+GCS_MAVLINK::init(char * port)
+{
 
+	chan = MAVLINK_COMM_0;//20170922
+//    GCS_Class::init(port);
+//    if (port == &Serial) {
+//        mavlink_comm_0_port = port;
+//        chan = MAVLINK_COMM_0;
+//    }else{
+//        mavlink_comm_1_port = port;
+//        chan = MAVLINK_COMM_1;
+//    }
+//    _queued_parameter = NULL;
+}
 
 
 

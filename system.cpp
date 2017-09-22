@@ -9,6 +9,10 @@
 void Copter::init_ardupilot()
 {
 
+	// init the GCS，地面站以Serial这个硬件驱动串口初始化
+	char uart_device[]={'u','a','r','t','\0'};
+	gcs0.init(uart_device);
+
 #if 0
 	// Console serial port
 	//

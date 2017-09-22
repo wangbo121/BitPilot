@@ -118,6 +118,7 @@ public:
 	GCS_MAVLINK(){}
 	void    update(void);
 	//void	init(FastSerial *port);
+	void	init(char *port);//这个应该是有串口来进行初始化的，我先用char*代替吧，反正用那个channnel 在最后发送的地方改一下就可以了
 //	void	send_message(enum ap_message id);
 	//void	send_text(gcs_severity severity, const char *str);
 //	void	send_text(gcs_severity severity, const prog_char_t *str);
