@@ -57,7 +57,8 @@
 #ifdef LINUX_OS
 //本来这个是需要的，但是移植过程mavlink协议有一些问题，mdk不认，所以先不要mavlink了
 #include "mavlink.h"//这个是基本的mavlink协议库1.0版本
-#include "GCS.h"
+//#include "GCS.h"
+#include "GCS_Copter.h"
 #endif
 
 //飞控所需要的外部设备数据和计划最终输出给外部设备的数据都从这个all_external_device接口进出
