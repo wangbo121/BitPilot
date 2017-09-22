@@ -84,6 +84,7 @@
 extern struct Location wp_total_array_temp[255];
 class Copter :public AP_HAL::HAL::Callbacks{
 public:
+	friend class GCS_MAVLINK;
 
     Copter(void)
 	{

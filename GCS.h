@@ -134,6 +134,22 @@ public:
 	bool mavlink_try_send_message(mavlink_channel_t chan, enum ap_message id, uint16_t packet_drops);
 	//void try_send_message(enum ap_message id);
 
+	  // NOTE! The streams enum below and the
+	// set of AP_Int16 stream rates _must_ be
+	// kept in the same order
+	enum streams {STREAM_RAW_SENSORS,
+				  STREAM_EXTENDED_STATUS,
+				  STREAM_RC_CHANNELS,
+				  STREAM_RAW_CONTROLLER,
+				  STREAM_POSITION,
+				  STREAM_EXTRA1,
+				  STREAM_EXTRA2,
+				  STREAM_EXTRA3,
+				  STREAM_PARAMS,
+				  NUM_STREAMS};
+
+	// see if we should send a stream now. Called at 50Hz
+	bool stream_trigger(enum streams stream_num);
 private:
 	void 	handleMessage(mavlink_message_t * msg);
 
@@ -188,6 +204,12 @@ private:
 	int16_t streamRateExtra1;
 	int16_t streamRateExtra2;
 	int16_t streamRateExtra3;
+
+    // number of 50Hz ticks until we next send this stream
+    uint8_t stream_ticks[NUM_STREAMS];
+
+    // number of extra ticks to add to slow things down for the radio
+    uint8_t stream_slowdown;
 };
 
 

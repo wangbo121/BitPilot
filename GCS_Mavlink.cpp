@@ -495,53 +495,46 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
     return true;
 }
 
-
-
 // see if we should send a stream now. Called at 50Hz
-//bool GCS_MAVLINK::stream_trigger(enum streams stream_num)
-//{
-//    if (stream_num >= NUM_STREAMS) {
-//        return false;
-//    }
-//    float rate = (uint8_t)streamRates[stream_num].get();
-//
-//    // send at a much lower rate while handling waypoints and
-//    // parameter sends
-//    if ((stream_num != STREAM_PARAMS) &&
-//        (waypoint_receiving || _queued_parameter != NULL)) {
-//        rate *= 0.25f;
-//    }
-//
-//    if (rate <= 0) {
-//        return false;
-//    }
-//
-//    if (stream_ticks[stream_num] == 0) {
-//        // we're triggering now, setup the next trigger point
-//        if (rate > 50) {
-//            rate = 50;
-//        }
-//        stream_ticks[stream_num] = (50 / rate) - 1 + stream_slowdown;
-//        return true;
-//    }
-//
-//    // count down at 50Hz
-//    stream_ticks[stream_num]--;
-//    return false;
-//}
+bool GCS_MAVLINK::stream_trigger(enum streams stream_num)
+{
+	 int16_t *stream_rates = &streamRateRawSensors;
+	uint8_t rate = (uint8_t)stream_rates[stream_num];
 
+	if (rate == 0) {
+		return false;
+	}
+
+	if (stream_ticks[stream_num] == 0) {
+		// we're triggering now, setup the next trigger point
+		if (rate > 50) {
+			rate = 50;
+		}
+		stream_ticks[stream_num] = (50 / rate) + stream_slowdown;
+		return true;
+	}
+
+	// count down at 50Hz
+	stream_ticks[stream_num]--;
+	return false;
+}
+
+/*
+ * 20170922这个发送虽然是50hz的，但是发送有需要触发，
+ * 而触发频率是handleMessage中设置的
+ */
 void
 GCS_MAVLINK::data_stream_send(void)
 {
-//    if (waypoint_receiving) {
-//        // don't interfere with mission transfer
-//        return;
-//    }
-//
+    if (waypoint_receiving) {
+        // don't interfere with mission transfer
+        return;
+    }
+
 //    if (!copter.in_mavlink_delay && !copter.motors.armed()) {
 //        handle_log_send(copter.DataFlash);
 //    }
-//
+
 //    copter.gcs_out_of_time = false;
 //
 //    if (_queued_parameter != NULL) {
@@ -561,68 +554,68 @@ GCS_MAVLINK::data_stream_send(void)
 //        // don't send any other stream types while in the delay callback
 //        return;
 //    }
-//
-//    if (stream_trigger(STREAM_RAW_SENSORS)) {
-//        send_message(MSG_RAW_IMU1);
-//        send_message(MSG_RAW_IMU2);
-//        send_message(MSG_RAW_IMU3);
-//    }
-//
-//    if (copter.gcs_out_of_time) return;
-//
-//    if (stream_trigger(STREAM_EXTENDED_STATUS)) {
-//        send_message(MSG_EXTENDED_STATUS1);
-//        send_message(MSG_EXTENDED_STATUS2);
-//        send_message(MSG_CURRENT_WAYPOINT);
-//        send_message(MSG_GPS_RAW);
-//        send_message(MSG_NAV_CONTROLLER_OUTPUT);
+
+    if (stream_trigger(STREAM_RAW_SENSORS)) {
+        send_message(MSG_RAW_IMU1);
+        send_message(MSG_RAW_IMU2);
+        send_message(MSG_RAW_IMU3);
+    }
+
+   // if (copter.gcs_out_of_time) return;
+
+    if (stream_trigger(STREAM_EXTENDED_STATUS)) {
+        send_message(MSG_EXTENDED_STATUS1);
+        send_message(MSG_EXTENDED_STATUS2);
+        send_message(MSG_CURRENT_WAYPOINT);
+        send_message(MSG_GPS_RAW);
+        send_message(MSG_NAV_CONTROLLER_OUTPUT);
 //        send_message(MSG_LIMITS_STATUS);
-//    }
-//
-//    if (copter.gcs_out_of_time) return;
-//
-//    if (stream_trigger(STREAM_POSITION)) {
-//        send_message(MSG_LOCATION);
+    }
+
+   // if (copter.gcs_out_of_time) return;
+
+    if (stream_trigger(STREAM_POSITION)) {
+        send_message(MSG_LOCATION);
 //        send_message(MSG_LOCAL_POSITION);
-//    }
-//
-//    if (copter.gcs_out_of_time) return;
-//
-//    if (stream_trigger(STREAM_RAW_CONTROLLER)) {
-//        send_message(MSG_SERVO_OUT);
-//    }
-//
-//    if (copter.gcs_out_of_time) return;
-//
-//    if (stream_trigger(STREAM_RC_CHANNELS)) {
-//        send_message(MSG_RADIO_OUT);
-//        send_message(MSG_RADIO_IN);
-//    }
-//
-//    if (copter.gcs_out_of_time) return;
-//
-//    if (stream_trigger(STREAM_EXTRA1)) {
-//        send_message(MSG_ATTITUDE);
-//        send_message(MSG_SIMSTATE);
+    }
+
+   // if (copter.gcs_out_of_time) return;
+
+    if (stream_trigger(STREAM_RAW_CONTROLLER)) {
+        send_message(MSG_SERVO_OUT);
+    }
+
+    //if (copter.gcs_out_of_time) return;
+
+    if (stream_trigger(STREAM_RC_CHANNELS)) {
+        send_message(MSG_RADIO_OUT);
+        send_message(MSG_RADIO_IN);
+    }
+
+    //if (copter.gcs_out_of_time) return;
+
+    if (stream_trigger(STREAM_EXTRA1)) {
+        send_message(MSG_ATTITUDE);
+        send_message(MSG_SIMSTATE);
 //        send_message(MSG_PID_TUNING);
-//    }
-//
-//    if (copter.gcs_out_of_time) return;
-//
-//    if (stream_trigger(STREAM_EXTRA2)) {
-//        send_message(MSG_VFR_HUD);
-//    }
-//
-//    if (copter.gcs_out_of_time) return;
-//
-//    if (stream_trigger(STREAM_EXTRA3)) {
-//        send_message(MSG_AHRS);
-//        send_message(MSG_HWSTATUS);
+    }
+
+   // if (copter.gcs_out_of_time) return;
+
+    if (stream_trigger(STREAM_EXTRA2)) {
+        send_message(MSG_VFR_HUD);
+    }
+
+  //  if (copter.gcs_out_of_time) return;
+
+    if (stream_trigger(STREAM_EXTRA3)) {
+        send_message(MSG_AHRS);
+        send_message(MSG_HWSTATUS);
 //        send_message(MSG_SYSTEM_TIME);
 //        send_message(MSG_RANGEFINDER);
-//#if AP_TERRAIN_AVAILABLE
-//        send_message(MSG_TERRAIN);
-//#endif
+#if AP_TERRAIN_AVAILABLE
+        send_message(MSG_TERRAIN);
+#endif
 //        send_message(MSG_BATTERY2);
 //        send_message(MSG_MOUNT_STATUS);
 //        send_message(MSG_OPTICAL_FLOW);
@@ -630,7 +623,7 @@ GCS_MAVLINK::data_stream_send(void)
 //        send_message(MSG_EKF_STATUS_REPORT);
 //        send_message(MSG_VIBRATION);
 //        send_message(MSG_RPM);
-//    }
+    }
 }
 
 
@@ -1509,6 +1502,8 @@ void Copter::gcs_data_stream_send(void)
 //            gcs[i].data_stream_send();
 //        }
 //    }
+
+	gcs0.data_stream_send();
 }
 
 /*
