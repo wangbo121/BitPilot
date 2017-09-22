@@ -9,7 +9,6 @@
 #include <limits.h>
 
 #ifdef LINUX_OS
-// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
 // default sensors are present and healthy: gyro, accelerometer, barometer, rate_control, attitude_stabilization, yaw_position, altitude control, x/y position control, motor_control
 #define MAVLINK_SENSOR_PRESENT_DEFAULT (MAV_SYS_STATUS_SENSOR_3D_GYRO | MAV_SYS_STATUS_SENSOR_3D_ACCEL | MAV_SYS_STATUS_SENSOR_ABSOLUTE_PRESSURE | MAV_SYS_STATUS_SENSOR_ANGULAR_RATE_CONTROL | MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION | MAV_SYS_STATUS_SENSOR_YAW_POSITION | MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL | MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL | MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS | MAV_SYS_STATUS_AHRS)
@@ -22,7 +21,7 @@
  */
 void Copter::gcs_send_message(enum ap_message id)
 {
-	gcs0.send_message(id);
+	gcs0.send_message(id);//gcs0 是 GCS_MAVLINK类定义的对象，所以从gcs0访问的函数应该都是在GCS_MAVLINK中声明定义过的
 //
 //    for (uint8_t i=0; i<num_gcs; i++) {
 //        if (gcs[i].initialised) {
@@ -1563,6 +1562,7 @@ void Copter::gcs_check_input(void)
 void
 GCS_MAVLINK::send_message(enum ap_message id)
 {
+	//chan我默认为0了 那这个packet_drops呢
     mavlink_send_message(chan,id, packet_drops);
 }
 
@@ -1572,13 +1572,17 @@ static struct mavlink_queue {
     enum ap_message deferred_messages[MAX_DEFERRED_MESSAGES];
     uint8_t next_deferred_message;
     uint8_t num_deferred_messages;
-} mavlink_queue[2];
+} mavlink_queue[2];//这个数组大小为2也就决定了最多有2个串口
 // send a message using mavlink
 void GCS_MAVLINK::mavlink_send_message(mavlink_channel_t chan, enum ap_message id, uint16_t packet_drops)
 {
     uint8_t i, nextid;
     struct mavlink_queue *q = &mavlink_queue[(uint8_t)chan];
 
+    /*
+     * 什么时候这个num_deferred_messages不等于0呢，只有不等于0才能发送呀
+     * 初始化时这些
+     */
     // see if we can send the deferred messages, if any
     while (q->num_deferred_messages != 0) {
         if (!mavlink_try_send_message(chan,
@@ -1609,6 +1613,9 @@ void GCS_MAVLINK::mavlink_send_message(mavlink_channel_t chan, enum ap_message i
         }
     }
 
+    /*
+     * 上面的代码在初始状态时，num_deferred_messages=0的情况下都是没啥用的，下面这个语句在num_deferred_messages=0时也会发送一条信息
+     */
     if (q->num_deferred_messages != 0 ||
         !mavlink_try_send_message(chan, id, packet_drops)) {
         // can't send it now, so defer it
@@ -1643,8 +1650,8 @@ bool GCS_MAVLINK::mavlink_try_send_message(mavlink_channel_t chan, enum ap_messa
 	switch(id) {
     case MSG_HEARTBEAT:
         CHECK_PAYLOAD_SIZE(HEARTBEAT);
-        send_message(MSG_HEARTBEAT);
-        //send_heartbeat(chan);
+        //send_message(MSG_HEARTBEAT);
+        copter.send_heartbeat(chan);
         return true;
 
 //    case MSG_EXTENDED_STATUS1:
@@ -1659,7 +1666,7 @@ bool GCS_MAVLINK::mavlink_try_send_message(mavlink_channel_t chan, enum ap_messa
 
     case MSG_ATTITUDE:
         CHECK_PAYLOAD_SIZE(ATTITUDE);
-       // send_attitude(chan);
+        copter.send_attitude(chan);
         break;
 
 //    case MSG_LOCATION:
