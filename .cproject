@@ -23,7 +23,7 @@
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug.218812919" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.exe.debug">
 								<option id="gnu.cpp.compiler.exe.debug.option.optimization.level.711025097" name="Optimization Level" superClass="gnu.cpp.compiler.exe.debug.option.optimization.level" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.exe.debug.option.debugging.level.801982098" name="Debug Level" superClass="gnu.cpp.compiler.exe.debug.option.debugging.level" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
-								<option id="gnu.cpp.compiler.option.other.other.463619823" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -fmessage-length=0" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.other.other.463619823" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -fmessage-length=0 -std=c++0x" valueType="string"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1530374816" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/AP_HAL}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/libraries/GCS_MAVLink/common}&quot;"/>
@@ -144,4 +144,5 @@
 		</configuration>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
+	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
 </cproject>
