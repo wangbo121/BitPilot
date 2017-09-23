@@ -472,7 +472,7 @@ enum MAV_CMD
 #define DESCENDING			-1
 #define REACHED_ALT			0
 
-
+#define ONBOARD_PARAM_NAME_LENGTH 15
 
 //  GCS Message ID's
 /// NOTE: to ensure we never block on sending MAVLink messages

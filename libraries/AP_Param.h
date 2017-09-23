@@ -127,6 +127,35 @@ enum ap_var_type {
 };
 
 
+   typedef char  prog_char;
+#ifndef PGM_P
+#define PGM_P const prog_char *
+#endif
+
+   static inline uint8_t pgm_read_byte(PGM_P s) { return (uint8_t)*s; }
+   	static inline uint8_t pgm_read_byte_far(const void *s) { return *(const uint8_t *)s; }
+   static inline uint16_t pgm_read_word(const void *s) { return *(const uint16_t *)s; }
+   // read something the size of a pointer. This makes the menu code more
+   // portable
+   static inline uintptr_t pgm_read_pointer(const void *s)
+   {
+       if (sizeof(uintptr_t) == sizeof(uint16_t)) {
+           return (uintptr_t)pgm_read_word(s);
+       } else {
+           union {
+               uintptr_t p;
+               uint8_t a[sizeof(uintptr_t)];
+           } u;
+           uint8_t i;
+           for (i=0; i< sizeof(uintptr_t); i++) {
+               u.a[i] = pgm_read_byte(i + (const prog_char *)s);
+           }
+           return u.p;
+       }
+   }
+
+
+
 /// Base class for variables.
 ///
 /// Provides naming and lookup services for variables.
@@ -386,7 +415,8 @@ public:
     static AP_Param *       next_scalar(ParamToken *token, enum ap_var_type *ptype);
 
     /// cast a variable to a float given its type
-    float                   cast_to_float(enum ap_var_type type) const;
+    //float                   cast_to_float(enum ap_var_type type=AP_PARAM_NONE) const;
+    void copy_name(char *buffer, size_t buffer_size, bool force_scalar);
 
     // check var table for consistency
     static bool             check_var_info(void);
@@ -454,6 +484,21 @@ private:
     static const uint8_t        _sentinal_group = 0xFF;
 
     static uint16_t             _frame_type_flags;
+
+
+
+    const struct AP_Param::Info *find_var_info_group(const struct GroupInfo *group_info,
+                                                               uint8_t vindex,
+                                                               uint8_t group_base,
+                                                               uint8_t group_shift,
+                                                               uint8_t *group_element,
+                                                               const struct GroupInfo **group_ret,
+                                                               uint8_t *idx);
+
+    // find the info structure for a variable
+    const struct Info *find_var_info(uint8_t *group_element,
+                                                         const struct GroupInfo **group_ret,
+                                                         uint8_t *idx);
 
     static bool                 check_group_info(const struct GroupInfo *group_info, uint16_t *total_size,
                                                  uint8_t max_bits, uint8_t prefix_length);

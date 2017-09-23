@@ -580,16 +580,16 @@ GCS_MAVLINK::data_stream_send(void)
 
 //    copter.gcs_out_of_time = false;
 //
-//    if (_queued_parameter != NULL) {
-//        if (streamRates[STREAM_PARAMS].get() <= 0) {
-//            streamRates[STREAM_PARAMS].set(10);
-//        }
-//        if (stream_trigger(STREAM_PARAMS)) {
-//            send_message(MSG_NEXT_PARAM);
-//        }
-//        // don't send anything else at the same time as parameters
-//        return;
-//    }
+    if (_queued_parameter != NULL) {
+        if (streamRates[STREAM_PARAMS] <= 0) {
+            streamRates[STREAM_PARAMS]=10;
+        }
+        if (stream_trigger(STREAM_PARAMS)) {
+            send_message(MSG_NEXT_PARAM);
+        }
+        // don't send anything else at the same time as parameters
+        return;
+    }
 //
 //    if (copter.gcs_out_of_time) return;
 //
@@ -920,6 +920,103 @@ void GCS_MAVLINK::mavlink_send_message(mavlink_channel_t chan, enum ap_message i
     }
 }
 
+static uint8_t mav_var_type(enum ap_var_type t)
+{
+    if (t == AP_PARAM_INT8) {
+	    return MAVLINK_TYPE_INT8_T;
+    }
+    if (t == AP_PARAM_INT16) {
+	    return MAVLINK_TYPE_INT16_T;
+    }
+    if (t == AP_PARAM_INT32) {
+	    return MAVLINK_TYPE_INT32_T;
+    }
+    // treat any others as float
+    return MAVLINK_TYPE_FLOAT;
+}
+
+/**
+* @brief Send the next pending parameter, called from deferred message
+* handling code
+*/
+void
+GCS_MAVLINK::queued_param_send()
+{
+    // Check to see if we are sending parameters
+    if (NULL == _queued_parameter) return;
+
+    AP_Param      *vp;
+    float       value;
+
+    // copy the current parameter and prepare to move to the next
+    vp = _queued_parameter;
+
+    // if the parameter can be cast to float, report it here and break out of the loop
+    //value = vp->cast_to_float(_queued_parameter_type);
+    value = (float)(_queued_parameter_type);
+
+    char param_name[ONBOARD_PARAM_NAME_LENGTH];
+    vp->copy_name(param_name, sizeof(param_name), true);
+
+//    mavlink_msg_param_value_send(
+//        chan,
+//        param_name,
+//        value,
+//        mav_var_type(_queued_parameter_type),
+//        _queued_parameter_count,
+//        _queued_parameter_index);
+
+
+    /**
+     * @brief Pack a param_value message on a channel
+     * @param system_id ID of this system
+     * @param component_id ID of this component (e.g. 200 for IMU)
+     * @param chan The MAVLink channel this message will be sent over
+     * @param msg The MAVLink message to compress the data into
+     * @param param_id Onboard parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string
+     * @param param_value Onboard parameter value
+     * @param param_type Onboard parameter type: see the MAV_PARAM_TYPE enum for supported data types.
+     * @param param_count Total number of onboard parameters
+     * @param param_index Index of this onboard parameter
+     * @return length of the message in bytes (excluding serial stream start sign)
+     */
+
+
+    mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+   mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+
+
+
+   // Initialize the required buffers
+   mavlink_message_t msg;
+   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+    mavlink_msg_param_value_pack_chan(mavlink_system.sysid ,mavlink_system.compid ,chan,
+    		                                                             &msg,
+    		                                                             param_name,
+																		 value,
+																		 mav_var_type(_queued_parameter_type),
+																		 _queued_parameter_count,
+																		 _queued_parameter_index );
+
+
+    // Copy the message to the send buffer
+   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+
+   // Send the message with the standard UART send function
+   // uart0_send might be named differently depending on
+   // the individual microcontroller / library in use.
+   //uart0_send(buf, len);
+   send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+
+
+    _queued_parameter = AP_Param::next_scalar(&_queued_parameter_token, &_queued_parameter_type);
+    _queued_parameter_index++;
+}
+
+
+
+
 
 // check if a message will fit in the payload space available
 #define CHECK_PAYLOAD_SIZE(id) if (payload_space < MAVLINK_MSG_ID_ ## id ## _LEN) return false
@@ -1026,7 +1123,7 @@ bool GCS_MAVLINK::mavlink_try_send_message(mavlink_channel_t chan, enum ap_messa
          */
     case MSG_NEXT_PARAM:
         CHECK_PAYLOAD_SIZE(PARAM_VALUE);
-		//gcs0.queued_param_send();
+		copter.gcs0.queued_param_send();
 
 
         break;
@@ -1103,6 +1200,22 @@ uint8_t mavlink_check_target(uint8_t sysid, uint8_t compid)
     // Currently we are not checking for correct compid since APM is not passing mavlink info to any subsystem
     // If it is addressed to our system ID we assume it is for us
     return 0; // no error
+}
+
+uint16_t
+GCS_MAVLINK::_count_parameters()
+{
+	// if we haven't cached the parameter count yet...
+	if (0 == _parameter_count) {
+        AP_Param  *vp;
+        AP_Param::ParamToken token;
+
+        vp = AP_Param::first(&token, NULL);
+		do {
+				_parameter_count++;
+        } while (NULL != (vp = AP_Param::next_scalar(&token, NULL)));
+	}
+	return _parameter_count;
 }
 
 void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
@@ -1376,9 +1489,9 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
 			// Start sending parameters - next call to ::update will kick the first one out
 
-			//_queued_parameter = AP_Param::first(&_queued_parameter_token, &_queued_parameter_type);
+			_queued_parameter = AP_Param::first(&_queued_parameter_token, &_queued_parameter_type);
 			_queued_parameter_index = 0;
-			//_queued_parameter_count = _count_parameters();
+			_queued_parameter_count = _count_parameters();
 			break;
 		}
 

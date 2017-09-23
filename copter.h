@@ -60,6 +60,8 @@
 #include "GCS.h"
 //#include "GCS_Copter.h"
 #endif
+//20170923
+#include "AP_Param.h"
 
 //飞控所需要的外部设备数据和计划最终输出给外部设备的数据都从这个all_external_device接口进出
 #include "all_external_device.h"

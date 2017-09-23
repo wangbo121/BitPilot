@@ -82,6 +82,19 @@ uint16_t AP_Param::num_param_overrides = 0;
 // flags indicating frame type
 uint16_t AP_Param::_frame_type_flags;
 
+
+#define PGM_UINT8(addr) pgm_read_byte((const prog_char *)addr)
+#define PGM_UINT16(addr) pgm_read_word((const uint16_t *)addr)
+#define PGM_POINTER(addr) pgm_read_pointer((const void *)addr)
+
+// the 'GROUP_ID' of a element of a group is the 8 bit identifier used
+// to distinguish between this element of the group and other elements
+// of the same group. It is calculated using a bit shift per level of
+// nesting, so the first level of nesting gets 4 bits, and the next
+// level gets the next 4 bits. This limits groups to having at most 16
+// elements.
+#define GROUP_ID(grpinfo, base, i, shift) ((base)+(((uint16_t)PGM_UINT8(&grpinfo[i].idx))<<(shift)))
+
 // write to EEPROM
 void AP_Param::eeprom_write_check(const void *ptr, uint16_t ofs, uint8_t size)
 {
@@ -1024,7 +1037,7 @@ bool AP_Param::save(bool force_save)
 
     // if the value is the default value then don't save
     if (phdr.type <= AP_PARAM_FLOAT) {
-        float v1 = cast_to_float((enum ap_var_type)phdr.type);
+        //float v1 = cast_to_float((enum ap_var_type)phdr.type);
         float v2;
         if (ginfo != nullptr) {
             v2 = get_default_value(this, &ginfo->def_value);
@@ -1567,22 +1580,142 @@ AP_Param *AP_Param::next_scalar(ParamToken *token, enum ap_var_type *ptype)
 
 
 /// cast a variable to a float given its type
-float AP_Param::cast_to_float(enum ap_var_type type) const
+//float AP_Param::cast_to_float(enum ap_var_type type) const
+//{
+//    switch (type) {
+//    case AP_PARAM_INT8:
+//        return ((AP_Int8 *)this)->cast_to_float();
+//    case AP_PARAM_INT16:
+//        return ((AP_Int16 *)this)->cast_to_float();
+//    case AP_PARAM_INT32:
+//        return ((AP_Int32 *)this)->cast_to_float();
+//    case AP_PARAM_FLOAT:
+//        return ((AP_Float *)this)->cast_to_float();
+//    default:
+//        return NAN;
+//    }
+//}
+
+
+// find the info structure for a variable in a group
+const struct AP_Param::Info *AP_Param::find_var_info_group(const struct GroupInfo *group_info,
+                                                           uint8_t vindex,
+                                                           uint8_t group_base,
+                                                           uint8_t group_shift,
+                                                           uint8_t *group_element,
+                                                           const struct GroupInfo **group_ret,
+                                                           uint8_t *idx)
 {
-    switch (type) {
-    case AP_PARAM_INT8:
-        return ((AP_Int8 *)this)->cast_to_float();
-    case AP_PARAM_INT16:
-        return ((AP_Int16 *)this)->cast_to_float();
-    case AP_PARAM_INT32:
-        return ((AP_Int32 *)this)->cast_to_float();
-    case AP_PARAM_FLOAT:
-        return ((AP_Float *)this)->cast_to_float();
-    default:
-        return NAN;
+	  uintptr_t base = PGM_POINTER(&_var_info[vindex].ptr);
+    uint8_t type;
+    for (uint8_t i=0;
+    		(type=PGM_UINT8(&group_info[i].type)) != AP_PARAM_NONE;
+         i++) {
+    	uintptr_t ofs = PGM_POINTER(&group_info[i].offset);
+#ifdef AP_NESTED_GROUPS_ENABLED
+        if (type == AP_PARAM_GROUP) {
+            const struct GroupInfo *ginfo = (const struct GroupInfo *)PGM_POINTER(&group_info[i].group_info);
+            // a nested group
+            if (group_shift + _group_level_shift >= _group_bits) {
+                // too deeply nested - this should have been caught by
+                // setup() !
+                return NULL;
+            }
+            const struct AP_Param::Info *info;
+            info = find_var_info_group(ginfo, vindex,
+                                       GROUP_ID(group_info, group_base, i, group_shift),
+                                       group_shift + _group_level_shift,
+                                       group_element,
+                                       group_ret,
+                                       idx);
+            if (info != NULL) {
+                return info;
+            }
+        } else // Forgive the poor formatting - if continues below.
+#endif // AP_NESTED_GROUPS_ENABLED
+        if ((uintptr_t)this == base + ofs) {
+            *group_element = GROUP_ID(group_info, group_base, i, group_shift);
+            *group_ret = &group_info[i];
+            *idx = 0;
+            return &_var_info[vindex];
+        } else if (type == AP_PARAM_VECTOR3F &&
+                   (base+ofs+sizeof(float) == (uintptr_t)this ||
+                    base+ofs+2*sizeof(float) == (uintptr_t)this)) {
+            // we are inside a Vector3f. We need to work out which
+            // element of the vector the current object refers to.
+            *idx = (((uintptr_t)this) - (base+ofs))/sizeof(float);
+            *group_element = GROUP_ID(group_info, group_base, i, group_shift);
+            *group_ret = &group_info[i];
+            return &_var_info[vindex];
+        }
     }
+    return NULL;
 }
 
+// find the info structure for a variable
+const struct AP_Param::Info *AP_Param::find_var_info(uint8_t *group_element,
+                                                     const struct GroupInfo **group_ret,
+                                                     uint8_t *idx)
+{
+    for (uint8_t i=0; i<_num_vars; i++) {
+    	  uint8_t type = PGM_UINT8(&_var_info[i].type);
+		uintptr_t base = PGM_POINTER(&_var_info[i].ptr);
+        if (type == AP_PARAM_GROUP) {
+            const struct GroupInfo *group_info = (const struct GroupInfo *)(&_var_info[i].group_info);
+            const struct AP_Param::Info *info;
+            info = find_var_info_group(group_info, i, 0, 0, group_element, group_ret, idx);
+            if (info != NULL) {
+                return info;
+            }
+        } else if (base == (uintptr_t)this) {
+            *group_element = 0;
+            *group_ret = NULL;
+            *idx = 0;
+            return &_var_info[i];
+        } else if (type == AP_PARAM_VECTOR3F &&
+                   (base+sizeof(float) == (uintptr_t)this ||
+                    base+2*sizeof(float) == (uintptr_t)this)) {
+            // we are inside a Vector3f. Work out which element we are
+            // referring to.
+            *idx = (((uintptr_t)this) - base)/sizeof(float);
+            *group_element = 0;
+            *group_ret = NULL;
+            return &_var_info[i];
+        }
+    }
+    return NULL;
+}
+
+
+// Copy the variable's whole name to the supplied buffer.
+//
+// If the variable is a group member, prepend the group name.
+//
+void AP_Param::copy_name(char *buffer, size_t buffer_size, bool force_scalar)
+{
+    uint8_t group_element;
+    const struct GroupInfo *ginfo;
+    uint8_t idx;
+    const struct AP_Param::Info *info = find_var_info(&group_element, &ginfo, &idx);
+    if (info == NULL) {
+        *buffer = 0;
+//        serialDebug("no info found");
+        return;
+    }
+    strncpy(buffer, info->name, buffer_size);
+    if (ginfo != NULL) {
+        uint8_t len = strnlen(buffer, buffer_size);
+        if (len < buffer_size) {
+            strncpy(&buffer[len], ginfo->name, buffer_size-len);
+        }
+        if ((force_scalar || idx != 0) && AP_PARAM_VECTOR3F == PGM_UINT8(&ginfo->type)) {
+            // the caller wants a specific element in a Vector3f
+            add_vector3f_suffix(buffer, buffer_size, idx);
+        }
+    } else if ((force_scalar || idx != 0) && AP_PARAM_VECTOR3F == PGM_UINT8(&info->type)) {
+            add_vector3f_suffix(buffer, buffer_size, idx);
+    }
+}
 
 //// print the value of all variables
 //void AP_Param::show(const AP_Param *ap, const char *s,
@@ -1698,7 +1831,7 @@ void AP_Param::convert_old_parameter(const struct ConversionInfo *info, float sc
         }
     } else if (ptype <= AP_PARAM_FLOAT && info->type <= AP_PARAM_FLOAT) {
         // perform scalar->scalar conversion
-        float v = ap->cast_to_float(info->type);
+       // float v = ap->cast_to_float(info->type);
 //        if (flags & CONVERT_FLAG_REVERSE) {
 //            // convert a _REV parameter to a _REVERSED parameter
 //            v = is_equal(v, -1.0f)?1:0;

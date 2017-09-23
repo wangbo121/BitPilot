@@ -1233,7 +1233,8 @@ void Copter::fifty_hz_loop()
 	   */
 	// kick the GCS to process uplink data
 	//gcs_update();//20170923发现使用这个函数后因为读取一个字节函数是有时间延时的，阻塞了，那么程序就不运行了，读取那里还需要更改
-	//gcs_data_stream_send();
+	  //上面的gcs_update()其实是从串口读取数据然后做解析，所以我习惯性的放在了串口的接收线程中，不再在这里运行
+	gcs_data_stream_send();
 
 }
 

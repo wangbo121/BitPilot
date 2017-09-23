@@ -16,6 +16,7 @@
 //#include <GPS.h>
 //#include <Stream.h>
 #include <stdint.h>
+#include "AP_Param.h"
 
 ///
 /// @class	GCS
@@ -91,7 +92,7 @@ public:
     void data_stream_send(uint16_t freqMin, uint16_t freqMax);
 
     //void    data_stream_send(void);
- 	void    queued_param_send();
+ 	//void    queued_param_send();
  	void    queued_waypoint_send();
 
 
@@ -161,9 +162,18 @@ public:
 	/// Perform queued sending operations
 	///
 
-	//AP_Var      *_queued_parameter;                 ///< next parameter to be sent in queue
+	/// Perform queued sending operations
+	///
+	AP_Param   *_queued_parameter;                  ///< next parameter to be sent in queue
+	enum ap_var_type _queued_parameter_type;        ///< type of the next parameter
+	AP_Param::ParamToken	_queued_parameter_token;///AP_Param token for next() call
 	uint16_t    _queued_parameter_index;            ///< next queued parameter's index
-    uint16_t    _queued_parameter_count;            ///< saved count of parameters for queued send
+	uint16_t    _queued_parameter_count;            ///< saved count of parameters for queued send
+
+
+	//AP_Var      *_queued_parameter;                 ///< next parameter to be sent in queue
+//	uint16_t    _queued_parameter_index;            ///< next queued parameter's index
+//    uint16_t    _queued_parameter_count;            ///< saved count of parameters for queued send
 
 	/// Count the number of reportable parameters.
 	///
@@ -218,6 +228,9 @@ public:
 
     // true when we have received at least 1 MAVLink packet
     bool mavlink_active;
+
+    // saveable rate of each stream
+       int16_t        streamRates[NUM_STREAMS];
 
 };
 
