@@ -73,7 +73,8 @@ static inline uint16_t mavlink_msg_heartbeat_pack(uint8_t system_id, uint8_t com
     _mav_put_uint8_t(buf, 5, autopilot);
     _mav_put_uint8_t(buf, 6, base_mode);
     _mav_put_uint8_t(buf, 7, system_status);
-    _mav_put_uint8_t(buf, 8, 3);
+   // _mav_put_uint8_t(buf, 8, 3);
+    _mav_put_uint8_t(buf, 8, 1);
 
         memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_HEARTBEAT_LEN);
 #else

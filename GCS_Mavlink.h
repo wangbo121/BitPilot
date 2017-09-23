@@ -77,14 +77,24 @@ static inline void comm_send_ch(mavlink_channel_t chan, uint8_t ch)
  */
 static inline uint8_t comm_receive_ch(mavlink_channel_t chan)
 {
-    uint8_t data = 0;
+    int data = 0;
     //char rcv_buf[512];
     char rcv_buf[2];
 
     switch(chan) {
 	case MAVLINK_COMM_0:
 		//data = mavlink_comm_0_port->read();
-		data=read_uart_data(uart_device_ap2gcs.uart_name, rcv_buf, 200, 1);
+		//data=read_uart_data(uart_device_ap2gcs.uart_name, rcv_buf, 200, 1);
+
+
+
+		data=read_uart_data_one_byte(uart_device_ap2gcs.uart_name);
+
+		if(data==-1)
+			data=0;
+
+
+
 		break;
 	case MAVLINK_COMM_1:
 		//data = mavlink_comm_1_port->read();

@@ -298,7 +298,7 @@ void Copter::setup()
 
 	DEBUG_PRINTF("uart recvbuf 串口名字=%s\n",uart_device_ap2gcs.uart_name);
 
-	create_uart_pthread(&uart_device_ap2gcs);
+	create_uart_pthread(&uart_device_ap2gcs);//2017023直接从串口读取，主动读取，不是单独线程了
 #endif
 }
 
@@ -1315,6 +1315,7 @@ void Copter::super_slow_loop()
     //gcs_data_stream_send(1,3);
 
     gcs_send_message(MSG_HEARTBEAT);
+    //gcs_update();
 
 	// agmatthews - USERHOOKS
 	#ifdef USERHOOK_SUPERSLOWLOOP
@@ -1494,7 +1495,7 @@ void Copter::send_realdata_to_gcs( void )
 
 static int radio_recv_state = 0;
 
-int read_radio_data(unsigned char *recv_buf,unsigned int recv_len)
+int read_radio_data_old(unsigned char *recv_buf,unsigned int recv_len)
 {
 	/* 直接把读取到的数据拷贝到_buffer数组中 */
 	static unsigned char _buffer[512];
@@ -1527,7 +1528,7 @@ int read_radio_data(unsigned char *recv_buf,unsigned int recv_len)
 	printf("radio data buf=\n");
 	for(i=0;i<recv_len;i++)
 	{
-		printf("%0x ",recv_buf[i]);
+		printf("%x ",recv_buf[i]);
 	}
 	printf("\n");
 #endif
@@ -1703,6 +1704,126 @@ int read_radio_data(unsigned char *recv_buf,unsigned int recv_len)
 
 }
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+ * 20170923为了接收missionplanner的数据
+ *
+ */
+#ifdef LINUX_OS
+#include "mavlink.h"
+#include "GCS.h"
+#include "GCS_Mavlink.h"
+
+int read_radio_data(unsigned char *recv_buf,unsigned int recv_len)
+{
+	/* 直接把读取到的数据拷贝到_buffer数组中 */
+	static unsigned char _buffer[512];
+
+	/* 这个帧头的8个字节，都保存下来，放在_frame_received里面 */
+	//head1=0xaa;
+	//head2=0x55;
+	static int _pack_recv_len = 0;
+	static int _pack_recv_cnt = 0;
+	static unsigned char _sysid;
+	static unsigned char _pack_recv_type;
+	static unsigned char _pack_recv_com_link;
+	static unsigned char _pack_recv_ack_req;
+
+	/* 这个是帧尾的校验和 其实是2个字节 但是我们现在只用1个字节 */
+	static unsigned char _checksum = 0;
+
+	unsigned int i = 0;
+	static unsigned char c;
+	static unsigned char valid_len=5;
+
+	static unsigned char _frame_received_cnt;
+	static unsigned char _frame_received[512];//存放一帧的数据，从帧头到帧尾校验和都包括，完整的一帧
+	static unsigned char _frame_checksum_len=2;
+
+
+
+	memcpy(_buffer, recv_buf, recv_len);
+#if 1
+	printf("radio data buf=#################################################################################################\n");
+	for(i=0;i<recv_len;i++)
+	{
+		printf("%x ",recv_buf[i]);
+	}
+	printf("\n");
+#endif
+
+	// receive new packets
+	static mavlink_message_t msg;
+	static mavlink_status_t status;
+	status.packet_rx_drop_count = 0;
+
+	// process received bytes
+	//因为comm_get_available(chan)返回值一直是1，所以这个循环是永久的
+//	while(comm_get_available(chan))
+//	{
+//		//关键是这个函数需要从串口读取一个字节的数据，这个要改写以下底层
+//		uint8_t c = (uint8_t)comm_receive_ch(chan);
+//
+//
+//		// Try to get a new message
+//		if (mavlink_parse_char(chan, c, &msg, &status)) {
+//			printf("mavlink update :受到地面站数据，开始处理受到的msg，handleMessage\n");
+//			copter.gcs0.mavlink_active = true;
+//			copter.gcs0.handleMessage(&msg);
+//		}
+//	}
+
+	// Update packet drops counter
+//	copter.gcs0.packet_drops += status.packet_rx_drop_count;
+
+
+	for (i = 0; i<recv_len; i++)
+	{
+		c = _buffer[i];
+		// Try to get a new message
+		if (mavlink_parse_char(0, c, &msg, &status)) {
+			printf("mavlink update :受到地面站数据，开始处理受到的msg，handleMessage\n");
+			copter.gcs0.mavlink_active = true;
+			copter.gcs0.handleMessage(&msg);
+		}
+
+	}
+
+	copter.gcs0.packet_drops += status.packet_rx_drop_count;
+
+	return 0;
+
+
+}
+#endif
+
+
+
+
+
+
 
 
 

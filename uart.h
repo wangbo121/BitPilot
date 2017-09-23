@@ -27,6 +27,12 @@ int read_uart_data(char *uart_name, char *rcv_buf, int time_out_ms, int buf_len)
 int send_uart_data(char *uart_name, char *send_buf, int buf_len);
 int close_uart_dev(char *uart_name);
 
+
+/*
+ * 20170923为了测试获取missionplanner的数据新添加的函数
+ */
+int read_uart_data_one_byte(char *uart_name);
+
 /*
  * 创建串口线程
  * uart_recvbuf_and_process是串口线程中的处理函数，参数为ptr_uart_device

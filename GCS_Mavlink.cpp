@@ -708,12 +708,12 @@ void GCS_MAVLINK::update(void)
 	while(comm_get_available(chan))
 	{
 		//关键是这个函数需要从串口读取一个字节的数据，这个要改写以下底层
-		uint8_t c = comm_receive_ch(chan);
+		uint8_t c = (uint8_t)comm_receive_ch(chan);
 
 
 		// Try to get a new message
 		if (mavlink_parse_char(chan, c, &msg, &status)) {
-			printf("mavlink update :受到地面站数据\n");
+			printf("mavlink update :受到地面站数据，开始处理受到的msg，handleMessage\n");
 			mavlink_active = true;
 			handleMessage(&msg);
 		}
@@ -849,6 +849,7 @@ void Copter::gcs_check_input(void)
 void
 GCS_MAVLINK::send_message(enum ap_message id)
 {
+	chan=MAVLINK_COMM_0;
 	//chan我默认为0了 那这个packet_drops呢
     mavlink_send_message(chan,id, packet_drops);
 }
@@ -1020,24 +1021,26 @@ bool GCS_MAVLINK::mavlink_try_send_message(mavlink_channel_t chan, enum ap_messa
 //        send_current_waypoint(chan);
 //        break;
 //
-//    case MSG_NEXT_PARAM:
-//        CHECK_PAYLOAD_SIZE(PARAM_VALUE);
-//        if (chan == MAVLINK_COMM_0) {
-//            gcs0.queued_param_send();
-//        } else if (gcs3.initialised) {
-//            gcs3.queued_param_send();
-//        }
-//        break;
-//
-//    case MSG_NEXT_WAYPOINT:
-//        CHECK_PAYLOAD_SIZE(WAYPOINT_REQUEST);
-//        if (chan == MAVLINK_COMM_0) {
-//            gcs0.queued_waypoint_send();
-//        } else {
-//            gcs3.queued_waypoint_send();
-//        }
-//        break;
-//
+        /*
+         * 发送参数的
+         */
+    case MSG_NEXT_PARAM:
+        CHECK_PAYLOAD_SIZE(PARAM_VALUE);
+		//gcs0.queued_param_send();
+
+
+        break;
+
+        /*
+         * 发送下一航点的
+         */
+    case MSG_NEXT_WAYPOINT:
+        CHECK_PAYLOAD_SIZE(WAYPOINT_REQUEST);
+
+        //    gcs0.queued_waypoint_send();
+
+        break;
+
 //    case MSG_STATUSTEXT:
 //        CHECK_PAYLOAD_SIZE(STATUSTEXT);
 //        send_statustext(chan);
@@ -1108,6 +1111,9 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 	static uint8_t mav_nav = 255;							// For setting mode (some require receipt of 2 messages...)
 
     uint8_t result = MAV_RESULT_FAILED;         // assume failure.  Each messages id is responsible for return ACK or NAK if required
+
+    DEBUG_PRINTF("msg->msgid=%d\n",msg->msgid);
+
 
     switch (msg->msgid) {
     case MAVLINK_MSG_ID_REQUEST_DATA_STREAM: //66
@@ -1347,6 +1353,18 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			break;
 		}
 
+		case MAVLINK_MSG_ID_PARAM_REQUEST_READ:
+
+			mavlink_param_request_read_t packet;
+			mavlink_msg_param_request_read_decode(msg, &packet);
+
+
+		//handle_param_request_read(msg);
+		break;
+
+
+
+
 		case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: // 21
 		{
 			// gcs_send_text_P(SEVERITY_LOW,PSTR("param request list"));
@@ -1363,6 +1381,15 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			//_queued_parameter_count = _count_parameters();
 			break;
 		}
+
+		case 0:
+			DEBUG_PRINTF("case 0\n");
+		break;
+
+		default:
+		        //handle_common_message(msg);
+		        break;
+
 
 
 

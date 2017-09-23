@@ -319,6 +319,90 @@ int read_uart_data(char *uart_name, char *rcv_buf, int time_out_ms, int buf_len)
     return pos;
 }
 
+
+int read_uart_data_one_byte(char *uart_name)
+{
+	 int fd=0;
+	int retval;
+	static fd_set rfds;
+	struct timeval tv;
+	int ret, pos;
+
+
+	tv.tv_sec = 0;  //set the rcv wait time
+	tv.tv_usec = 20 * 1000;  //100000us = 0.1s  2毫秒
+
+	char rcv_char;
+	struct stat temp_stat;
+
+	//printf("read data 串口名字=%s\n",uart_name);
+	fd=get_uart_fd(uart_name);
+
+
+	char ret_char;
+
+	while (1)
+	{
+		FD_ZERO(&rfds);
+		FD_SET(fd, &rfds);
+
+		if(-1==fstat(fd,&temp_stat))
+		{
+			printf("fstat %d error:%s",fd,strerror(errno));
+		}
+
+		retval = select(fd + 1, &rfds, NULL, NULL, &tv);
+		//retval = select(FD_SETSIZE, &rfds, NULL, NULL, &tv);
+		//retval = select(fd + 1, &rfds, NULL, NULL, NULL);
+
+		if (retval == -1)
+		{
+			perror("select()");
+			break;
+		}
+		else if (retval)
+		{
+
+			ret = read(fd,  &rcv_char, 1);
+			if (-1 == ret)
+			{
+				break;
+			}
+
+
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	if(ret==-1)
+	{
+		return -1;
+	}else
+	{
+		return rcv_char;
+	}
+
+
+//	  if(-1!=(ret = read(fd, &rcv_char, 1)))
+//	  {
+//		  if(ret !=0)
+//		  {
+//			  return rcv_char;
+//		  }
+//		  else return 0;
+//
+//	  }
+//	  else
+//	  {
+//		  return -1;
+//	  }
+
+	  //return ret;
+}
+
 void *uart_recvbuf_and_process(void * ptr_pthread_arg)
 {
     char buf[UART_BUF_SIZE] = { 0 };

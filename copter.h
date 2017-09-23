@@ -113,6 +113,7 @@ public:
     int navigate();//20170917改成有返回值的
 	//void get_stabilize_roll(int32_t target_angle);
 
+    GCS_MAVLINK gcs0;
 
 private:
 
@@ -444,7 +445,7 @@ private:
     // GCS
     // ---
     //GCS_MAVLINK gcs;
-    GCS_MAVLINK gcs0;
+//    GCS_MAVLINK gcs0;
     char GCS_buffer[53];
     char display_PID = -1;						// Flag used by DebugTerminal to indicate that the next PID calculation with this index should be displayed
 

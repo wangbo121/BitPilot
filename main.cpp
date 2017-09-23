@@ -106,16 +106,18 @@ void Copter::loop()
 	// trigger our 1 hz loop
 	//if(counter_one_herz >= 50){
 	//因为我这里改成了100hz所以需要改成100
-	if(counter_one_herz >= 100)
+	//if(counter_one_herz >= 50)
+	if(maintask_cnt>100)
 	{
-		super_slow_loop();
+		DEBUG_PRINTF("**********************************一秒钟******************************************************************************\n");
+		super_slow_loop();//心跳包在super_slow_loop里面
 		counter_one_herz = 0;
 
 		/*
 		 * 发送数据包给地面站,但是里面的串口发送还用的是linux的,仍然需要更改
 		 */
 		printf("1秒钟发送心跳包\n");
-		gcs_send_heartbeat();
+		//gcs_send_heartbeat();
 		//send_heartbeat_to_gcs();
 		//send_attitude_to_gcs();
 	}

@@ -17,6 +17,7 @@
 #ifndef LINUX_OS
 #define LINUX_OS //这个是在linux上测试时用的，比如udp和串口通信
 #endif
+#define LINUX_OS //这个是在linux上测试时用的，比如udp和串口通信
 
 #ifdef LINUX_OS
 extern struct T_UART_DEVICE uart_device_ap2gcs;

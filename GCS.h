@@ -90,6 +90,10 @@ public:
     // send streams which match frequency range
     void data_stream_send(uint16_t freqMin, uint16_t freqMax);
 
+    //void    data_stream_send(void);
+ 	void    queued_param_send();
+ 	void    queued_waypoint_send();
+
 
 
     // set to true if this GCS link is active
@@ -150,8 +154,9 @@ public:
 
 	// see if we should send a stream now. Called at 50Hz
 	bool stream_trigger(enum streams stream_num);
-private:
 	void 	handleMessage(mavlink_message_t * msg);
+//private:
+//	void 	handleMessage(mavlink_message_t * msg);
 
 	/// Perform queued sending operations
 	///
