@@ -283,6 +283,7 @@ void Copter::setup()
 	uart_device_ap2gcs.uart_name=char_uart;
 
 	uart_device_ap2gcs.baudrate=UART_AP2GCS_BAUD;
+	uart_device_ap2gcs.baudrate=115200;
 	uart_device_ap2gcs.databits=UART_AP2GCS_DATABITS;
 	uart_device_ap2gcs.parity=UART_AP2GCS_PARITY;
 	uart_device_ap2gcs.stopbits=UART_AP2GCS_STOPBITS;
@@ -1231,8 +1232,8 @@ void Copter::fifty_hz_loop()
 	   * 20170922
 	   */
 	// kick the GCS to process uplink data
-	gcs_update();
-	gcs_data_stream_send();
+	//gcs_update();//20170923发现使用这个函数后因为读取一个字节函数是有时间延时的，阻塞了，那么程序就不运行了，读取那里还需要更改
+	//gcs_data_stream_send();
 
 }
 

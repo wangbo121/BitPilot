@@ -76,7 +76,7 @@ void Copter::loop()
 
     // try to send any deferred messages if the serial port now has
     // some space available
-    gcs_send_message(MSG_RETRY_DEFERRED);
+    //gcs_send_message(MSG_RETRY_DEFERRED);
 
 	/*
 	 * 快循环，用来保证增稳，即使没有gps也应该可以手动遥控增稳飞行
@@ -114,6 +114,8 @@ void Copter::loop()
 		/*
 		 * 发送数据包给地面站,但是里面的串口发送还用的是linux的,仍然需要更改
 		 */
+		printf("1秒钟发送心跳包\n");
+		gcs_send_heartbeat();
 		//send_heartbeat_to_gcs();
 		//send_attitude_to_gcs();
 	}
@@ -130,7 +132,7 @@ void Copter::loop()
 
 
 		//发送实时数据给地面站，只是作为在linux平台的测试，在linux平台上暂时测试是1秒钟发送一个实时数据包
-		send_realdata_to_gcs();
+		//send_realdata_to_gcs();//这个用的还是无人船的地面站
 
 		maintask_cnt=0;
 	}

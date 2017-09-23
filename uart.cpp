@@ -53,7 +53,7 @@ static int get_uart_num(char *uart_name)
     {
         if(strcmp(uart_name,uart_dev[i])==0)
         {
-            printf("这是第%d个串口\n",i);
+            //printf("这是第%d个串口\n",i);
             uart_no=i;
             break;
         }
@@ -348,7 +348,7 @@ void *uart_recvbuf_and_process(void * ptr_pthread_arg)
 
 
 
-    	printf("uart recvbuf 串口名字=%s\n",ptr_uart->uart_name);
+    	//printf("uart recvbuf 串口名字=%s\n",ptr_uart->uart_name);
         if(-1!=(read_len=read_uart_data(ptr_uart->uart_name, buf, 200, sizeof(buf)-1)))
     	//if(-1!=(read_len=read_uart_data("/dev/ttyUSB0", buf, 200, sizeof(buf)-1)))
     	//read_uart_data("/dev/ttyUSB0", buf, 200, sizeof(buf)-1);//可以运行

@@ -22,6 +22,7 @@
  */
 void Copter::gcs_send_message(enum ap_message id)
 {
+	printf("Copter::gcs_send_message\n");
 	gcs0.send_message(id);//gcs0 是 GCS_MAVLINK类定义的对象，所以从gcs0访问的函数应该都是在GCS_MAVLINK中声明定义过的
 //
 //    for (uint8_t i=0; i<num_gcs; i++) {
@@ -146,18 +147,44 @@ NOINLINE void Copter::send_heartbeat(mavlink_channel_t chan)
 
 NOINLINE void Copter::send_attitude(mavlink_channel_t chan)
 {
-#if 0
-    const Vector3f &gyro = ins.get_gyro();
-    mavlink_msg_attitude_send(
-        chan,
-        millis(),
-        ahrs.roll,
-        ahrs.pitch,
-        ahrs.yaw,
-        gyro.x,
-        gyro.y,
-        gyro.z);
+#if 1
+    const Vector3f &gyro = copter.imu.get_gyro();
+
+
+
+    mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+   mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+
+
+
+   // Initialize the required buffers
+   mavlink_message_t msg;
+   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+
+
+    mavlink_msg_attitude_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,0,0,0.5,0,0,0,0);
+
+    // Copy the message to the send buffer
+	   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+
+	   // Send the message with the standard UART send function
+	   // uart0_send might be named differently depending on
+	   // the individual microcontroller / library in use.
+	   //uart0_send(buf, len);
+	   send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+//    mavlink_msg_attitude_send(
+//        chan,
+//        gettimeofday_ms(),
+//        ahrs.roll,
+//        ahrs.pitch,
+//        ahrs.yaw,
+//        gyro.x,
+//        gyro.y,
+//        gyro.z);
 #endif
+
+
 }
 
 //#if AC_FENCE == ENABLED
@@ -686,6 +713,7 @@ void GCS_MAVLINK::update(void)
 
 		// Try to get a new message
 		if (mavlink_parse_char(chan, c, &msg, &status)) {
+			printf("mavlink update :受到地面站数据\n");
 			mavlink_active = true;
 			handleMessage(&msg);
 		}
