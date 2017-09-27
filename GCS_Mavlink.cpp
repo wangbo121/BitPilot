@@ -745,9 +745,11 @@ void GCS_MAVLINK::update(void)
 
 	uint32_t tnow = clock_gettime_ms();
 
+//	if (waypoint_receiving &&
+//		waypoint_request_i <= (unsigned)copter.g.command_total &&
+//		tnow > waypoint_timelast_request + 500 + (stream_slowdown*20)) {
 	if (waypoint_receiving &&
-		waypoint_request_i <= (unsigned)copter.g.command_total &&
-		tnow > waypoint_timelast_request + 500 + (stream_slowdown*20)) {
+			waypoint_request_i <= (unsigned)copter.g.command_total) {
 		waypoint_timelast_request = tnow;
 		send_message(MSG_NEXT_WAYPOINT);
 	}
@@ -1146,7 +1148,7 @@ bool GCS_MAVLINK::mavlink_try_send_message(mavlink_channel_t chan, enum ap_messa
     case MSG_NEXT_WAYPOINT:
         CHECK_PAYLOAD_SIZE(WAYPOINT_REQUEST);
 
-        //    gcs0.queued_waypoint_send();
+            //gcs0.queued_waypoint_send();
 
         break;
 
@@ -1320,13 +1322,30 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 	{
 		//send_text_P(SEVERITY_LOW,PSTR("waypoint request list"));
 
+		DEBUG_PRINTF("请求回传所有航点****************************************************************\n");
 		// decode
 		mavlink_waypoint_request_list_t packet;
 		mavlink_msg_waypoint_request_list_decode(msg, &packet);
 		if (mavlink_check_target(packet.target_system, packet.target_component))
 			break;
 
-		// Start sending waypoints
+
+
+		mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+		mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+		// Define the system type, in this case an airplane
+					uint8_t system_type = MAV_TYPE_FIXED_WING;
+					uint8_t autopilot_type = MAV_AUTOPILOT_GENERIC;
+
+		// Initialize the required buffers
+		mavlink_message_t msg;
+		uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+		copter.g.command_total=10;
+		mavlink_msg_mission_count_pack(mavlink_system.sysid , mavlink_system.compid,&msg,\
+				                                                     system_type,autopilot_type,copter.g.command_total);
+
+
+//		// Start sending waypoints
 //		mavlink_msg_waypoint_count_send(
 //			chan,msg->sysid,
 //			msg->compid,
@@ -1335,8 +1354,8 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 		waypoint_timelast_send		= gettimeofday_ms();
 		waypoint_sending			= true;
 		waypoint_receiving			= false;
-		waypoint_dest_sysid			= msg->sysid;
-		waypoint_dest_compid		= msg->compid;
+		waypoint_dest_sysid			= msg.sysid;
+		waypoint_dest_compid		= msg.compid;
 		break;
 	}
 
@@ -1458,9 +1477,56 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 //										y,
 //										z);
 
+
+
+
+			mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+			mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+			// Define the system type, in this case an airplane
+						uint8_t system_type = MAV_TYPE_FIXED_WING;
+						uint8_t autopilot_type = MAV_AUTOPILOT_GENERIC;
+
+			// Initialize the required buffers
+			mavlink_message_t msg;
+			uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+			mavlink_msg_mission_item_pack(mavlink_system.sysid,mavlink_system.compid,&msg,system_type,autopilot_type,\
+					                                                    packet.seq,frame,tell_command.id,current,autocontinue,param1,param2,param3,param4,\
+					                                                    tell_command.lat,tell_command.lng,tell_command.alt );
+
+
+
+			// Copy the message to the send buffer
+						uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+						send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+
 			// update last waypoint comm stamp
 			//waypoint_timelast_send = millis();
 			waypoint_timelast_send = gettimeofday_ms();
+			break;
+		}
+
+		case MAVLINK_MSG_ID_MISSION_COUNT:     // 44
+		{
+			//send_text_P(SEVERITY_LOW,PSTR("waypoint count"));
+			DEBUG_PRINTF("发送任务个数------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+
+			// decode
+			mavlink_mission_count_t packet;
+			mavlink_msg_mission_count_decode(msg, &packet);
+			if (mavlink_check_target(packet.target_system,packet.target_component)) break;
+
+//			// start waypoint receiving
+//			if (packet.count > MAX_WAYPOINTS) {
+//				packet.count = MAX_WAYPOINTS;
+//			}
+			copter.g.command_total=10;
+
+			//waypoint_timelast_receive = millis();
+			waypoint_receiving   = true;
+			waypoint_sending         = false;
+			waypoint_request_i   = 0;
+			waypoint_timelast_request = 0;
 			break;
 		}
 
@@ -1511,7 +1577,8 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			mavlink_message_t msg;
 			uint8_t buf[MAVLINK_MAX_PACKET_LEN];
 
-//			mavlink_msg_param_request_read_pack(mavlink_system.sysid,mavlink_system.compid,&msg,system_type,autopilot_type,packet.param_id,packet.param_index);
+			////不用下面的这句
+		//mavlink_msg_param_request_read_pack(mavlink_system.sysid,mavlink_system.compid,&msg,system_type,autopilot_type,packet.param_id,packet.param_index);
 
 			//mavlink_msg_param_value_send
 			mavlink_msg_param_value_pack(mavlink_system.sysid,mavlink_system.compid,&msg,\
