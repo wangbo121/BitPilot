@@ -117,6 +117,8 @@ public:
 
     GCS_MAVLINK gcs0;
 
+    AP_Param param;
+
 private:
 
 	Vector3f omega;

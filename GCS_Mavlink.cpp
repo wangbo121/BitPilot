@@ -163,7 +163,10 @@ NOINLINE void Copter::send_attitude(mavlink_channel_t chan)
 
 
 
-    mavlink_msg_attitude_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,0,0,0.5,0,0,0,0);
+   static float pitch_radian=0.0;
+   pitch_radian+=0.001;
+    //mavlink_msg_attitude_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,0,0,0.5,0,0,0,0);
+   mavlink_msg_attitude_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,0,0,pitch_radian,0,0,0,0);
 
     // Copy the message to the send buffer
 	   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
@@ -723,6 +726,15 @@ void GCS_MAVLINK::update(void)
 	packet_drops += status.packet_rx_drop_count;
 
 	/*
+	 * 2.3的内容 参数包和航点包实际上在这里发送，handleMessage中对于参数和航点的动作只是把要发送的参数和航点放在了即将发送的循环丢列里
+	 */
+	 // send out queued params/ waypoints
+//	if (NULL != _queued_parameter) {
+//		send_message(MSG_NEXT_PARAM);
+//	}
+
+
+	/*
 	 * 20170922下面的其实先不需要了，是关于航点于这个数据的互斥发送
 	 */
 
@@ -1123,7 +1135,7 @@ bool GCS_MAVLINK::mavlink_try_send_message(mavlink_channel_t chan, enum ap_messa
          */
     case MSG_NEXT_PARAM:
         CHECK_PAYLOAD_SIZE(PARAM_VALUE);
-		copter.gcs0.queued_param_send();
+		copter.gcs0.queued_param_send();//这个函数其实没有调用，还是在gcs_mavlink::update函数中代用的
 
 
         break;
@@ -1467,13 +1479,53 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 		}
 
 		case MAVLINK_MSG_ID_PARAM_REQUEST_READ:
+		{
 
-			mavlink_param_request_read_t packet;
-			mavlink_msg_param_request_read_decode(msg, &packet);
+			  // decode
+				mavlink_param_request_read_t packet;
+				mavlink_msg_param_request_read_decode(msg, &packet);
+//				if (mavlink_check_target(packet.target_system,packet.target_component)) break;
+//				if (packet.param_index != -1) {
+//					gcs_send_text_P(SEVERITY_LOW, PSTR("Param by index not supported"));
+//					break;
+//				}
+
+			DEBUG_PRINTF("******************************************************************************请求回传单个参数\n");
+			DEBUG_PRINTF("packet.param_index=%d\n",packet.param_index);
+			DEBUG_PRINTF("packet.param_id=%s\n",packet.param_id);
+
+
+			mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+			mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+
+			// Define the system type, in this case an airplane
+			uint8_t system_type = MAV_TYPE_FIXED_WING;
+			uint8_t autopilot_type = MAV_AUTOPILOT_GENERIC;
+
+			uint8_t system_mode = MAV_MODE_PREFLIGHT; ///< Booting up
+			//uint32_t custom_mode = 0;                 ///< Custom mode, can be defined by user/adopter
+			uint8_t system_state = MAV_STATE_STANDBY; ///< System ready for flight
+
+
+			// Initialize the required buffers
+			mavlink_message_t msg;
+			uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+//			mavlink_msg_param_request_read_pack(mavlink_system.sysid,mavlink_system.compid,&msg,system_type,autopilot_type,packet.param_id,packet.param_index);
+
+			//mavlink_msg_param_value_send
+			mavlink_msg_param_value_pack(mavlink_system.sysid,mavlink_system.compid,&msg,\
+					                      packet.param_id,1.0,MAVLINK_TYPE_FLOAT,1,packet.param_index);
+
+
+			// Copy the message to the send buffer
+			uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+			send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
 
 
 		//handle_param_request_read(msg);
 		break;
+		}
 
 
 
@@ -1481,6 +1533,8 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 		case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: // 21
 		{
 			// gcs_send_text_P(SEVERITY_LOW,PSTR("param request list"));
+
+			DEBUG_PRINTF("******************************************************************************请求回传所有参数\n");
 
 			// decode
 			mavlink_param_request_list_t packet;
