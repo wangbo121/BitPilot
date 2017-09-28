@@ -572,7 +572,7 @@ bool GCS_MAVLINK::stream_trigger(enum streams stream_num)
 void
 GCS_MAVLINK::data_stream_send(void)
 {
-    if (waypoint_receiving) {
+    if (waypoint_receiving || waypoint_sending ) {
         // don't interfere with mission transfer
         return;
     }
@@ -1329,13 +1329,11 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 		if (mavlink_check_target(packet.target_system, packet.target_component))
 			break;
 
-
-
 		mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
 		mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
 		// Define the system type, in this case an airplane
-					uint8_t system_type = MAV_TYPE_FIXED_WING;
-					uint8_t autopilot_type = MAV_AUTOPILOT_GENERIC;
+		uint8_t system_type = MAV_TYPE_FIXED_WING;
+		uint8_t autopilot_type = MAV_AUTOPILOT_GENERIC;
 
 		// Initialize the required buffers
 		mavlink_message_t msg;
@@ -1343,6 +1341,10 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 		copter.g.command_total=10;
 		mavlink_msg_mission_count_pack(mavlink_system.sysid , mavlink_system.compid,&msg,\
 				                                                     system_type,autopilot_type,copter.g.command_total);
+
+		// Copy the message to the send buffer
+		uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+		send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
 
 
 //		// Start sending waypoints
@@ -1363,7 +1365,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 		case MAVLINK_MSG_ID_WAYPOINT_REQUEST: // 40
 		{
 			//send_text_P(SEVERITY_LOW,PSTR("waypoint request"));
-
+			DEBUG_PRINTF("请求回传单个航点****************************************************************\n");
 			// Check if sending waypiont
 			//if (!waypoint_sending) break;
 			// 5/10/11 - We are trying out relaxing the requirement that we be in waypoint sending mode to respond to a waypoint request.  DEW
@@ -1374,6 +1376,8 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
 			if (mavlink_check_target(packet.target_system, packet.target_component))
 				break;
+
+			DEBUG_PRINTF("即将要回传的航点的编号=%d\n",packet.seq);
 
 			// send waypoint
 			tell_command = copter.get_cmd_with_index(packet.seq);
@@ -1400,9 +1404,14 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			float x = 0, y = 0, z = 0;
 
 			if (tell_command.id < MAV_CMD_NAV_LAST) {
+
+
+
+
 				// command needs scaling
 				x = tell_command.lat/1.0e7; // local (x), global (latitude)
-				y = tell_command.lng/1.0e7; // local (y), global (longitude)
+				//y = tell_command.lng/1.0e7; // local (y), global (longitude)
+				y = -tell_command.lng/1.0e7; // local (y), global (longitude)
 				// ACM is processing alt inside each command. so we save and load raw values. - this is diffrent to APM
 				z = tell_command.alt/1.0e2; // local (z), global/relative (altitude)
 			}
@@ -1483,8 +1492,8 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
 			mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
 			// Define the system type, in this case an airplane
-						uint8_t system_type = MAV_TYPE_FIXED_WING;
-						uint8_t autopilot_type = MAV_AUTOPILOT_GENERIC;
+			uint8_t system_type = MAV_TYPE_FIXED_WING;
+			uint8_t autopilot_type = MAV_AUTOPILOT_GENERIC;
 
 			// Initialize the required buffers
 			mavlink_message_t msg;
@@ -1492,13 +1501,14 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
 			mavlink_msg_mission_item_pack(mavlink_system.sysid,mavlink_system.compid,&msg,system_type,autopilot_type,\
 					                                                    packet.seq,frame,tell_command.id,current,autocontinue,param1,param2,param3,param4,\
-					                                                    tell_command.lat,tell_command.lng,tell_command.alt );
+					                                                    //tell_command.lat,tell_command.lng,tell_command.alt );
+					                                                    x,y,z );
 
 
 
 			// Copy the message to the send buffer
-						uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-						send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+			uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+			send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
 
 			// update last waypoint comm stamp
 			//waypoint_timelast_send = millis();
@@ -1534,6 +1544,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 		{
 			//send_text_P(SEVERITY_LOW,PSTR("waypoint ack"));
 
+			DEBUG_PRINTF("回传航点结束\n");
 			// decode
 			mavlink_waypoint_ack_t packet;
 			mavlink_msg_waypoint_ack_decode(msg, &packet);
