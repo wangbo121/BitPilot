@@ -338,8 +338,8 @@ void Copter::loop_fast()
 	//g.channel_rudder.set_pwm(1600);//这个set_pwm参数的范围是1000～2000
 	//g.channel_pitch.set_pwm(1600);//这个set_pwm参数的范围是1000～2000，把pitch一直设置为1600，看能不能稳定在9度左右
 	//g.rc_5.set_pwm(1400);//rc_5大于1500时，是增稳控制状态
-	//g.rc_5.set_pwm(1600);//rc_5大于1500时，是增稳控制状态
-	g.rc_5.set_pwm(1990);//rc_5大于1900时，是绕航点飞行状态
+	g.rc_5.set_pwm(1600);//rc_5大于1500时，是增稳控制状态
+	//g.rc_5.set_pwm(1990);//rc_5大于1900时，是绕航点飞行状态
 
 	/* 2--更新姿态，获取飞机现在的姿态角 */
 	compass.read();
@@ -1090,6 +1090,8 @@ void Copter::medium_loop()
 		case 4:
 			medium_loopCounter = 0;
 
+			gcs_update();
+
 			if (g.battery_monitoring != 0){
 				//read_battery();
 			}
@@ -1813,6 +1815,10 @@ int read_radio_data(unsigned char *recv_buf,unsigned int recv_len)
 	}
 
 	copter.gcs0.packet_drops += status.packet_rx_drop_count;
+
+
+
+
 
 	return 0;
 

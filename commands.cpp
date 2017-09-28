@@ -107,6 +107,8 @@
 	 * 我还是把航点放在数组里
 	 */
 
+	temp.lng=-temp.lng;//20170928只是为了显示，实际使用中这个不需要反号
+
 	memcpy(&wp_total_array[i],&temp,sizeof(struct Location));
 
 #if 0

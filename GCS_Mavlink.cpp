@@ -206,7 +206,44 @@ NOINLINE void Copter::send_extended_status1(mavlink_channel_t chan)
 
 void NOINLINE Copter::send_location(mavlink_channel_t chan)
 {
+#if 0
+    Matrix3f rot = dcm.get_dcm_matrix(); // neglecting angle of attack for now
+    mavlink_msg_global_position_int_send(
+	chan,
+	current_loc.lat,
+	current_loc.lng,
+	current_loc.alt * 10,
+	g_gps->ground_speed * rot.a.x,
+	g_gps->ground_speed * rot.b.x,
+	g_gps->ground_speed * rot.c.x);
+#else
 
+
+
+    mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+   mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+
+
+
+   // Initialize the required buffers
+   mavlink_message_t msg;
+   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+    mavlink_msg_global_position_int_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,\
+    		                                                             0,current_loc.lat,-current_loc.lng,current_loc.alt,current_loc.alt,0,0,0,0);
+
+	// Copy the message to the send buffer
+	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+
+	// Send the message with the standard UART send function
+	// uart0_send might be named differently depending on
+	// the individual microcontroller / library in use.
+	//uart0_send(buf, len);
+	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+
+
+
+#endif
 }
 
 void NOINLINE Copter::send_nav_controller_output(mavlink_channel_t chan)
@@ -572,7 +609,7 @@ bool GCS_MAVLINK::stream_trigger(enum streams stream_num)
 void
 GCS_MAVLINK::data_stream_send(void)
 {
-    if (waypoint_receiving || waypoint_sending ) {
+    if (waypoint_receiving || waypoint_sending || (_queued_parameter != NULL) ) {
         // don't interfere with mission transfer
         return;
     }
@@ -583,16 +620,16 @@ GCS_MAVLINK::data_stream_send(void)
 
 //    copter.gcs_out_of_time = false;
 //
-    if (_queued_parameter != NULL) {
-        if (streamRates[STREAM_PARAMS] <= 0) {
-            streamRates[STREAM_PARAMS]=10;
-        }
-        if (stream_trigger(STREAM_PARAMS)) {
-            send_message(MSG_NEXT_PARAM);
-        }
-        // don't send anything else at the same time as parameters
-        return;
-    }
+//    if (_queued_parameter != NULL) {
+//        if (streamRates[STREAM_PARAMS] <= 0) {
+//            streamRates[STREAM_PARAMS]=10;
+//        }
+//        if (stream_trigger(STREAM_PARAMS)) {
+//            send_message(MSG_NEXT_PARAM);
+//        }
+//        // don't send anything else at the same time as parameters
+//        return;
+//    }
 //
 //    if (copter.gcs_out_of_time) return;
 //
@@ -708,19 +745,30 @@ void GCS_MAVLINK::update(void)
 
 	// process received bytes
 	//因为comm_get_available(chan)返回值一直是1，所以这个循环是永久的
-	while(comm_get_available(chan))
-	{
-		//关键是这个函数需要从串口读取一个字节的数据，这个要改写以下底层
-		uint8_t c = (uint8_t)comm_receive_ch(chan);
+//	while(comm_get_available(chan))
+//	{
+//		//关键是这个函数需要从串口读取一个字节的数据，这个要改写以下底层
+//		uint8_t c = (uint8_t)comm_receive_ch(chan);
+//
+//
+//		// Try to get a new message
+//		if (mavlink_parse_char(chan, c, &msg, &status)) {
+//			printf("mavlink update :受到地面站数据，开始处理受到的msg，handleMessage\n");
+//			mavlink_active = true;
+//			handleMessage(&msg);
+//		}
+//	}
 
-
-		// Try to get a new message
-		if (mavlink_parse_char(chan, c, &msg, &status)) {
-			printf("mavlink update :受到地面站数据，开始处理受到的msg，handleMessage\n");
-			mavlink_active = true;
-			handleMessage(&msg);
-		}
+	 if (_queued_parameter != NULL) {
+	if (streamRates[STREAM_PARAMS] <= 0) {
+		streamRates[STREAM_PARAMS]=10;
 	}
+	if (stream_trigger(STREAM_PARAMS)) {
+		send_message(MSG_NEXT_PARAM);
+	}
+	// don't send anything else at the same time as parameters
+	return;
+}
 
 	// Update packet drops counter
 	packet_drops += status.packet_rx_drop_count;
@@ -739,6 +787,9 @@ void GCS_MAVLINK::update(void)
 	 */
 
 
+	/*
+	 * 如果不是接收航点或者发送航点，下面的代码就不执行，所以只有在接收航点或者发送航点时，send_message(MSG_NEXT_WAYPOINT);才会执行
+	 */
 	if (!waypoint_receiving && !waypoint_sending) {
 		return;
 	}
@@ -754,15 +805,15 @@ void GCS_MAVLINK::update(void)
 		send_message(MSG_NEXT_WAYPOINT);
 	}
 
-	// stop waypoint sending if timeout
-	if (waypoint_sending && (tnow - waypoint_timelast_send) > waypoint_send_timeout){
-		waypoint_sending = false;
-	}
-
-	// stop waypoint receiving if timeout
-	if (waypoint_receiving && (tnow - waypoint_timelast_receive) > waypoint_receive_timeout){
-		waypoint_receiving = false;
-	}
+//	// stop waypoint sending if timeout
+//	if (waypoint_sending && (tnow - waypoint_timelast_send) > waypoint_send_timeout){
+//		waypoint_sending = false;
+//	}
+//
+//	// stop waypoint receiving if timeout
+//	if (waypoint_receiving && (tnow - waypoint_timelast_receive) > waypoint_receive_timeout){
+//		waypoint_receiving = false;
+//	}
 
 }
 
@@ -949,6 +1000,45 @@ static uint8_t mav_var_type(enum ap_var_type t)
     return MAVLINK_TYPE_FLOAT;
 }
 
+
+
+/**
+* @brief Send the next pending waypoint, called from deferred message
+* handling code
+*/
+void
+GCS_MAVLINK::queued_waypoint_send()
+{
+
+	mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+	mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+	// Define the system type, in this case an airplane
+	uint8_t system_type = MAV_TYPE_FIXED_WING;
+	uint8_t autopilot_type = MAV_AUTOPILOT_GENERIC;
+
+	// Initialize the required buffers
+	mavlink_message_t msg;
+	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+    if (waypoint_receiving &&
+        waypoint_request_i < (unsigned)copter.g.command_total) {
+
+    	mavlink_msg_mission_request_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,\
+    																										system_type, autopilot_type,waypoint_request_i);
+
+    	// Copy the message to the send buffer
+		uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+		send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+
+//        mavlink_msg_waypoint_request_send(
+//            chan,
+//            waypoint_dest_sysid,
+//            waypoint_dest_compid,
+//            waypoint_request_i);
+    }
+}
+
+
 /**
 * @brief Send the next pending parameter, called from deferred message
 * handling code
@@ -1068,10 +1158,10 @@ bool GCS_MAVLINK::mavlink_try_send_message(mavlink_channel_t chan, enum ap_messa
         copter.send_attitude(chan);
         break;
 
-//    case MSG_LOCATION:
-//        CHECK_PAYLOAD_SIZE(GLOBAL_POSITION_INT);
-//        send_location(chan);
-//        break;
+    case MSG_LOCATION:
+        CHECK_PAYLOAD_SIZE(GLOBAL_POSITION_INT);
+        copter.send_location(chan);
+        break;
 //
 //    case MSG_NAV_CONTROLLER_OUTPUT:
 //        CHECK_PAYLOAD_SIZE(NAV_CONTROLLER_OUTPUT);
@@ -1147,8 +1237,10 @@ bool GCS_MAVLINK::mavlink_try_send_message(mavlink_channel_t chan, enum ap_messa
          */
     case MSG_NEXT_WAYPOINT:
         CHECK_PAYLOAD_SIZE(WAYPOINT_REQUEST);
-
-            //gcs0.queued_waypoint_send();
+        /*
+         * 下面这个回传函数是地面站给驾驶仪发送航点时，驾驶仪需要不断地向地面站请求发送航点
+         */
+		copter.gcs0.queued_waypoint_send();
 
         break;
 
@@ -1411,7 +1503,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 				// command needs scaling
 				x = tell_command.lat/1.0e7; // local (x), global (latitude)
 				//y = tell_command.lng/1.0e7; // local (y), global (longitude)
-				y = -tell_command.lng/1.0e7; // local (y), global (longitude)
+				y = -tell_command.lng/1.0e7; // local (y), global (longitude)//20170928这个其实是不需要反号的，但是我的初始经度是-122，所以反号设置为正
 				// ACM is processing alt inside each command. so we save and load raw values. - this is diffrent to APM
 				z = tell_command.alt/1.0e2; // local (z), global/relative (altitude)
 			}
@@ -1516,29 +1608,29 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			break;
 		}
 
-		case MAVLINK_MSG_ID_MISSION_COUNT:     // 44
-		{
-			//send_text_P(SEVERITY_LOW,PSTR("waypoint count"));
-			DEBUG_PRINTF("发送任务个数------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
-
-			// decode
-			mavlink_mission_count_t packet;
-			mavlink_msg_mission_count_decode(msg, &packet);
-			if (mavlink_check_target(packet.target_system,packet.target_component)) break;
-
-//			// start waypoint receiving
-//			if (packet.count > MAX_WAYPOINTS) {
-//				packet.count = MAX_WAYPOINTS;
-//			}
-			copter.g.command_total=10;
-
-			//waypoint_timelast_receive = millis();
-			waypoint_receiving   = true;
-			waypoint_sending         = false;
-			waypoint_request_i   = 0;
-			waypoint_timelast_request = 0;
-			break;
-		}
+//		case MAVLINK_MSG_ID_MISSION_COUNT:     // 44
+//		{
+//			//send_text_P(SEVERITY_LOW,PSTR("waypoint count"));
+//			DEBUG_PRINTF("发送任务个数------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+//
+//			// decode
+//			mavlink_mission_count_t packet;
+//			mavlink_msg_mission_count_decode(msg, &packet);
+//			if (mavlink_check_target(packet.target_system,packet.target_component)) break;
+//
+////			// start waypoint receiving
+////			if (packet.count > MAX_WAYPOINTS) {
+////				packet.count = MAX_WAYPOINTS;
+////			}
+//			copter.g.command_total=10;
+//
+//			//waypoint_timelast_receive = millis();
+//			waypoint_receiving   = true;
+//			waypoint_sending         = false;
+//			waypoint_request_i   = 0;
+//			waypoint_timelast_request = 0;
+//			break;
+//		}
 
 		case MAVLINK_MSG_ID_WAYPOINT_ACK: //47
 		{
@@ -1627,9 +1719,260 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			break;
 		}
 
-		case 0:
-			DEBUG_PRINTF("case 0\n");
+		case MAVLINK_MSG_ID_HEARTBEAT:      // MAV ID: 0
+		{
+			// We keep track of the last time we received a heartbeat from our GCS for failsafe purposes
+			// if(msg->sysid != copter.g.sysid_my_gcs) break;
+			//copter.failsafe.last_heartbeat_ms = hal.scheduler->millis();
+			//copter.pmTest1++;
 		break;
+		}
+
+
+	    case MAVLINK_MSG_ID_PARAM_SET:     // 23
+	    {
+	        //handle_param_set(msg, &copter.DataFlash);
+	        break;
+	    }
+
+	    /*
+	     * 20170928地面站在给驾驶仪发送航点时应该会先发送这个航点数的吧
+	     */
+	    case MAVLINK_MSG_ID_WAYPOINT_COUNT: // 44
+		{
+			//send_text_P(SEVERITY_LOW,PSTR("waypoint count"));
+
+			// decode
+			mavlink_waypoint_count_t packet;
+			mavlink_msg_waypoint_count_decode(msg, &packet);
+			if (mavlink_check_target(packet.target_system,packet.target_component)) break;
+
+			// start waypoint receiving
+			if (packet.count > MAX_WAYPOINTS) {
+				packet.count = MAX_WAYPOINTS;
+			}
+			copter.g.command_total=packet.count;
+			//copter.g.command_total=10;
+			/*
+			 * 20170928已经断点测试，这个函数在地面站给驾驶仪设置航点时，会设置g.command_total微packet.count
+			 */
+			DEBUG_PRINTF("copter.g.command_total=%d------------------------------------------------------------------------------------------------------------------------------------------------------------\n",copter.g.command_total);
+
+
+
+
+			//waypoint_timelast_receive = millis();
+			waypoint_receiving   = true;
+			waypoint_sending	 = false;
+			waypoint_request_i   = 0;
+			waypoint_timelast_request = 0;
+			break;
+		}
+
+
+		/*
+		 * 解析收到的航点保存到数组里
+		 */
+	    // XXX receive a WP from GCS and store in EEPROM
+		case MAVLINK_MSG_ID_WAYPOINT: //39
+		{
+
+			// decode
+			mavlink_waypoint_t packet;
+			mavlink_msg_waypoint_decode(msg, &packet);
+			if (mavlink_check_target(packet.target_system,packet.target_component)) break;
+
+			// defaults
+			tell_command.id = packet.command;
+
+			/*
+			switch (packet.frame){
+
+				case MAV_FRAME_MISSION:
+				case MAV_FRAME_GLOBAL:
+					{
+						tell_command.lat = 1.0e7*packet.x; // in as DD converted to * t7
+						tell_command.lng = 1.0e7*packet.y; // in as DD converted to * t7
+						tell_command.alt = packet.z*1.0e2; // in as m converted to cm
+						tell_command.options = 0; // absolute altitude
+						break;
+					}
+
+				case MAV_FRAME_LOCAL: // local (relative to home position)
+					{
+						tell_command.lat = 1.0e7*ToDeg(packet.x/
+						(radius_of_earth*cos(ToRad(home.lat/1.0e7)))) + home.lat;
+						tell_command.lng = 1.0e7*ToDeg(packet.y/radius_of_earth) + home.lng;
+						tell_command.alt = packet.z*1.0e2;
+						tell_command.options = MASK_OPTIONS_RELATIVE_ALT;
+						break;
+					}
+				//case MAV_FRAME_GLOBAL_RELATIVE_ALT: // absolute lat/lng, relative altitude
+				default:
+					{
+						tell_command.lat = 1.0e7 * packet.x; // in as DD converted to * t7
+						tell_command.lng = 1.0e7 * packet.y; // in as DD converted to * t7
+						tell_command.alt = packet.z * 1.0e2;
+						tell_command.options = MASK_OPTIONS_RELATIVE_ALT; // store altitude relative!! Always!!
+						break;
+					}
+			}
+			*/
+
+			// we only are supporting Abs position, relative Alt
+			tell_command.lat = 1.0e7 * packet.x; // in as DD converted to * t7
+			tell_command.lng = 1.0e7 * packet.y; // in as DD converted to * t7
+			tell_command.alt = packet.z * 1.0e2;
+			tell_command.options = 1; // store altitude relative!! Always!!
+
+			switch (tell_command.id) {					// Switch to map APM command fields inot MAVLink command fields
+				case MAV_CMD_NAV_LOITER_TURNS:
+				case MAV_CMD_DO_SET_HOME:
+				case MAV_CMD_DO_SET_ROI:
+					tell_command.p1 = packet.param1;
+					break;
+
+				case MAV_CMD_CONDITION_YAW:
+					tell_command.p1 = packet.param3;
+					tell_command.alt = packet.param1;
+					tell_command.lat = packet.param2;
+					tell_command.lng = packet.param4;
+					break;
+
+				case MAV_CMD_NAV_TAKEOFF:
+					tell_command.p1 = 0;
+					break;
+
+				case MAV_CMD_CONDITION_CHANGE_ALT:
+					tell_command.p1 = packet.param1 * 100;
+					break;
+
+				case MAV_CMD_NAV_LOITER_TIME:
+					tell_command.p1 = packet.param1;	// APM loiter time is in ten second increments
+					break;
+
+				case MAV_CMD_CONDITION_DELAY:
+				case MAV_CMD_CONDITION_DISTANCE:
+					tell_command.lat = packet.param1;
+					break;
+
+				case MAV_CMD_DO_JUMP:
+					tell_command.lat = packet.param2;
+					tell_command.p1  = packet.param1;
+					break;
+
+				case MAV_CMD_DO_REPEAT_SERVO:
+					tell_command.lng = packet.param4;
+				case MAV_CMD_DO_REPEAT_RELAY:
+				case MAV_CMD_DO_CHANGE_SPEED:
+					tell_command.lat = packet.param3;
+					tell_command.alt = packet.param2;
+					tell_command.p1 = packet.param1;
+					break;
+
+				case MAV_CMD_NAV_WAYPOINT:
+					tell_command.p1 = packet.param1;
+					break;
+
+				case MAV_CMD_DO_SET_PARAMETER:
+				case MAV_CMD_DO_SET_RELAY:
+				case MAV_CMD_DO_SET_SERVO:
+					tell_command.alt = packet.param2;
+					tell_command.p1 = packet.param1;
+					break;
+			}
+
+			if(packet.current == 2){ 				//current = 2 is a flag to tell us this is a "guided mode" waypoint and not for the mission
+//				guided_WP = tell_command;
+//
+//				// add home alt if needed
+//				if (guided_WP.options & MASK_OPTIONS_RELATIVE_ALT){
+//					guided_WP.alt += home.alt;
+//				}
+//
+//				set_mode(GUIDED);
+//
+//				// make any new wp uploaded instant (in case we are already in Guided mode)
+//				set_next_WP(&guided_WP);
+//
+//				// verify we recevied the command
+//				mavlink_msg_waypoint_ack_send(
+//						chan,
+//						msg->sysid,
+//						msg->compid,
+//						0);
+
+			} else {
+				// Check if receiving waypoints (mission upload expected)
+				if (!waypoint_receiving) break;
+
+
+				//Serial.printf("req: %d, seq: %d, total: %d\n", waypoint_request_i,packet.seq, g.command_total.get());
+
+				static int seq_temp=0;
+				seq_temp=packet.seq;
+
+				seq_temp=seq_temp+0;
+				// check if this is the requested waypoint
+				if (packet.seq != waypoint_request_i)
+					break;
+
+				DEBUG_PRINTF("*********************************************************************************************保存航点\n");
+				/*
+				 * 这里是具体的把航点保存到flash中，但是我保存到数组中
+				 */
+				if(packet.seq != 0)//20170928这个if需要吗？为什么seq=0不需要呢
+					copter.set_cmd_with_index(tell_command, packet.seq);
+
+				// update waypoint receiving state machine
+				//waypoint_timelast_receive = millis();
+				waypoint_timelast_request = 0;
+				waypoint_request_i++;
+
+				if (waypoint_request_i == (uint16_t)copter.g.command_total){
+					uint8_t type = 0; // ok (0), error(1)
+
+					mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+					mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+
+					// Define the system type, in this case an airplane
+					uint8_t system_type = MAV_TYPE_FIXED_WING;
+					uint8_t autopilot_type = MAV_AUTOPILOT_GENERIC;
+					// Initialize the required buffers
+					mavlink_message_t msg;
+					uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+
+					mavlink_msg_mission_ack_pack(mavlink_system.sysid,mavlink_system.compid,&msg,system_type,autopilot_type,MAV_MISSION_ACCEPTED);
+
+					/*
+					 * 上面是pack并不包括发送，但是一般pack打包后都需要发送的，下面的老是忘记
+					 */
+					// Copy the message to the send buffer
+					uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+					send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+//					mavlink_msg_waypoint_ack_send(
+//						chan,
+//						msg->sysid,
+//						msg->compid,
+//						type);
+
+					//send_text(SEVERITY_LOW,PSTR("flight plan received"));
+					waypoint_receiving = false;
+					// XXX ignores waypoint radius for individual waypoints, can
+					// only set WP_RADIUS parameter
+				}
+			}
+			break;
+		}
+
+
+
+
+
+
+
+
 
 		default:
 		        //handle_common_message(msg);
@@ -1675,14 +2018,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
 
 
-//    case MAVLINK_MSG_ID_HEARTBEAT:      // MAV ID: 0
-//    {
-//        // We keep track of the last time we received a heartbeat from our GCS for failsafe purposes
-//       // if(msg->sysid != copter.g.sysid_my_gcs) break;
-//        //copter.failsafe.last_heartbeat_ms = hal.scheduler->millis();
-//        //copter.pmTest1++;
-//        break;
-//    }
+
 
 //    case MAVLINK_MSG_ID_SET_MODE:       // MAV ID: 11
 //    {
@@ -1709,11 +2045,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 //        break;
 //    }
 //
-//    case MAVLINK_MSG_ID_PARAM_SET:     // 23
-//    {
-//        handle_param_set(msg, &copter.DataFlash);
-//        break;
-//    }
+
 //
 //    case MAVLINK_MSG_ID_MISSION_WRITE_PARTIAL_LIST: // MAV ID: 38
 //    {

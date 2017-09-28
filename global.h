@@ -378,7 +378,7 @@ typedef enum MAV_ROI
 #define SIMPLE_5 16
 #define SIMPLE_6 32
 
-
+#define MAX_WAYPOINTS 255
 
 // Commands - Note that APM now uses a subset of the MAVLink protocol
 // commands.  See enum MAV_CMD in the GCS_Mavlink library
@@ -803,6 +803,26 @@ int8_t         tilt_comp;
 #define mavlink_msg_waypoint_set_current_send mavlink_msg_mission_set_current_send
 #define mavlink_msg_waypoint_set_current_decode mavlink_msg_mission_set_current_decode
 #define mavlink_waypoint_set_current_t mavlink_mission_set_current_t
+
+//enum MAV_MISSION_RESULT
+//{
+//	MAV_MISSION_ACCEPTED=0, /* mission accepted OK | */
+//	MAV_MISSION_ERROR=1, /* generic error / not accepting mission commands at all right now | */
+//	MAV_MISSION_UNSUPPORTED_FRAME=2, /* coordinate frame is not supported | */
+//	MAV_MISSION_UNSUPPORTED=3, /* command is not supported | */
+//	MAV_MISSION_NO_SPACE=4, /* mission item exceeds storage space | */
+//	MAV_MISSION_INVALID=5, /* one of the parameters has an invalid value | */
+//	MAV_MISSION_INVALID_PARAM1=6, /* param1 has an invalid value | */
+//	MAV_MISSION_INVALID_PARAM2=7, /* param2 has an invalid value | */
+//	MAV_MISSION_INVALID_PARAM3=8, /* param3 has an invalid value | */
+//	MAV_MISSION_INVALID_PARAM4=9, /* param4 has an invalid value | */
+//	MAV_MISSION_INVALID_PARAM5_X=10, /* x/param5 has an invalid value | */
+//	MAV_MISSION_INVALID_PARAM6_Y=11, /* y/param6 has an invalid value | */
+//	MAV_MISSION_INVALID_PARAM7=12, /* param7 has an invalid value | */
+//	MAV_MISSION_INVALID_SEQUENCE=13, /* received waypoint out of sequence | */
+//	MAV_MISSION_DENIED=14, /* not accepting any mission commands from this communication partner | */
+//	MAV_MISSION_RESULT_ENUM_END=15, /*  | */
+//};
 
 //#define MAV_CMD_DO_SET_ROI MAV_CMD_NAV_ROI
 
