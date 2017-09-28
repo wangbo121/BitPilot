@@ -1706,6 +1706,11 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
 			DEBUG_PRINTF("******************************************************************************请求回传所有参数\n");
 
+			/*
+			 * 参数的发送放在了gcs_update里面 航点的回传也是放在那里了
+			 *
+			 */
+
 			// decode
 			mavlink_param_request_list_t packet;
 			mavlink_msg_param_request_list_decode(msg, &packet);
@@ -1731,9 +1736,80 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
 	    case MAVLINK_MSG_ID_PARAM_SET:     // 23
 	    {
-	        //handle_param_set(msg, &copter.DataFlash);
-	        break;
-	    }
+//	    			AP_Var				  *vp;
+//	    			AP_Meta_class::Type_id  var_type;
+
+	    			// decode
+	    			mavlink_param_set_t packet;
+	    			mavlink_msg_param_set_decode(msg, &packet);
+
+	    			if (mavlink_check_target(packet.target_system, packet.target_component))
+	    				break;
+
+	    			// set parameter
+
+	    			char key[ONBOARD_PARAM_NAME_LENGTH+1];
+	    			strncpy(key, (char *)packet.param_id, ONBOARD_PARAM_NAME_LENGTH);
+	    			key[ONBOARD_PARAM_NAME_LENGTH] = 0;
+
+
+	    			/*
+	    			 * 下面其实就是通过key这个字符串，也就是参数的名字，找到该字符串在flash中的位置，
+	    			 * 然后对vp这个指针根据 var_type也就是数据的类型，强制转换，从而保存地面站发送过来的参数值
+	    			 * 再接收到参数值后还需要返回mavlink_msg_param_value_send
+	    			 *static inline uint16_t mavlink_msg_param_value_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
+                               const char *param_id, float param_value, uint8_t param_type, uint16_t param_count, uint16_t param_index) 实际用这个函数打包
+                               参考网址
+                               http://qgroundcontrol.org/mavlink/parameter_protocol
+	    			 */
+
+
+	    			// find the requested parameter
+//	    			vp = AP_Var::find(key);
+//
+//	    			if ((NULL != vp) &&							 		// exists
+//	    					!isnan(packet.param_value) &&			   // not nan
+//	    					!isinf(packet.param_value)) {			   // not inf
+//
+//	    				// add a small amount before casting parameter values
+//	    				// from float to integer to avoid truncating to the
+//	    				// next lower integer value.
+//	    				float rounding_addition = 0.01;
+//
+//	    				// fetch the variable type ID
+//	    				var_type = vp->meta_type_id();
+//
+//	    				// handle variables with standard type IDs
+//	    				if (var_type == AP_Var::k_typeid_float) {
+//	    					((AP_Float *)vp)->set_and_save(packet.param_value);
+//	    #if LOGGING_ENABLED == ENABLED
+//	    					Log_Write_Data(1, (float)((AP_Float *)vp)->get());
+//	    #endif
+//	    				} else if (var_type == AP_Var::k_typeid_float16) {
+//	    					((AP_Float16 *)vp)->set_and_save(packet.param_value);
+//	    #if LOGGING_ENABLED == ENABLED
+//	    					Log_Write_Data(2, (float)((AP_Float *)vp)->get());
+//	    #endif
+//	    				} else if (var_type == AP_Var::k_typeid_int32) {
+//	    					if (packet.param_value < 0) rounding_addition = -rounding_addition;
+//	    					((AP_Int32 *)vp)->set_and_save(packet.param_value+rounding_addition);}
+
+
+//	    				// Report back the new value if we accepted the change
+//	    				// we send the value we actually set, which could be
+//	    				// different from the value sent, in case someone sent
+//	    				// a fractional value to an integer type
+//	    				mavlink_msg_param_value_send(
+//	    					chan,
+//	    					(int8_t *)key,
+//	    					vp->cast_to_float(),
+//	    					_count_parameters(),
+//	    					-1); // XXX we don't actually know what its index is...
+//
+//	    			}
+
+	    			break;
+	    		} // end case
 
 	    /*
 	     * 20170928地面站在给驾驶仪发送航点时应该会先发送这个航点数的吧
