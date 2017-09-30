@@ -8,9 +8,6 @@
 #ifndef COPTER_H_
 #define COPTER_H_
 
-/*
- * 关于飞控的头文件，飞控独立跟系统没有关系
- */
 ////////////////////////////////////////////////////////////////////////////////
 // Header includes
 ////////////////////////////////////////////////////////////////////////////////
@@ -29,9 +26,10 @@
 
 // Application dependencies
 
-//飞控自身头文件
+//飞控程序需要的头文件
 // Libraries
 #include "BIT_HAL.h"
+
 #include "location.h"
 #include "vector2.h"
 #include "vector3.h"
@@ -61,11 +59,15 @@
 //#include "GCS_Copter.h"
 #endif
 //20170923
-#include "AP_Param.h"
+//#include "AP_Param.h"//20170930还是不要这个ap_param了，太复杂了，而且在我看来用处不是特别大，只是简化了把参数包存到eeprom的过程
 
 //飞控所需要的外部设备数据和计划最终输出给外部设备的数据都从这个all_external_device接口进出
 #include "all_external_device.h"
 
+
+// Local modules 这里的local局部的意思，也就是在主目录下或者说是Arducopter目录下的文件，其他的都应该是在库里面的，用尖括号括起来
+#include "Parameters.h"
+#include "GCS.h"
 
 //飞控模拟用的头文件
 /*
