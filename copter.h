@@ -31,15 +31,18 @@
 #include "BIT_HAL.h"
 
 #include "location.h"
+
+#include "BIT_MATH.h"        // ArduPilot Mega Vector/Matrix math Library
 #include "vector2.h"
 #include "vector3.h"
 #include "matrix3.h"
-#include "utility.h"
+
 #include "gps.h"        // ArduPilot GPS library
 #include "gps_nmea.h"
+
 #include "compass.h"     // ArduPilot Mega Magnetometer Library
 #include "compass_hmc5843.h"
-#include "BIT_MATH.h"        // ArduPilot Mega Vector/Matrix math Library
+
 #include "imu.h"         // ArduPilot Mega IMU Library
 //#include "imu_oilpan.h"
 #include "ahrs_DCM.h"         // ArduPilot Mega DCM Library
@@ -68,6 +71,10 @@
 // Local modules 这里的local局部的意思，也就是在主目录下或者说是Arducopter目录下的文件，其他的都应该是在库里面的，用尖括号括起来
 #include "Parameters.h"
 #include "GCS.h"
+
+//这个主要是我用来作为获取系统时间的 秒 毫秒 微秒
+#include "utility.h"
+
 
 //飞控模拟用的头文件
 /*
@@ -1240,6 +1247,8 @@ private:
     void init_capabilities(void);
     void dataflash_periodic(void);
     void accel_cal_update(void);
+
+    void startup_ground( void );
 
     /*
      * 上面这些函数都是私有的呀，别的类无法访问，只有自己能访问

@@ -1092,6 +1092,16 @@ struct AP2GCS_REAL
 
 };
 
+struct T_GLOBAL_BOOL
+{
+	/*
+	 * 这个结构我想作为整个工程除了库文件的全局变量，任何文件的任何函数都可以调用这里面的变量
+	 * 而且不使用bool这个关键词，bool值全部用unsigned char代替
+	 */
+	unsigned char takeoff_complete;					// Flag for using take-off controls
+	unsigned char	 land_complete;
+};
+
 extern struct T_GLOBAL_BOOL_BOATPILOT  global_bool_boatpilot;
 
 
