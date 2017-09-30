@@ -89,14 +89,9 @@ void Copter::loop()
 	/*
 	 * // reads all of the necessary trig functions for cameras, throttle, etc.
 	 * 这个是更新所有需要的三角函数的数值	trigonometric function （三角函数）
+	 * 是用来计算auto_roll的
 	 */
 	update_trig();
-
-	// check for new GPS messages
-	// --------------------------
-//	if(GPS_enabled){
-//		update_GPS();
-//	}
 
 	medium_loop();
 
@@ -107,19 +102,17 @@ void Copter::loop()
 	counter_one_herz++;
 
 	// trigger our 1 hz loop
-	//if(counter_one_herz >= 50){
 	//因为我这里改成了100hz所以需要改成100
 	//if(counter_one_herz >= 50)
 	if(maintask_cnt>100)
 	{
-		DEBUG_PRINTF("**********************************一秒钟******************************************************************************\n");
+		DEBUG_PRINTF("**********************************  1秒钟，发送心跳包******************************************************************************\n");
 		super_slow_loop();//心跳包在super_slow_loop里面
 		counter_one_herz = 0;
 
 		/*
 		 * 发送数据包给地面站,但是里面的串口发送还用的是linux的,仍然需要更改
 		 */
-		printf("1秒钟发送心跳包\n");
 		//gcs_send_heartbeat();
 		//send_heartbeat_to_gcs();
 		//send_attitude_to_gcs();
@@ -130,7 +123,7 @@ void Copter::loop()
 	if(maintask_cnt>100)
 	{
 		//这个是1秒钟打印一次
-		DEBUG_PRINTF("*********maintask_cnt>100*********************************************************");
+		//DEBUG_PRINTF("*********maintask_cnt>100*********************************************************");
 		float system_time_s=0;
 		system_time_s=clock_gettime_ms();
 		DEBUG_PRINTF("system_time_s==%f\n",system_time_s/1000);
@@ -143,7 +136,7 @@ void Copter::loop()
 	}
 
 	//这个是10ms就判断一次是否收到地面站请求回传航点的命令
-	verify_send_all_waypoint_to_gcs();
+	//verify_send_all_waypoint_to_gcs();//这个是用无人船地面站测试时用的函数，现在不需要了
 #endif
 }
 

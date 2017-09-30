@@ -948,6 +948,7 @@ void Copter::medium_loop()
 		case 0:
 			medium_loopCounter++;
 
+			//20170930这里更新gps还是太快了，所以我用了下面的gps_cnt计数
 			//if(GPS_enabled){
 			//	update_GPS();
 			//}
@@ -968,9 +969,6 @@ void Copter::medium_loop()
 					//compass.null_offsets(dcm.get_dcm_matrix());
 				}
 			}
-
-			// auto_trim, uses an auto_level algorithm
-//			auto_trim();
 
 			// record throttle output
 			// ------------------------------
@@ -1002,6 +1000,7 @@ void Copter::medium_loop()
 					// ----------------------------------
 					calc_XY_velocity();
 
+					//20170930通过光流应该能够更好的定位，但是基本的飞控是不需要的，删除掉
 					// If we have optFlow enabled we can grab a more accurate speed
 					// here and override the speed from the GPS
 					// ----------------------------------------
@@ -1031,12 +1030,6 @@ void Copter::medium_loop()
 			medium_loopCounter++;
 
 			// Read altitude from sensors
-			// --------------------------
-			#if HIL_MODE != HIL_MODE_ATTITUDE					// don't execute in HIL mode
-			update_altitude();
-			#endif
-
-			// Read altitude from sensors
 			// ------------------
 			update_alt();
 
@@ -1059,24 +1052,6 @@ void Copter::medium_loop()
 				}
 			}
 
-			/*
-			 //下面主要是记录姿态的日志，控制的日志，电机的日志以及发送数据给地面站
-            if(motor_armed){
-                if (g.log_bitmask & MASK_LOG_ATTITUDE_MED)
-                    Log_Write_Attitude();
-
-                if (g.log_bitmask & MASK_LOG_CTUN)
-                    Log_Write_Control_Tuning();
-            }
-
-				// send all requested output streams with rates requested
-				// between 5 and 45 Hz
-				gcs_data_stream_send(5,45);
-
-			if (g.log_bitmask & MASK_LOG_MOTORS)
-				Log_Write_Motors();
-				*/
-
 			break;
 
 		// This case controls the slow loop
@@ -1084,26 +1059,16 @@ void Copter::medium_loop()
 		case 4:
 			medium_loopCounter = 0;
 
-			gcs_update();
+			gcs_update();//发送参数包和航点包
 
 			if (g.battery_monitoring != 0){
 				//read_battery();
 			}
 
-			// Accel trims 		= hold > 2 seconds
-			// Throttle cruise  = switch less than 1 second
-			// --------------------------------------------
-			//read_trim_switch();
-
-			// Check for engine arming
-			// -----------------------
-			//arm_motors();
-
-			// Do an extra baro read
+			// Do an extra baro read读取气压计数据 不要删除20170930
 			// ---------------------
-			#if HIL_MODE != HIL_MODE_ATTITUDE
-			barometer.read();
-			#endif
+			//barometer.read();
+
 
 			// agmatthews - USERHOOKS
 			#ifdef USERHOOK_MEDIUMLOOP
@@ -1131,7 +1096,7 @@ void Copter::slow_loop()
 			superslow_loopCounter++;
 
 			/*
-			 * 下面这个是更新记录磁力计的偏移量,后期还是得用
+			 * 下面这个是更新记录磁力计的偏移量,后期还是得用，不要删除
 			 */
 			if(superslow_loopCounter > 1200){
 				#if HIL_MODE != HIL_MODE_ATTITUDE
@@ -1159,26 +1124,18 @@ void Copter::slow_loop()
 
 		case 2:
 			slow_loopCounter = 0;
+
+			//更新发生故障保护的事件驱动，不要删除
 			//update_events();
-#if 0
-			这些不需要
+
+			//灯光闪烁，不要删除
 			// blink if we are armed
-			update_lights();
+			//update_lights();
 
 			// send all requested output streams with rates requested
 			// between 3 and 5 Hz
-			gcs_data_stream_send(3,5);
+			//gcs_data_stream_send(3,5);
 
-			if(g.radio_tuning > 0)
-				tuning();
-#endif
-			#if MOTOR_LEDS == 1
-				update_motor_leds();
-			#endif
-
-			#if USB_MUX_PIN > 0
-			check_usb_mux();
-			#endif
 			break;
 
 		default:
@@ -1219,18 +1176,14 @@ void Copter::fifty_hz_loop()
 	  //相机云台的稳定控制
 	//camera_stabilization();
 
-	  //接收来自地面站的数据，更新命令
-	// kick the GCS to process uplink data
-	//gcs_update();
-    //gcs_data_stream_send(45,1000);
-
 	  /*
-	   * 20170922
+	   * 20170922//接收来自地面站的数据，更新命令
 	   */
 	// kick the GCS to process uplink data
 	//gcs_update();//20170923发现使用这个函数后因为读取一个字节函数是有时间延时的，阻塞了，那么程序就不运行了，读取那里还需要更改
-	  //上面的gcs_update()其实是从串口读取数据然后做解析，所以我习惯性的放在了串口的接收线程中，不再在这里运行
-	gcs_data_stream_send();
+	  //上面的gcs_update()中的更新函数，其实是从串口读取数据然后做解析，所以我习惯性的放在了串口的接收线程中，不再在这里运行，而gcs_update函数中只保留了发送参数包和航点包的，把接收删掉了
+	  // //gcs_data_stream_send(45,1000);
+	gcs_data_stream_send();//gcs_data_stream_send()这个函数是发送实时数据的，也就是发送除了参数包，航点包等的，优先级要低于gcs_update
 
 }
 
@@ -1289,7 +1242,7 @@ void Copter::update_all_external_device_input( void )
 // 1Hz loop
 void Copter::super_slow_loop()
 {
-	//王博20170917这个函数里面最重要的就是1超过30秒上锁，使得电机无法转动，2发送心跳包给地面站
+	//王博20170917这个函数里面最重要的就是1超过30秒上锁，使得电机无法转动，2发送心跳包给地面站，当油门一直处在0位置时，超过30秒就上锁，需要解锁
 #if 0
 	if (g.log_bitmask & MASK_LOG_CUR)
 		Log_Write_Current();
@@ -1319,6 +1272,7 @@ void Copter::super_slow_loop()
 	   USERHOOK_SUPERSLOWLOOP
 	#endif
 
+	   //20170930看下面打印还有一个throttle_cruise巡航油门，我也得设置一个这个参数
 	/*
 	Serial.printf("alt %d, next.alt %d, alt_err: %d, cruise: %d, Alt_I:%1.2f, wp_dist %d, tar_bear %d, home_d %d, homebear %d\n",
 					current_loc.alt,

@@ -159,7 +159,7 @@ private:
     int32_t home_distance;
     // distance between plane and next waypoint in cm.
     uint32_t wp_distance;//20170919这个貌似有问题,apm2.3 一开始说是厘米,定义的是32位的,但是一会又说// wp_distance is in ACTUAL meters, not the *100 meters we get from the GPS
-    //我都按照米来算
+    //我都按照米来算，嗯，都按照米来算，得到正确的程序
 
     // Circle
     bool circle_pilot_yaw_override; // true if pilot is overriding yaw
