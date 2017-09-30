@@ -76,10 +76,13 @@ void Copter::loop()
 
     // try to send any deferred messages if the serial port now has
     // some space available
+	//20170930apm这里是发送延迟的信息，但是我不需要，屏蔽掉了
     //gcs_send_message(MSG_RETRY_DEFERRED);
 
 	/*
-	 * 快循环，用来保证增稳，即使没有gps也应该可以手动遥控增稳飞行
+	 * 快循环，用来保证增稳，即使没有gps也应该可以手动遥控增稳飞行，只需要imu和dcm算法就可以了
+	 * 其实fast_loop应该跟其他函数隔离开来，这个是保证飞机稳定的，其他的跟loop_fast无关，在apm2.0.50中fast_loop频率是200hz
+	 * 其他函数都是在这个函数执行结束后才会运行，所以我在后面需要把这个改成最新的apm的任务模式
 	 */
 	loop_fast();
 

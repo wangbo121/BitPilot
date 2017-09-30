@@ -310,7 +310,6 @@ void Copter::loop_fast()
 	//20170918添加了all_external_device_input和output一直循环从驱动中获取数据，至于硬件驱动到底多大频率获取的我不管，我只是每次从这里获取数据
 	update_all_external_device_input();
 
-
 	/*
 	 * wangbo20170801
 	 * 其实如果只是增稳控制的话
@@ -326,7 +325,6 @@ void Copter::loop_fast()
 	float timer;
 	timer=clock_gettime_ms();
 	G_Dt=(timer-fast_loopTimer)/1000.0;
-
 	fast_loopTimer=timer;
 #endif
 
@@ -334,7 +332,7 @@ void Copter::loop_fast()
 
 	/* 1--读取接收机的信号，获取遥控器各个通道 */
 	read_radio();
-
+	//下面的设置遥控器其实是不需要的，应该按照从地面站或者从遥控器的第五通道来决定飞行模式
 	//g.channel_rudder.set_pwm(1600);//这个set_pwm参数的范围是1000～2000
 	//g.channel_pitch.set_pwm(1600);//这个set_pwm参数的范围是1000～2000，把pitch一直设置为1600，看能不能稳定在9度左右
 	//g.rc_5.set_pwm(1400);//rc_5大于1500时，是增稳控制状态
@@ -344,7 +342,8 @@ void Copter::loop_fast()
 	/* 2--更新姿态，获取飞机现在的姿态角 */
 	compass.read();
 	//gps.read();
-	//100hz更新gps数据没有太大的意义，并且在程序中我们需要用gps来计算实际的朝东和朝北的速度，如果gps更新太快，导致每次更新gps时，老的经纬度和新的经纬度是一样的
+	//100hz更新gps数据没有太大的意义，并且在程序中我们需要用gps来计算实际的朝东和朝北的速度，
+	//如果gps更新太快，导致每次更新gps时，老的经纬度和新的经纬度几乎是一样的
 	//导致计算的actual_speed是0
 	//update_GPS();//gps read只是读取数据 update_GPS里面还需要给current_loc赋值//20170919放在这里太快了,还是放在10hz的里面好点
 	imu.update();
@@ -352,14 +351,7 @@ void Copter::loop_fast()
 	 * 因为下面的ahrs中需要imu gps compass的数据，
 	 * 所以需要先读取那些传感器的数据
 	 */
-	ahrs.update_DCM(G_Dt);//20170920目前ahrs更新时还没有用drift_correction，也就是没有用gps的数据，但是后面肯定是要加上的
-
-	if(takeoff_complete == false)
-	{
-		// reset these I terms to prevent awkward tipping on takeoff
-		reset_rate_I();
-		reset_stability_I();
-	}
+	ahrs.update_DCM(G_Dt);//20170920目前ahrs更新时还没有用drift_correction，也就是没有用gps的数据，但是后面可能是要加上的
 
 	/* 3--update_current_flight_mode 更新控制状态，从而选择控制方式
 	 * 设置yaw_mode roll_pitch_mode throttle_mode的模式
@@ -428,6 +420,13 @@ void Copter::loop_fast()
 
 	/* 5--把计算所得控制量输出给电机 */
 	motors_output();
+
+	if(takeoff_complete == false)
+	{
+		// reset these I terms to prevent awkward tipping on takeoff
+		reset_rate_I();
+		reset_stability_I();
+	}
 
 #ifdef LINUX_OS
 	/*
@@ -499,16 +498,6 @@ void Copter::loop_fast()
 	servos_set_out[2]=motor_out_flightgear[2];
 	servos_set_out[3]=motor_out_flightgear[3];
 
-//	ap2fg.throttle0 = ((float)(servos_set_out[0])-1000.0)/1000.0;
-//	ap2fg.throttle1 = ((float)(servos_set_out[1])-1000.0)/1000.0;
-//	ap2fg.throttle2 = ((float)(servos_set_out[2])-1000.0)/1000.0;
-//	ap2fg.throttle3 = ((float)(servos_set_out[3])-1000.0)/1000.0;
-//
-//	std::cout<<"ap2fg.throttle0="<<ap2fg.throttle0<<std::endl;
-//	std::cout<<"ap2fg.throttle1="<<ap2fg.throttle1<<std::endl;
-//	std::cout<<"ap2fg.throttle2="<<ap2fg.throttle2<<std::endl;
-//	std::cout<<"ap2fg.throttle3="<<ap2fg.throttle3<<std::endl;
-
 	/*
 	 * 固定发送给flightgear的油门速度，能够看出旋转的方向来
 	 * 因为不知道为什么arducopter这个模型，在1500转左侧是逆时针转动
@@ -574,6 +563,9 @@ void Copter::update_current_flight_mode(void)
 	 * 什么时候是航点飞行模式呢
 	 */
 
+	/*
+	 * 根据飞行模式决定控制yaw roll pitch throttle的模式
+	 */
 	switch(control_mode)
 	{
 	case ACRO:
@@ -646,12 +638,11 @@ void Copter::motors_output()
 #else
 
     //这个是针对+型机架的系数
-	_roll_factor[0]  =  -1;  _pitch_factor[0]  =  0; _throttle_factor[0]=+1; _yaw_factor[0]  = +1;
-	_roll_factor[1]  =   +1;  _pitch_factor[1]  =  0; _throttle_factor[1]=+1; _yaw_factor[1]  =  +1;
-	_roll_factor[2]  = 0;  _pitch_factor[2]  =  +1;  _throttle_factor[2]=+1;_yaw_factor[2]  = -1;
-	_roll_factor[3]  =  0;  _pitch_factor[3]  = -1;  _throttle_factor[3]=+1;_yaw_factor[3]  =  -1;
+	_roll_factor[0]  =  -1;  _pitch_factor[0]  =   0;  _throttle_factor[0]= +1;  _yaw_factor[0]  = +1;
+	_roll_factor[1]  = +1;  _pitch_factor[1]  =   0;  _throttle_factor[1]= +1;  _yaw_factor[1]  = +1;
+	_roll_factor[2]  =   0;  _pitch_factor[2]  = +1;  _throttle_factor[2]= +1;  _yaw_factor[2]  =  -1;
+	_roll_factor[3]  =   0;  _pitch_factor[3]  =  -1;  _throttle_factor[3]= +1;  _yaw_factor[3]  =  -1;
 #endif
-
 
 	g.channel_roll.calc_pwm();
 	g.channel_pitch.calc_pwm();
@@ -675,6 +666,10 @@ void Copter::motors_output()
 	std::cout<<"g.channel_pitch.radio_out="<<g.channel_pitch.radio_out<<std::endl;
 	std::cout<<"g.channel_throttle.radio_out="<<g.channel_throttle.radio_out<<std::endl;
 	std::cout<<"g.channel_rudder.radio_out="<<g.channel_rudder.radio_out<<std::endl;
+
+	/*
+	 * 20170930切记我们输出需要的是throttle的radio_out，而其他的都是需要的pwm_out
+	 */
 
 	for(int i=0;i<4;i++)
 	{
@@ -919,7 +914,6 @@ void Copter::update_nav_wp()
 
 void Copter::update_trig(void){
 	Vector2f yawvector;
-	//Matrix3f temp 	= dcm.get_dcm_matrix();
 	Matrix3f temp 	= ahrs.get_dcm_matrix();
 
 	yawvector.x 	= temp.a.x; // sin
@@ -1246,7 +1240,7 @@ void Copter::update_all_external_device_input( void )
 
 #ifdef LINUX_OS
 	/*
-	 * gps数据
+	 * gps数据 gps数据更新最多也就是10hz，所以这里只是赋值，到底gps的值在哪里用呢，是在medium_loop中调用的
 	 */
 	all_external_device_input.latitude    =    (fdm_feed_back.latitude *RAD_TO_DEG)*1e7;
 	all_external_device_input.longitude =    (fdm_feed_back.longitude *RAD_TO_DEG)*1e7;
