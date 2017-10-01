@@ -28,7 +28,7 @@ extern struct T_UART_DEVICE uart_device_ap2gcs;
 /**
  * 简单打印调试信息
  */
-#define DEBUG_SWITCH   1//如果不想打印信息，就将这句代码注释掉
+//#define DEBUG_SWITCH   1//如果不想打印信息，就将这句代码注释掉
 #ifdef    DEBUG_SWITCH
 //#define printf_debug(fmt,args...) printf(fmt, ##args)
 #define DEBUG_PRINTF(fmt,args...) printf(fmt, ##args)
@@ -510,6 +510,9 @@ enum gcs_severity {
     SEVERITY_HIGH,
     SEVERITY_CRITICAL
 };
+
+
+
 
 
 

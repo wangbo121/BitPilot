@@ -15,11 +15,15 @@
 
 #ifdef LINUX_OS
 
+/*
+ * 20171001我为了保存参数，写了下面的这个字符串数组表
+ */
+char * parameter_array[]={"hello","wangbo"};
+
 // default sensors are present and healthy: gyro, accelerometer, barometer, rate_control, attitude_stabilization, yaw_position, altitude control, x/y position control, motor_control
 #define MAVLINK_SENSOR_PRESENT_DEFAULT (MAV_SYS_STATUS_SENSOR_3D_GYRO | MAV_SYS_STATUS_SENSOR_3D_ACCEL | MAV_SYS_STATUS_SENSOR_ABSOLUTE_PRESSURE | MAV_SYS_STATUS_SENSOR_ANGULAR_RATE_CONTROL | MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION | MAV_SYS_STATUS_SENSOR_YAW_POSITION | MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL | MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL | MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS | MAV_SYS_STATUS_AHRS)
 
 //20170930我这里面的函数都是从apm3.3复制粘贴过来的，但是我又要参照apm2.6的一些函数来写
-
 
 /*
  *  send a message on both GCS links，原来说的是2个地面站口，但是我这里先只用1个
@@ -229,7 +233,103 @@ void NOINLINE Copter::send_location(mavlink_channel_t chan)
 
 NOINLINE void Copter::send_extended_status1(mavlink_channel_t chan)
 {
+	uint32_t control_sensors_present = 0;
+	uint32_t control_sensors_enabled;
+	uint32_t control_sensors_health;
 
+	// first what sensors/controllers we have
+	control_sensors_present |= (1<<0); // 3D gyro present
+	control_sensors_present |= (1<<1); // 3D accelerometer present
+	if (g.compass_enabled) {
+		control_sensors_present |= (1<<2); // compass present
+	}
+	control_sensors_present |= (1<<3); // absolute pressure sensor present
+//	if (&gps != NULL && g_gps->status() == GPS::GPS_OK) {
+//		control_sensors_present |= (1<<5); // GPS present
+//	}
+	control_sensors_present |= (1<<5); // GPS present
+	control_sensors_present |= (1<<10); // 3D angular rate control
+	control_sensors_present |= (1<<11); // attitude stabilisation
+	control_sensors_present |= (1<<12); // yaw position
+	control_sensors_present |= (1<<13); // altitude control
+	control_sensors_present |= (1<<14); // X/Y position control
+	control_sensors_present |= (1<<15); // motor control
+
+	// now what sensors/controllers are enabled
+
+	// first the sensors
+	control_sensors_enabled = control_sensors_present & 0x1FF;
+
+	// now the controllers
+	control_sensors_enabled = control_sensors_present & 0x1FF;
+
+	control_sensors_enabled |= (1<<10); // 3D angular rate control
+	control_sensors_enabled |= (1<<11); // attitude stabilisation
+	control_sensors_enabled |= (1<<13); // altitude control
+	control_sensors_enabled |= (1<<15); // motor control
+
+	switch (control_mode) {
+	case AUTO:
+	case RTL:
+	case LOITER:
+	case GUIDED:
+	case CIRCLE:
+	case POSITION:
+		control_sensors_enabled |= (1<<12); // yaw position
+		control_sensors_enabled |= (1<<14); // X/Y position control
+		break;
+	}
+
+	// at the moment all sensors/controllers are assumed healthy
+	control_sensors_health = control_sensors_present;
+
+	uint16_t battery_current = -1;
+	uint8_t battery_remaining = -1;
+
+//	if (current_total1 != 0 && g.pack_capacity != 0) {
+//		battery_remaining = (100.0 * (g.pack_capacity - current_total1) / g.pack_capacity);
+//	}
+//	if (current_total1 != 0) {
+//		battery_current = current_amps1 * 100;
+//	}
+//
+//	if (g.battery_monitoring == 3) {
+//		/*setting a out-of-range value.
+//		 *  It informs to external devices that
+//		 *  it cannot be calculated properly just by voltage*/
+//		battery_remaining = 150;
+//	}
+
+	mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+	mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+
+	// Initialize the required buffers
+	mavlink_message_t msg;
+	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+	battery_remaining=100;//20171001电池剩余百分之百
+	mavlink_msg_sys_status_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,\
+														control_sensors_present,\
+														control_sensors_enabled,\
+														control_sensors_health,\
+														0, // CPU Load not supported in AC yet
+														battery_voltage1 * 1000, // mV
+														battery_current,        // in 10mA units
+														battery_remaining,      // in %
+														0, // comm drops %,
+														0, // comm drops in pkts,
+														0, 0, 0, 0);
+
+	// Copy the message to the send buffer
+	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+
+#ifdef LINUX_OS
+	// Send the message with the standard UART send function
+	// uart0_send might be named differently depending on
+	// the individual microcontroller / library in use.
+	//uart0_send(buf, len);
+	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+#endif
 
 }
 
@@ -926,10 +1026,10 @@ bool GCS_MAVLINK::mavlink_try_send_message(mavlink_channel_t chan, enum ap_messa
             copter.send_location(chan);
             break;
 
-//    case MSG_EXTENDED_STATUS1:
-//        CHECK_PAYLOAD_SIZE(SYS_STATUS);
-//        send_extended_status1(chan, packet_drops);
-//        break;
+		case MSG_EXTENDED_STATUS1:
+			CHECK_PAYLOAD_SIZE(SYS_STATUS);
+			copter.send_extended_status1(chan);
+			break;
 //
 //    case MSG_EXTENDED_STATUS2:
 //        CHECK_PAYLOAD_SIZE(MEMINFO);
@@ -1470,6 +1570,17 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 	    			strncpy(key, (char *)packet.param_id, ONBOARD_PARAM_NAME_LENGTH);
 	    			key[ONBOARD_PARAM_NAME_LENGTH] = 0;
 
+	    			printf("handleMessage    :    key = %s\n",key);
+
+	    			/*
+	    			 * 现在已经找到了参数的名称保存在key里面
+	    			 * 需要通过key找到驾驶仪中参数的变量名称，然后把packet.param_value赋值给这个参数变量
+	    			 * 这里面有个问题就是这个packet.param_value是具有不同类型的，有可能是int 也有可能是float
+	    			 * 所以我需要进行如下操作
+	    			 * 1把所有的参数名称写成字符串数组列表，这样与key比对，能够得到该key在数组中的位置
+	    			 * 2得到位置后，用switch语句，case这个位置值，根据case的值分别给参数赋值
+	    			 * 3这样可能麻烦一点，但是好歹能够使用数组来保存参数了
+	    			 */
 
 	    			/*
 	    			 * 下面其实就是通过key这个字符串，也就是参数的名字，找到该字符串在flash中的位置，
