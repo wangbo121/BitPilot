@@ -1490,9 +1490,6 @@ private:
 
 
 
-	 void send_realdata_to_gcs( void );
-
-
 
 	 /*
 	  * 20170920开始添加mavlink1.0的地面站协议

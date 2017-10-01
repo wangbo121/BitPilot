@@ -13,18 +13,9 @@
 int seconds=0;
 int mseconds=MAINTASK_TICK_TIME_MS*(1e3);/*每个tick为20毫秒，也就是20000微秒*/
 struct timeval maintask_tick;
-
-//void verify_send_all_waypoint_to_gcs( void);
 #endif
 
 unsigned int maintask_cnt;
-
-/*
- * 这两个函数即使不在linux系统上也是需要的
- * 按照mavlink协议发送数据给地面站
- */
-void send_heartbeat_to_gcs( void );
-void send_attitude_to_gcs( void );
 
 int main(int argc,char * const argv[])
 {
@@ -57,7 +48,6 @@ int main(int argc,char * const argv[])
 		maintask_tick.tv_sec = seconds;
 		maintask_tick.tv_usec = mseconds;
 		select(0, NULL, NULL, NULL, &maintask_tick);
-		//maintask_cnt++;
 #endif
 
 		/*
@@ -111,63 +101,4 @@ void Copter::loop()
 
 		maintask_cnt = 0;
 	}
-
-}
-
-void send_heartbeat_to_gcs( void )
-{
-#ifdef LINUX_OS
-	// 发送心跳包
-	send_heartbeat_to_gcs();
-	mavlink_system.sysid=1;
-	mavlink_system.compid=1;
-
-	// Initialize the required buffers
-	mavlink_message_t msg;
-	uint8_t mav_send_buf[MAVLINK_MAX_PACKET_LEN];
-
-	uint8_t system_type=	MAV_TYPE_QUADROTOR;
-	uint8_t autopilot_type=MAV_AUTOPILOT_GENERIC;
-	uint8_t system_mode=MAV_MODE_PREFLIGHT;
-	uint8_t custom_mode=0;
-	uint8_t system_state=MAV_STATE_STANDBY;
-
-	int len;
-	//send heart beat
-	mavlink_system.compid = MAV_COMP_ID_ALL;
-	mavlink_msg_heartbeat_pack(mavlink_system.sysid, mavlink_system.compid, &msg, system_type,autopilot_type, system_mode, custom_mode, system_state);
-	len = mavlink_msg_to_send_buffer(mav_send_buf, &msg);
-#endif
-
-#ifdef LINUX_OS
-	send_uart_data(uart_device_ap2gcs.uart_name, (char *)mav_send_buf,len);
-#endif
-
-}
-
-void send_attitude_to_gcs( void )
-{
-#ifdef LINUX_OS
-	mavlink_system.sysid=1;
-	mavlink_system.compid=1;
-
-	// Initialize the required buffers
-	mavlink_message_t msg;
-	uint8_t mav_send_buf[MAVLINK_MAX_PACKET_LEN];
-
-	int len;
-	mavlink_system.compid = MAV_COMP_ID_ALL;
-
-	//send IMU
-	mavlink_msg_attitude_pack(  mavlink_system.sysid,mavlink_system.compid,  &msg,  maintask_cnt,
-														fdm_feed_back.phi, fdm_feed_back.theta, fdm_feed_back.psi,
-														fdm_feed_back.phidot,fdm_feed_back.thetadot,fdm_feed_back.psidot);
-
-	len = mavlink_msg_to_send_buffer(mav_send_buf, &msg);
-#endif
-
-#ifdef LINUX_OS
-	send_uart_data(uart_device_ap2gcs.uart_name, (char *)mav_send_buf,len);
-#endif
-
 }

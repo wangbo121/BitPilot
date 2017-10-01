@@ -431,8 +431,7 @@ void Copter::loop_fast()
 
 #ifdef LINUX_OS
 	/*
-	 * 其实到这里主程序也就结束了，我本来想把下面的都放在#define LINUX_OS中的
-	 * 但是ucos上将来是不是也需要模拟仿真呢，就先留着了20170920
+	 * 其实到这里主程序也就结束了，下面的程序主要是为了模拟仿真，把数据发送给flightgear
 	 */
 	/*
 	 * motors_output()函数中把最终输出给radio_out的数值，
@@ -617,6 +616,7 @@ void Copter::set_servos_4()
 {
 
 }
+
 void Copter::motors_output()
 {
 	int16_t             motor_out[AP_MOTORS_MAX_NUM_MOTORS];
@@ -787,21 +787,21 @@ void Copter::update_alt()
 	static int16_t 	old_climb_rate 	= 0;
 
 
-		// This is real life
+	// This is real life
 
-		// read in Actual Baro Altitude
-		baro_alt 			= (baro_alt + read_barometer()) >> 1;
+	// read in Actual Baro Altitude
+	baro_alt 			= (baro_alt + read_barometer()) >> 1;
 
-		// calc the vertical accel rate
-		int temp			= (baro_alt - old_baro_alt) * 10;//为什么乘以10，其实应该是除以0.1，因为周期是10hz，0.1秒，所以爬升律就等于这个
-		baro_rate 			= (temp + baro_rate) >> 1;
-		old_baro_alt		= baro_alt;
+	// calc the vertical accel rate
+	int temp			= (baro_alt - old_baro_alt) * 10;//为什么乘以10，其实应该是除以0.1，因为周期是10hz，0.1秒，所以爬升律就等于这个
+	baro_rate 			= (temp + baro_rate) >> 1;
+	old_baro_alt		= baro_alt;
 
 
 
-		// NO Sonar case
-		current_loc.alt = baro_alt + home.alt;
-		climb_rate 		= baro_rate;
+	// NO Sonar case
+	current_loc.alt = baro_alt + home.alt;
+	climb_rate 		= baro_rate;
 
 
 	// simple smoothing
@@ -815,8 +815,6 @@ void Copter::update_alt()
 
 	// update the target altitude
 	next_WP.alt = get_new_altitude();
-
-
 }
 
 void Copter::update_GPS(void)
@@ -862,8 +860,6 @@ void Copter::update_auto_yaw()
     	DEBUG_PRINTF("update_auto_yaw    :    auto_yaw = %d\n",auto_yaw);
     }
 }
-
-
 
 // Outputs Nav_Pitch and Nav_Roll
 void Copter::update_nav_wp()
@@ -1319,11 +1315,9 @@ struct T_MAVLINK_REALTIME_DATA ap2gcs_mavlink;
 
 
 
-
-
-
-
-
+/*
+ * 下面的按道理跟飞控就没什么关系了，主要是为了接收串口来的数据，然后进行解析
+ */
 #ifdef LINUX_OS
 /*
  * 通过串口通信，发送实时数据给无人船地面站做测试用，主要是经纬度用来地面站上显示
@@ -1349,102 +1343,8 @@ int fd_socket_generic;
 #endif
 
 
-
-
-int generate_packet(unsigned char*dst_buf, unsigned char *src_buf,unsigned char len,\
-                    unsigned int packet_cnt, unsigned char message_type,\
-                    unsigned char commu_method, unsigned char ack_req)
-{
-    static unsigned char frame_head_len=8;
-    static unsigned char frame_end_len=2;
-    unsigned char packet[128];
-    unsigned char checksum = 0;
-
-    int i, j;
-    int packet_data_len;
-
-    packet[0] = 0xaa;
-    packet[1] = 0x55;
-    packet[2] = 76;//20170728统一定义为76字节，包含帧头帧尾
-    packet_data_len = len;
-
-    packet[3] = packet_cnt;
-
-    packet[4] = 0x01;
-    packet[5] = message_type;
-
-    packet[6]=commu_method;
-    packet[7]=ack_req;
-
-    for (i = frame_head_len, j = 0; i < packet_data_len + frame_head_len; i++, j++)
-    {
-        packet[i] = src_buf[j];
-    }
-
-    for (i = 0; i < len + frame_head_len; i++)
-    {
-        checksum += packet[i];
-    }
-
-    i = len + frame_head_len;
-
-    //20170728把数据包长度统一减少2个字节，为76个字节
-    packet[i]=0;
-    checksum=checksum+packet[i];
-    packet[i+1] = (checksum & 0xFF);
-
-    memcpy(dst_buf, packet, packet_data_len + frame_head_len + frame_end_len);
-    //printf("打包后返回的字节长度=%d\n",packet_data_len + frame_head_len + frame_end_len);//20170729已测试
-
-    /*返回总的发送字节数*/
-    return packet_data_len + frame_head_len + frame_end_len;
-}
-
-
-#ifdef LINUX_OS
-void Copter::send_realdata_to_gcs( void )
-{
-	 unsigned char buf_data[256];
-	unsigned char buf_packet[256];
-	int ret;
-	static int real_cnt;
-	real_cnt++;
-
-#if 0
-	std::cout<<"send ap2gcs current_loc="<<current_loc.lng<<std::endl;
-	//ap2gcs.lng=current_loc.lng*1e-2;
-	ap2gcs.lng=-current_loc.lng*1e-2;
-	ap2gcs.lat=current_loc.lat*1e-2;
-	ap2gcs.alt=current_loc.alt*1e-2;
-#else
-
-	//ap2gcs.lng=current_loc.lng*1e-2;
-	ap2gcs.lng=-current_loc.lng*1e-2;
-	ap2gcs.lat=current_loc.lat*1e-2;
-	ap2gcs.alt=current_loc.alt*1e-2;
-
-#endif
-	//20170728把帧头帧尾加入到数据结构中
-	static unsigned char frame_len=76;
-	static unsigned char frame_head_len=8;
-	static unsigned char frame_checksum_len=2;
-	static unsigned char frame_data_len;
-	frame_data_len=frame_len-frame_head_len-frame_checksum_len;
-
-	memcpy(buf_data, &ap2gcs.pack_func_flag, frame_data_len);
-	ret=generate_packet(buf_packet, buf_data, frame_data_len,\
-											real_cnt, 0x10,\
-											0,1);
-#ifdef LINUX_OS
-	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf_packet,ret);
-#endif
-}
-#endif
-
-
-
 /*
- * 20170923为了接收missionplanner的数据
+ * 20170923为了接收missionplanner的数据，这个函数很重要，虽然以后是需要把这个接收线程放在别的地方
  *
  */
 #ifdef LINUX_OS
@@ -1529,34 +1429,6 @@ int read_radio_data(unsigned char *recv_buf,unsigned int recv_len)
 
 	copter.gcs0.packet_drops += status.packet_rx_drop_count;
 
-
-
-
-
 	return 0;
-
-
 }
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
