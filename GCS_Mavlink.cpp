@@ -988,6 +988,7 @@ GCS_MAVLINK::queued_param_send()
 
     _queued_parameter = AP_Param::next_scalar(&_queued_parameter_token, &_queued_parameter_type);
     _queued_parameter_index++;
+    printf("_queued_parameter_index=%d\n",_queued_parameter_index);
 }
 
 
@@ -1477,7 +1478,8 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 //					break;
 //				}
 
-			DEBUG_PRINTF("******************************************************************************请求回传单个参数\n");
+			//DEBUG_PRINTF("******************************************************************************请求回传单个参数\n");
+			//printf("******************************************************************************请求回传单个参数\n");
 			DEBUG_PRINTF("packet.param_index=%d\n",packet.param_index);
 			DEBUG_PRINTF("packet.param_id=%s\n",packet.param_id);
 
@@ -1522,7 +1524,8 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 		{
 			// gcs_send_text_P(SEVERITY_LOW,PSTR("param request list"));
 
-			DEBUG_PRINTF("******************************************************************************请求回传所有参数\n");
+			//DEBUG_PRINTF("******************************************************************************请求回传所有参数\n");
+			printf("******************************************************************************请求回传所有参数\n");
 
 			/*
 			 * 参数的发送放在了gcs_update里面 航点的回传也是放在那里了
@@ -1580,7 +1583,23 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 	    			 * 1把所有的参数名称写成字符串数组列表，这样与key比对，能够得到该key在数组中的位置
 	    			 * 2得到位置后，用switch语句，case这个位置值，根据case的值分别给参数赋值
 	    			 * 3这样可能麻烦一点，但是好歹能够使用数组来保存参数了
+	    			 * 4别忘了设置参数后，需要把设置好的参数发回给地面站，相应一下
 	    			 */
+
+	    			//	    				// Report back the new value if we accepted the change
+	    			//	    				// we send the value we actually set, which could be
+	    			//	    				// different from the value sent, in case someone sent
+	    			//	    				// a fractional value to an integer type
+	    			//	    				mavlink_msg_param_value_send(
+	    			//	    					chan,
+	    			//	    					(int8_t *)key,
+	    			//	    					vp->cast_to_float(),
+	    			//	    					_count_parameters(),
+	    			//	    					-1); // XXX we don't actually know what its index is...
+	    			//
+	    			//	    			}
+
+
 
 	    			/*
 	    			 * 下面其实就是通过key这个字符串，也就是参数的名字，找到该字符串在flash中的位置，
