@@ -213,8 +213,6 @@ void Copter::setup()
 	wp_total_array[9].lng 	= start_longtitude+delta_lon*0;				// Lon * 10**7
 	wp_total_array[9].lat 	= start_latitude+delta_lat*0;				// Lat * 10**7
 
-	memcpy(&wp_total_array_temp,&wp_total_array,sizeof(wp_total_array));
-
 	for(int i=0;i<wp_num;i++)
 	{
 		DEBUG_PRINTF("setup    :    wp_total_array[%d].lng = %d\n",i,wp_total_array[i].lng);
@@ -1184,7 +1182,6 @@ struct T_MAVLINK_REALTIME_DATA ap2gcs_mavlink;
 /*
  * 通过串口通信，发送实时数据给无人船地面站做测试用，主要是经纬度用来地面站上显示
  */
-int fd_ap2gcs;
 struct T_UART_DEVICE uart_device_ap2gcs;
 
 #endif

@@ -1043,20 +1043,6 @@ bool GCS_MAVLINK::mavlink_try_send_message(mavlink_channel_t chan, enum ap_messa
  * 20170922下面是从我编译的apm3.3中抄过来的
  */
 
-
-
-NOINLINE void Copter::send_fence_status(mavlink_channel_t chan)
-{
-
-}
-
-
-
-void NOINLINE Copter::send_proximity(mavlink_channel_t chan, uint16_t count_max)
-{
-
-}
-
 void
 GCS_MAVLINK::init(char * port)
 {
@@ -1102,9 +1088,9 @@ GCS_MAVLINK::_count_parameters()
 void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 {
 	struct Location tell_command = {};				// command for telemetry
-	static uint8_t mav_nav = 255;							// For setting mode (some require receipt of 2 messages...)
-
-    uint8_t result = MAV_RESULT_FAILED;         // assume failure.  Each messages id is responsible for return ACK or NAK if required
+//	static uint8_t mav_nav = 255;							// For setting mode (some require receipt of 2 messages...)
+//
+//    uint8_t result = MAV_RESULT_FAILED;         // assume failure.  Each messages id is responsible for return ACK or NAK if required
 
     DEBUG_PRINTF("handleMessage    :    msg->msgid=%d\n",msg->msgid);
 
@@ -1191,7 +1177,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 	{
 		//send_text_P(SEVERITY_LOW,PSTR("waypoint request list"));
 
-		DEBUG_PRINTF("请求回传所有航点****************************************************************\n");
+		DEBUG_PRINTF("handleMessage    :    请求回传所有航点\n");
 		// decode
 		mavlink_waypoint_request_list_t packet;
 		mavlink_msg_waypoint_request_list_decode(msg, &packet);
@@ -1234,7 +1220,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 		case MAVLINK_MSG_ID_WAYPOINT_REQUEST: // 40
 		{
 			//send_text_P(SEVERITY_LOW,PSTR("waypoint request"));
-			DEBUG_PRINTF("请求回传单个航点****************************************************************\n");
+			DEBUG_PRINTF("handleMessage    :    请求回传单个航点\n");
 			// Check if sending waypiont
 			//if (!waypoint_sending) break;
 			// 5/10/11 - We are trying out relaxing the requirement that we be in waypoint sending mode to respond to a waypoint request.  DEW
@@ -1246,7 +1232,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			if (mavlink_check_target(packet.target_system, packet.target_component))
 				break;
 
-			DEBUG_PRINTF("即将要回传的航点的编号=%d\n",packet.seq);
+			DEBUG_PRINTF("handleMessage    :    即将要回传的航点的编号=%d\n",packet.seq);
 
 			// send waypoint
 			tell_command = copter.get_cmd_with_index(packet.seq);
@@ -1272,11 +1258,8 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
 			float x = 0, y = 0, z = 0;
 
-			if (tell_command.id < MAV_CMD_NAV_LAST) {
-
-
-
-
+			if (tell_command.id < MAV_CMD_NAV_LAST)
+			{
 				// command needs scaling
 				x = tell_command.lat/1.0e7; // local (x), global (latitude)
 				//y = tell_command.lng/1.0e7; // local (y), global (longitude)
@@ -1340,24 +1323,6 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 					break;
 			}
 
-//			mavlink_msg_waypoint_send(chan,msg->sysid,
-//										msg->compid,
-//										packet.seq,
-//										frame,
-//										tell_command.id,
-//										current,
-//										autocontinue,
-//										param1,
-//										param2,
-//										param3,
-//										param4,
-//										x,
-//										y,
-//										z);
-
-
-
-
 			mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
 			mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
 			// Define the system type, in this case an airplane
@@ -1373,8 +1338,6 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 					                                                    //tell_command.lat,tell_command.lng,tell_command.alt );
 					                                                    x,y,z );
 
-
-
 			// Copy the message to the send buffer
 			uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
 			send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
@@ -1385,29 +1348,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			break;
 		}
 
-//		case MAVLINK_MSG_ID_MISSION_COUNT:     // 44
-//		{
-//			//send_text_P(SEVERITY_LOW,PSTR("waypoint count"));
-//			DEBUG_PRINTF("发送任务个数------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
-//
-//			// decode
-//			mavlink_mission_count_t packet;
-//			mavlink_msg_mission_count_decode(msg, &packet);
-//			if (mavlink_check_target(packet.target_system,packet.target_component)) break;
-//
-////			// start waypoint receiving
-////			if (packet.count > MAX_WAYPOINTS) {
-////				packet.count = MAX_WAYPOINTS;
-////			}
-//			copter.g.command_total=10;
-//
-//			//waypoint_timelast_receive = millis();
-//			waypoint_receiving   = true;
-//			waypoint_sending         = false;
-//			waypoint_request_i   = 0;
-//			waypoint_timelast_request = 0;
-//			break;
-//		}
+
 
 		case MAVLINK_MSG_ID_WAYPOINT_ACK: //47
 		{
@@ -1851,55 +1792,32 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
     }
 
 
-
-
-
-
+//		case MAVLINK_MSG_ID_MISSION_COUNT:     // 44
+//		{
+//			//send_text_P(SEVERITY_LOW,PSTR("waypoint count"));
+//			DEBUG_PRINTF("发送任务个数------------------------------------------------------------------------------------------------------------------------------------------------------------\n");
+//
+//			// decode
+//			mavlink_mission_count_t packet;
+//			mavlink_msg_mission_count_decode(msg, &packet);
+//			if (mavlink_check_target(packet.target_system,packet.target_component)) break;
+//
+////			// start waypoint receiving
+////			if (packet.count > MAX_WAYPOINTS) {
+////				packet.count = MAX_WAYPOINTS;
+////			}
+//			copter.g.command_total=10;
+//
+//			//waypoint_timelast_receive = millis();
+//			waypoint_receiving   = true;
+//			waypoint_sending         = false;
+//			waypoint_request_i   = 0;
+//			waypoint_timelast_request = 0;
+//			break;
+//		}
 		default:
-		        //handle_common_message(msg);
-		        break;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+		//handle_common_message(msg);
+		break;
 
 //    case MAVLINK_MSG_ID_SET_MODE:       // MAV ID: 11
 //    {
@@ -2699,16 +2617,4 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
     }     // end switch
 } // end handle mavlink
-
-
-
-
-
-
-
-
-
-
-
-
 #endif
