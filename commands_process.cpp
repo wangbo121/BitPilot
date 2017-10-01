@@ -168,7 +168,7 @@
  void Copter:: execute_nav_command(void)
 {
 //	// This is what we report to MAVLINK
-	g.command_index  = command_nav_index;
+	g.command_index  = command_nav_index;//20171001测试这个是目标航点，测试正确
 //
 //	// Save CMD to Log
 //	if (g.log_bitmask & MASK_LOG_CMD)

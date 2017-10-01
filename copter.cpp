@@ -261,7 +261,6 @@ void Copter::setup()
 
 #ifdef LINUX_OS
 	fast_loopTimer=clock_gettime_ms();//必须有这个初始化，否则第一次G_Dt的值会非常大，不过现在有没有都无所谓了，我已经把G_Dt固定为0.01
-	global_bool_boatpilot.wp_total_num=wp_num;
 #endif
 
 
@@ -1324,9 +1323,7 @@ struct T_MAVLINK_REALTIME_DATA ap2gcs_mavlink;
  */
 int fd_ap2gcs;
 struct T_UART_DEVICE uart_device_ap2gcs;
-struct AP2GCS_REAL ap2gcs;
 
-struct T_GLOBAL_BOOL_BOATPILOT  global_bool_boatpilot;
 #endif
 
 #ifdef LINUX_OS

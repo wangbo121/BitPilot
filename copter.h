@@ -132,7 +132,7 @@ private:
 
 	Vector3f omega;
     // Global parameters are all contained within the 'g' class.
-    Global_Pilot g;
+    Parameters g;
 
     AP_RC ap_rc;
 
