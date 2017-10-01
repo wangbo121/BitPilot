@@ -219,15 +219,15 @@ void Copter::setup()
 
 	for(int i=0;i<wp_num;i++)
 	{
-	std::cout<<"wp_total_array["<<i<<"].lng="<<wp_total_array[i].lng<<std::endl;
-	std::cout<<"wp_total_array["<<i<<"].lat="<<wp_total_array[i].lat<<std::endl;
-	std::cout<<"wp_total_array["<<i<<"].alt="<<wp_total_array[i].alt<<std::endl;
+		DEBUG_PRINTF("setup    :    wp_total_array[%d].lng = %d\n",i,wp_total_array[i].lng);
+		DEBUG_PRINTF("setup    :    wp_total_array[%d].lng = %d\n",i,wp_total_array[i].lng);
+		DEBUG_PRINTF("setup    :    wp_total_array[%d].lng = %d\n",i,wp_total_array[i].lng);
 	}
 
 	init_home();
 
-	std::cout<<"home.lng="<<home.lng<<std::endl;
-	std::cout<<"home.lat="<<home.lat<<std::endl;
+	DEBUG_PRINTF("setup    :    home.lng = %d\n",home.lng);
+	DEBUG_PRINTF("setup    :    home.lat = %d\n",home.lat);
 
 	g.waypoint_total=wp_num;
 	next_WP.id=MAV_CMD_NAV_WAYPOINT;
@@ -649,23 +649,20 @@ void Copter::motors_output()
 	g.channel_rudder.calc_pwm();
 	g.channel_throttle.calc_pwm();
 
-	std::cout<<"g.channel_roll.servo_out="<<g.channel_roll.servo_out<<std::endl;
-	std::cout<<"g.channel_pitch.servo_out="<<g.channel_pitch.servo_out<<std::endl;
-	std::cout<<"g.channel_rudder.servo_out="<<g.channel_rudder.servo_out<<std::endl;
-	std::cout<<"g.channel_throttle.servo_out="<<g.channel_throttle.servo_out<<std::endl;
+	DEBUG_PRINTF("motors_output    :    g.channel_roll.servo_out = %d\n",g.channel_roll.servo_out);
+	DEBUG_PRINTF("motors_output    :    g.channel_pitch.servo_out = %d\n",g.channel_pitch.servo_out);
+	DEBUG_PRINTF("motors_output    :    g.channel_rudder.servo_out = %d\n",g.channel_rudder.servo_out);
+	DEBUG_PRINTF("motors_output    :    g.channel_throttle.servo_out = %d\n",g.channel_throttle.servo_out);
 
-	std::cout<<"********准备输出pwm脉宽给电调***********"<<std::endl;
+	DEBUG_PRINTF("motors_output    :    g.channel_roll.pwm_out = %d\n",g.channel_roll.pwm_out);
+	DEBUG_PRINTF("motors_output    :    g.channel_pitch.pwm_out = %d\n",g.channel_pitch.pwm_out);
+	DEBUG_PRINTF("motors_output    :    g.channel_rudder.pwm_out = %d\n",g.channel_rudder.pwm_out);
+	DEBUG_PRINTF("motors_output    :    g.channel_throttle.pwm_out = %d\n",g.channel_throttle.pwm_out);
 
-	std::cout<<"g.channel_roll.pwm_out="<<g.channel_roll.pwm_out<<std::endl;
-	std::cout<<"g.channel_pitch.pwm_out="<<g.channel_pitch.pwm_out<<std::endl;
-	std::cout<<"g.channel_rudder.pwm_out="<<g.channel_rudder.pwm_out<<std::endl;
-
-	std::cout<<"g.channel_throttle.radio_out="<<g.channel_throttle.radio_out<<std::endl;
-
-	std::cout<<"g.channel_roll.radio_out="<<g.channel_roll.radio_out<<std::endl;
-	std::cout<<"g.channel_pitch.radio_out="<<g.channel_pitch.radio_out<<std::endl;
-	std::cout<<"g.channel_throttle.radio_out="<<g.channel_throttle.radio_out<<std::endl;
-	std::cout<<"g.channel_rudder.radio_out="<<g.channel_rudder.radio_out<<std::endl;
+	DEBUG_PRINTF("motors_output    :    g.channel_roll.radio_out = %d\n",g.channel_roll.radio_out);
+	DEBUG_PRINTF("motors_output    :    g.channel_pitch.radio_out = %d\n",g.channel_pitch.radio_out);
+	DEBUG_PRINTF("motors_output    :    g.channel_rudder.radio_out = %d\n",g.channel_rudder.radio_out);
+	DEBUG_PRINTF("motors_output    :    g.channel_throttle.radio_out = %d\n",g.channel_throttle.radio_out);
 
 	/*
 	 * 20170930切记我们输出需要的是throttle的radio_out，而其他的都是需要的pwm_out
@@ -747,7 +744,7 @@ void Copter::update_navigation()
     switch(control_mode) {
     case AUTO:
         // note: wp_control is handled by commands_logic
-    	std::cout<<"verify_commands();"<<std::endl;
+    	DEBUG_PRINTF("update_navigation    :    verify_commands()\n");
        verify_commands();
 
         // calculates desired Yaw
@@ -756,10 +753,9 @@ void Copter::update_navigation()
         // calculates the desired Roll and Pitch
         update_nav_wp();//由update_auto_yaw计算得到的nav_roll nav_pitch，在经过该函数的计算，得到auto_roll auto_pitch
 
-        std::cout<<"update_navigation  auto_yaw="<<auto_yaw<<std::endl;
-        std::cout<<"update_navigation  auto_roll="<<auto_roll<<std::endl;
-        std::cout<<"update_navigation  auto_pitch="<<auto_pitch<<std::endl;
-
+        DEBUG_PRINTF("update_navigation    :    auto_yaw = %d\n",auto_yaw);
+        DEBUG_PRINTF("update_navigation    :    auto_roll = %d\n",auto_roll);
+        DEBUG_PRINTF("update_navigation    :    auto_pitch = %d\n",auto_pitch);
         break;
 
 
@@ -862,7 +858,7 @@ void Copter::update_auto_yaw()
     	//std::cout<<"original_target_bearing="<<original_target_bearing<<std::endl;
         //auto_yaw = original_target_bearing;//original_target_bearing是在set_wp_next的时候的目标航点的方位bearing
         auto_yaw = target_bearing;//这个是2.3版本的
-        std::cout<<"auto_yaw="<<auto_yaw<<std::endl;
+    	DEBUG_PRINTF("update_auto_yaw    :    auto_yaw = %d\n",auto_yaw);
     }
 }
 
@@ -887,8 +883,7 @@ void Copter::update_nav_wp()
 	    * 20170821
 	    * 一开始由于next_WP都是0,所以肯定计算结果是错误的,但是update_commands很快就会执行,那么next_WP就会计算出来,从而很快就正确了
 	    */
-
-	   std::cout<<"wp_control == WP_MODE"<<std::endl;
+	   DEBUG_PRINTF("update_nav_wp    :    wp_control == WP_MODE\n");
 
         // calc error to target
         calc_location_error(&next_WP);//这个对于航点飞行来说没什么用，但是可以打印出来看看经度纬度差多少

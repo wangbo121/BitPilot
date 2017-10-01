@@ -58,30 +58,34 @@ Copter::get_stabilize_roll(int32_t target_angle)
 void
 Copter::get_stabilize_pitch(int32_t target_angle)
 {
-	std::cout<<"get_stabilize_pitch     pitch target_angle="<<target_angle<<std::endl;
-	 // angle error
-	    target_angle            = wrap_180(target_angle - ahrs.pitch_sensor,100);
+	DEBUG_PRINTF("get_stabilize_pitch    :    pitch target_angle = %u\n",target_angle);
 
-	    target_angle             = constrain_value(target_angle, -2000, 2000);
+	// angle error
+	target_angle = wrap_180(target_angle - ahrs.pitch_sensor,100);
 
-	    std::cout<<"ahrs.pitch_sensor="<<ahrs.pitch_sensor<<std::endl;
-	    std::cout<<"pitch error="<<target_angle<<std::endl;
+	target_angle = constrain_value(target_angle, -2000, 2000);
 
-	    // convert to desired Rate:
-	    int32_t target_rate = g.pi_stabilize_pitch.get_p(target_angle);
+	DEBUG_PRINTF("get_stabilize_pitch    :    ahrs.pitch_sensor = %d\n",ahrs.pitch_sensor);
+	DEBUG_PRINTF("get_stabilize_pitch    :    wrap target_angle = %d\n",target_angle);
 
-	    std::cout<<"get_stabilize_pitch    target_rate="<<target_rate<<std::endl;
+	// convert to desired Rate:
+	int32_t target_rate = g.pi_stabilize_pitch.get_p(target_angle);
 
-	    int16_t i_stab;
-	    if(labs(ahrs.pitch_sensor) < 500) {
-	        target_angle            = constrain_value(target_angle, -500, 500);
-	        i_stab                          = g.pi_stabilize_pitch.get_i(target_angle, G_Dt);
-	    }else{
-	        i_stab                          = g.pi_stabilize_pitch.get_integrator();
-	    }
+	DEBUG_PRINTF("get_stabilize_pitch    :    target_rate = %d\n",target_rate);
 
-	    // set targets for rate controller
-	    set_pitch_rate_target(target_rate + i_stab, EARTH_FRAME);
+	int16_t i_stab;
+	if(labs(ahrs.pitch_sensor) < 500)
+	{
+		target_angle = constrain_value(target_angle, -500, 500);
+		i_stab             = g.pi_stabilize_pitch.get_i(target_angle, G_Dt);
+	}
+	else
+	{
+		i_stab             = g.pi_stabilize_pitch.get_integrator();
+	}
+
+	// set targets for rate controller
+	set_pitch_rate_target(target_rate + i_stab, EARTH_FRAME);
 
 
 }
@@ -474,9 +478,6 @@ Copter::update_yaw_mode(void)
 void
 Copter::update_roll_pitch_mode(void)
 {
-//	std::cout<<"g.channel_roll.control_in="<<g.channel_roll.control_in<<std::endl;
-//	std::cout<<"g.channel_pitch.control_in="<<g.channel_pitch.control_in<<std::endl;
-
 
 	switch(roll_pitch_mode)
 	{
@@ -488,6 +489,7 @@ Copter::update_roll_pitch_mode(void)
 		get_stabilize_pitch(control_pitch);
 		break;
 	case ROLL_PITCH_ACRO:
+
 		get_roll_rate_stabilized_ef(g.channel_roll.control_in);
 		get_pitch_rate_stabilized_ef(g.channel_pitch.control_in);
 		/* 下面的这两个貌似是ACRO特技模式，但是也是角速度模式 */
@@ -501,33 +503,28 @@ Copter::update_roll_pitch_mode(void)
 //	            update_simple_mode();
 //	        }
 
-		 /*
-		  * 20170822 下面里面有一句auto_pitch，auto_pitch之所以取了负号，是因为从固定翼飞机上说我们遥控器往上推是压杆
-		  * 也就意味着elevator的值是负数或者说如果按照1000～2000来说，应该是1000～1500之间，按照servo_out来说就是，-4500～0度
-		  */
-	        // mix in user control with Nav control
-	        nav_roll                += constrain(wrap_180(auto_roll  - nav_roll,100),  -g.auto_slew_rate, g.auto_slew_rate);                 // 40 deg a second g.auto_slew_rate=30 初始化的宏定义
-	        nav_pitch               += constrain(wrap_180(auto_pitch - nav_pitch,100), -g.auto_slew_rate, g.auto_slew_rate);                 // 40 deg a second
+		/*
+		* 20170822 下面里面有一句auto_pitch，auto_pitch之所以取了负号，是因为从固定翼飞机上说我们遥控器往上推是压杆
+		* 也就意味着elevator的值是负数或者说如果按照1000～2000来说，应该是1000～1500之间，按照servo_out来说就是，-4500～0度
+		*/
+		// mix in user control with Nav control
+		nav_roll                += constrain(wrap_180(auto_roll  - nav_roll,100),  -g.auto_slew_rate, g.auto_slew_rate);                 // 40 deg a second g.auto_slew_rate=30 初始化的宏定义
+		nav_pitch               += constrain(wrap_180(auto_pitch - nav_pitch,100), -g.auto_slew_rate, g.auto_slew_rate);                 // 40 deg a second
 
-	        std::cout<<"update_roll_pitch_mode    auto_roll="<<auto_roll<<std::endl;
-	        std::cout<<"update_roll_pitch_mode    nav_roll="<<nav_roll<<std::endl;
+		DEBUG_PRINTF("update_roll_pitch_mode    :    auto_roll = %d\n",auto_roll);
+		DEBUG_PRINTF("update_roll_pitch_mode    :    nav_roll = %d\n",nav_roll);
+		DEBUG_PRINTF("update_roll_pitch_mode    :    auto_pitch = %d\n",auto_pitch);
+		DEBUG_PRINTF("update_roll_pitch_mode    :    nav_pitch = %d\n",nav_pitch);
 
-	        std::cout<<"update_roll_pitch_mode    auto_pitch="<<auto_pitch<<std::endl;
-			std::cout<<"update_roll_pitch_mode    nav_pitch="<<nav_pitch<<std::endl;
+		control_roll            = g.channel_roll.control_mix(nav_roll);
+		control_pitch           = g.channel_pitch.control_mix(nav_pitch);
 
+		DEBUG_PRINTF("update_roll_pitch_mode    :    control_roll = %d\n",control_roll);
+		DEBUG_PRINTF("update_roll_pitch_mode    :    control_pitch = %d\n",control_pitch);
 
-
-	        //std::cout<<"g.channel_roll="<<g.channel_roll.control_in<<std::endl;
-
-	        control_roll            = g.channel_roll.control_mix(nav_roll);
-	        control_pitch           = g.channel_pitch.control_mix(nav_pitch);
-
-	        std::cout<<"update_roll_pitch_mode    control_roll="<<control_roll<<std::endl;
-	        std::cout<<"update_roll_pitch_mode    control_pitch="<<control_pitch<<std::endl;
-
-	        get_stabilize_roll(control_roll);
-	        get_stabilize_pitch(control_pitch);
-	        break;
+		get_stabilize_roll(control_roll);
+		get_stabilize_pitch(control_pitch);
+		break;
 
 	default:
 		break;
@@ -600,7 +597,7 @@ void Copter::update_throttle_mode(void)
 		case THROTTLE_AUTO:
 			// calculate angle boost
 			angle_boost = get_angle_boost(g.throttle_cruise);
-			std::cout<<"THROTTLE_AUTO    angle_boost="<<angle_boost<<std::endl;
+			DEBUG_PRINTF("update_throttle_mode    :    angle_boost = %d\n",angle_boost);
 
 			// manual command up or down?
 			if(manual_boost != 0){
@@ -632,15 +629,13 @@ void Copter::update_throttle_mode(void)
 				// 10hz, 			don't run up i term
 				//if(invalid_throttle && motor_auto_armed == true){
 				if(invalid_throttle){
-
-					std::cout<<"invalid throttle !!"<<std::endl;
-
+					DEBUG_PRINTF("update_throttle_mode    :    invalid throttle !!!!!\n");
 					// how far off are we
 					altitude_error = get_altitude_error();
 
-					std::cout<<"update_throttle_mode    next_WP.alt="<<next_WP.alt<<std::endl;
-					std::cout<<"update_throttle_mode    current_loc.alt="<<current_loc.alt<<std::endl;
-					std::cout<<"update_throttle_mode    altitude_error = "<<altitude_error <<std::endl;
+					DEBUG_PRINTF("update_throttle_mode    :    next_WP.alt = %d\n",next_WP.alt);
+					DEBUG_PRINTF("update_throttle_mode    :    current_loc.alt = %d\n",current_loc.alt);
+					DEBUG_PRINTF("update_throttle_mode    :    altitude_error= %d\n",altitude_error);
 
 					// get the AP throttle
 					nav_throttle = get_nav_throttle(altitude_error);
@@ -662,10 +657,8 @@ void Copter::update_throttle_mode(void)
 				  nav_throttle = min(nav_throttle, 0);
 				}
 
-				std::cout<<"update_throttle_mode    nav_throttle="<<nav_throttle<<std::endl;
 				throttle_out = g.throttle_cruise + nav_throttle + angle_boost + get_z_damping() - landing_boost;
-
-				std::cout<<"update_throttle_mode    throttle_out="<<throttle_out<<std::endl;
+				DEBUG_PRINTF("update_throttle_mode    :    throttle_out= %d\n",throttle_out);
 			}
 
 			// light filter of output
@@ -846,8 +839,8 @@ Copter::get_nav_throttle(int32_t z_error)
 	rate_error 		= g.pi_alt_hold.get_p(z_error);
 	rate_error 		= constrain(rate_error, -100, 100);
 
-	std::cout<<"get_nav_throttle z_error="<<z_error<<std::endl;
-	std::cout<<"get_nav_throttle rate_error="<<rate_error<<std::endl;
+	DEBUG_PRINTF("get_nav_throttle    :    z_error = %d\n",z_error);
+	DEBUG_PRINTF("get_nav_throttle    :    rate_error = %d\n",rate_error);
 
 	// limit error to prevent I term wind up
 	z_error 		= constrain(z_error, -400, 400);
@@ -857,7 +850,7 @@ Copter::get_nav_throttle(int32_t z_error)
 
 	// calculate rate error
 	rate_error 		= rate_error - climb_rate;
-	std::cout<<"get_nav_throttle     climb_rate="<<climb_rate<<std::endl;
+	DEBUG_PRINTF("get_nav_throttle    :    climb_rate = %d\n",climb_rate);
 
 	// limit the rate
 	output =  constrain(g.pid_throttle.get_pid(rate_error, .1), -160, 180);
@@ -868,7 +861,7 @@ Copter::get_nav_throttle(int32_t z_error)
 	// save our output
 	old_output  = output;
 
-	std::cout<<"get_nav_throttle  output="<<output<<std::endl;
+	DEBUG_PRINTF("get_nav_throttle    :    output = %d\n",output);
 
 	// output control:
 	return output + iterm;

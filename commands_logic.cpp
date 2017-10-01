@@ -21,7 +21,7 @@ void Copter:: process_nav_command()
 			break;
 
 		case MAV_CMD_NAV_WAYPOINT:	// 16  Navigate to Waypoint
-			std::cout<<"do_nav_wp();"<<std::endl;
+			DEBUG_PRINTF("process_nav_command    :    do_nav_wp()\n");
 			do_nav_wp();
 			break;
 
@@ -132,7 +132,8 @@ void Copter:: process_now_command()
 
 bool Copter:: verify_must()
 {
-	std::cout<<"进入  verify_must"<<std::endl;
+	DEBUG_PRINTF("verify_must    :    进入  verify_must\n");
+
 	switch(command_nav_queue.id) {
 
 		case MAV_CMD_NAV_TAKEOFF:
@@ -148,7 +149,7 @@ bool Copter:: verify_must()
 			break;
 
 		case MAV_CMD_NAV_WAYPOINT:
-			std::cout<<"进入  verify_nav_wp"<<std::endl;
+			DEBUG_PRINTF("verify_must    :    进入  verify_nav_wp\n");
 			return verify_nav_wp();
 			break;
 

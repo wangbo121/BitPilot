@@ -22,7 +22,7 @@
  */
 void Copter::gcs_send_message(enum ap_message id)
 {
-	printf("Copter::gcs_send_message\n");
+	DEBUG_PRINTF("Copter::gcs_send_message\n");
 	gcs0.send_message(id);//gcs0 是 GCS_MAVLINK类定义的对象，所以从gcs0访问的函数应该都是在GCS_MAVLINK中声明定义过的
 //
 //    for (uint8_t i=0; i<num_gcs; i++) {

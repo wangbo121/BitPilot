@@ -16,19 +16,19 @@
 //****************************************************************
 int Copter::navigate()
 {
+
     // waypoint distance from plane in cm
     // ---------------------------------------
 
-	std::cout<<"next_WP.lng="<<next_WP.lng<<std::endl;
-	std::cout<<"next_WP.lat="<<next_WP.lat<<std::endl;
-	//std::cout<<"next_WP.id"<<next_WP.id<<std::endl;
-	//printf("next_WP.id=%d\n",next_WP.id);
 
-	std::cout<<"home.lng="<<home.lng<<std::endl;
-	std::cout<<"home.lat="<<home.lat<<std::endl;
+	DEBUG_PRINTF("navigate    :    next_WP.lng = %d\n",next_WP.lng);
+	DEBUG_PRINTF("navigate    :    next_WP.lat = %d\n",next_WP.lat);
 
-	std::cout<<"filtered_loc.lng="<<filtered_loc.lng<<std::endl;
-	std::cout<<"filtered_loc.lat="<<filtered_loc.lat<<std::endl;
+	DEBUG_PRINTF("navigate    :    home.lng = %d\n",home.lng);
+	DEBUG_PRINTF("navigate    :    home.lat = %d\n",home.lat);
+
+	DEBUG_PRINTF("navigate    :    filtered_loc.lng = %d\n",filtered_loc.lng);
+	DEBUG_PRINTF("navigate    :    filtered_loc.lat = %d\n",filtered_loc.lat);
 
 //    wp_distance     = get_distance_cm(&filtered_loc, &next_WP);
 //    home_distance   = get_distance_cm(&filtered_loc, &home);
@@ -41,21 +41,21 @@ int Copter::navigate()
     		return 0;
     	}
 
-    std::cout<<"wp_distance    ="<<wp_distance    <<std::endl;
-    std::cout<<"home_distance     ="<<home_distance     <<std::endl;
+    DEBUG_PRINTF("navigate    :    wp_distance = %u\n",wp_distance);
+    DEBUG_PRINTF("navigate    :    home_distance = %d\n",home_distance);
 
+    DEBUG_PRINTF("navigate    :    next_WP.lng = %d\n",next_WP.lng);
+	DEBUG_PRINTF("navigate    :    next_WP.lat = %d\n",next_WP.lat);
 
-	std::cout<<"navigate    next_WP.lng="<<next_WP.lng<<std::endl;
-	std::cout<<" navigate    next_WP.lat="<<next_WP.lat<<std::endl;
     // target_bearing is where we should be heading
     // --------------------------------------------
     target_bearing                  = get_bearing_cd(&filtered_loc, &next_WP);
     home_to_copter_bearing  = get_bearing_cd(&home, &current_loc);
 
-    std::cout<<"target_bearing="<<target_bearing<<std::endl;//0821测试没有问题，显示的9000，也就是正东，我设置的经度是这样的
-    std::cout<<"home_to_copter_bearing="<<home_to_copter_bearing<<std::endl;
+    DEBUG_PRINTF("navigate    :    target_bearing = %d\n",target_bearing);//0821测试没有问题，显示的9000，也就是正东，我设置的经度是这样的
+    DEBUG_PRINTF("navigate    :    home_to_copter_bearing = %d\n",home_to_copter_bearing);
 
-	// nav_bearing will includes xtrac correction
+    // nav_bearing will includes xtrac correction
 	// ------------------------------------------
 	nav_bearing = target_bearing;
 
@@ -69,7 +69,7 @@ uint8_t Copter::check_missed_wp()
     int32_t temp;
     temp = target_bearing - original_target_bearing;
 
-    std::cout<<"check_missed_wp()    temp="<<temp<<std::endl;
+    DEBUG_PRINTF("check_missed_wp    :    temp = %u\n",temp);
 
     //temp = wrap_180(temp,1);
     temp = wrap_180(temp,100);
@@ -77,62 +77,65 @@ uint8_t Copter::check_missed_wp()
 }
 
 // ------------------------------
-void Copter::calc_XY_velocity(){
-    static int32_t last_longitude = 0;
-    static int32_t last_latitude  = 0;
+void Copter::calc_XY_velocity()
+{
+	//    static int32_t last_longitude = 0;
+	//    static int32_t last_latitude  = 0;
+	static long last_longitude = 0;
+	static long last_latitude  = 0;
 
-    // called after GPS read
-    // offset calculation of GPS speed:
-    // used for estimations below 1.5m/s
-    // y_GPS_speed positve = Up
-    // x_GPS_speed positve = Right
+	// called after GPS read
+	// offset calculation of GPS speed:
+	// used for estimations below 1.5m/s
+	// y_GPS_speed positve = Up
+	// x_GPS_speed positve = Right
 
-    // initialise last_longitude and last_latitude
-#if 0
-    if( last_longitude == 0 && last_latitude == 0 ) {
-        last_longitude = gps.longitude;
-        last_latitude = gps.latitude;
-    }
-#endif
-    // this speed is ~ in cm because we are using 10^7 numbers from GPS
-    //float tmp = 1.0/dTnav;
-    float tmp = 1000.0/dTnav;//20170919如果dTnav单位是ms毫秒的话,
+	// initialise last_longitude and last_latitude
+	#if 0
+	if( last_longitude == 0 && last_latitude == 0 ) {
+	last_longitude = gps.longitude;
+	last_latitude = gps.latitude;
+	}
+	#endif
+	// this speed is ~ in cm because we are using 10^7 numbers from GPS
+	//float tmp = 1.0/dTnav;
+	float tmp = 1000.0/dTnav;//20170919如果dTnav单位是ms毫秒的话,
 
 
-    std::cout<<"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$gps.longitude="<<gps.longitude<<std::endl;
-    std::cout<<"gps.latitude="<<gps.latitude<<std::endl;
-    std::cout<<"last_longitude="<<last_longitude<<std::endl;
-    std::cout<<"last_latitude="<<last_latitude<<std::endl;
+	DEBUG_PRINTF("calc_XY_velocity    :    gps.longitude = %ld\n",gps.longitude);
+	DEBUG_PRINTF("calc_XY_velocity    :    gps.latitude = %ld\n",gps.latitude);
+	DEBUG_PRINTF("calc_XY_velocity    :    last_longitude = %ld\n",last_longitude);
+	DEBUG_PRINTF("calc_XY_velocity    :    last_latitude = %ld\n",last_latitude);
 
-   // x_actual_speed  = (float)(gps.longitude - last_longitude)  * scaleLongDown * tmp;
-    x_actual_speed  = (float)(gps.longitude - last_longitude)  *  tmp;
-    y_actual_speed  = (float)(gps.latitude  - last_latitude)  * tmp;
+	// x_actual_speed  = (float)(gps.longitude - last_longitude)  * scaleLongDown * tmp;
+	x_actual_speed  = (float)(gps.longitude - last_longitude)  *  tmp;
+	y_actual_speed  = (float)(gps.latitude  - last_latitude)  * tmp;
 
-    std::cout<<"x_actual_speed="<<x_actual_speed<<std::endl;
-    std::cout<<"y_actual_speed="<<y_actual_speed<<std::endl;
+	DEBUG_PRINTF("calc_XY_velocity    :    x_actual_speed = %ld\n",x_actual_speed);
+	DEBUG_PRINTF("calc_XY_velocity    :    y_actual_speed = %ld\n",y_actual_speed);
 
-    last_longitude  = gps.longitude;
-    last_latitude   = gps.latitude;
+	last_longitude  = gps.longitude;
+	last_latitude   = gps.latitude;
 
-//#if INERTIAL_NAV == ENABLED
-#if 0
-    // inertial_nav
-    xy_error_correction();
-    filtered_loc.lng = xLeadFilter.get_position(g_gps->longitude, accels_velocity.x);
-    filtered_loc.lat = yLeadFilter.get_position(g_gps->latitude,  accels_velocity.y);
-#else
-    /*
-     * 20170821我把滤波删掉了，直接用了gps.longitude
-     */
-//    filtered_loc.lng = xLeadFilter.get_position(g_gps->longitude, x_actual_speed, gps.get_lag());
-//    filtered_loc.lat = yLeadFilter.get_position(g_gps->latitude,  y_actual_speed, g_gps->get_lag());
+	//#if INERTIAL_NAV == ENABLED
+	#if 0
+	// inertial_nav
+	xy_error_correction();
+	filtered_loc.lng = xLeadFilter.get_position(g_gps->longitude, accels_velocity.x);
+	filtered_loc.lat = yLeadFilter.get_position(g_gps->latitude,  accels_velocity.y);
+	#else
+	/*
+	* 20170821我把滤波删掉了，直接用了gps.longitude
+	*/
+	//    filtered_loc.lng = xLeadFilter.get_position(g_gps->longitude, x_actual_speed, gps.get_lag());
+	//    filtered_loc.lat = yLeadFilter.get_position(g_gps->latitude,  y_actual_speed, g_gps->get_lag());
 
-    filtered_loc.lng = gps.longitude;
-       filtered_loc.lat = gps.latitude;
+	filtered_loc.lng = gps.longitude;
+	filtered_loc.lat = gps.latitude;
 
-       std::cout<<"filtered_loc.lng ="<<filtered_loc.lng <<std::endl;
-       std::cout<<"filtered_loc.lat = "<<filtered_loc.lat  <<std::endl;
-#endif
+	DEBUG_PRINTF("calc_XY_velocity    :    filtered_loc.lng = %ld\n",filtered_loc.lng);
+	DEBUG_PRINTF("calc_XY_velocity    :    filtered_loc.lat = %ld\n",filtered_loc.lat);
+	#endif
 }
 
 void Copter::calc_location_error(struct Location *next_loc)
@@ -152,8 +155,8 @@ void Copter::calc_location_error(struct Location *next_loc)
     // Y Error
     lat_error       = next_loc->lat - current_loc.lat;                                                          // 500 - 0 = 500 Go North
 
-    std::cout<<"long_error="<<long_error<<std::endl;
-    std::cout<<"lat_error   ="<<lat_error   <<std::endl;
+    DEBUG_PRINTF("calc_location_error    :    long_error = %d\n",long_error);
+    DEBUG_PRINTF("calc_location_error    :    lat_error = %d\n",lat_error);
 }
 
 #if 0
@@ -252,12 +255,11 @@ void Copter::calc_nav_rate(int16_t max_speed)
 {
     float temp, temp_x, temp_y;
 
-    std::cout<<"calc_nav_rate  original_target_bearing="<<original_target_bearing<<std::endl;
+    DEBUG_PRINTF("calc_nav_rate    :    original_target_bearing = %d\n",original_target_bearing);
 
     // push us towards the original track
     update_crosstrack();//这个函数需要original_target_bearing的，这个角度还是很重要呀,因为是用来判断到没到点的
-    std::cout<<"calc_nav_rate  crosstrack_error="<<crosstrack_error<<std::endl;
-
+    DEBUG_PRINTF("calc_nav_rate    :    crosstrack_error = %f\n",crosstrack_error);
 
     //crosstrack_error的单位是米
     /*
@@ -268,9 +270,7 @@ void Copter::calc_nav_rate(int16_t max_speed)
     int16_t cross_speed = crosstrack_error * -g.crosstrack_gain*100/2;     // scale down crosstrack_error in cm 之所以乘以100 再除以2是对应 800cm距离时 速度对应400cm/s
     cross_speed     = constrain(cross_speed, -150, 150);//这里限制了位置环的速度
 
-    std::cout<<"calc_nav_rate  target_bearing="<<target_bearing<<std::endl;
-
-
+    DEBUG_PRINTF("calc_nav_rate    :    target_bearing = %d\n",target_bearing);
 
     // rotate by 90 to deal with trig functions
     temp                    = (9000l - target_bearing) * RADX100;//这里temp的单位是弧度
@@ -296,12 +296,12 @@ void Copter::calc_nav_rate(int16_t max_speed)
     x_rate_error    = x_target_speed - x_actual_speed;//20170821这个应该是gps计算得到的
 #endif
 
-    std::cout<<"@@@@@@@@@@@@@@@@@@@@@@@calc_nav_rate   x_actual_speed="<<x_actual_speed<<std::endl;//150 0821
-    std::cout<<"calc_nav_rate   x_target_speed="<<x_target_speed<<std::endl;//150 0821
+    DEBUG_PRINTF("calc_nav_rate    :    x_actual_speed = %d\n",x_actual_speed);
+    DEBUG_PRINTF("calc_nav_rate    :    x_target_speed = %d\n",x_target_speed);//150 0821
 
     x_rate_error    = constrain(x_rate_error, -500, 500);
     //nav_lon                 = g.pid_nav_lon.get_pid(x_rate_error, dTnav);//这个是位置环的2级pid，把速率给到pid控制器
-    std::cout<<"calc_nav_rate  dTnav="<<dTnav<<std::endl;
+    DEBUG_PRINTF("calc_nav_rate    :    dTnav = %lu\n",dTnav);
     nav_lon                 = g.pid_nav_lon.get_pid(x_rate_error, dTnav);//这个是位置环的2级pid，把速率给到pid控制器
 
 
@@ -323,8 +323,8 @@ void Copter::calc_nav_rate(int16_t max_speed)
     y_rate_error    = y_target_speed - y_actual_speed;
 #endif
 
-    std::cout<<"calc_nav_rate y_actual_speed="<<y_actual_speed<<std::endl;
-    std::cout<<"calc_nav_rate y_target_speed="<<y_target_speed<<std::endl;
+    DEBUG_PRINTF("calc_nav_rate    :    y_actual_speed = %d\n",y_actual_speed);
+    DEBUG_PRINTF("calc_nav_rate    :    y_target_speed = %d\n",y_target_speed);
 
     y_rate_error    = constrain(y_rate_error, -500, 500);       // added a rate error limit to keep pitching down to a minimum
     nav_lat                 = g.pid_nav_lat.get_pid(y_rate_error, dTnav);
@@ -335,8 +335,8 @@ void Copter::calc_nav_rate(int16_t max_speed)
     nav_lat                 += tilt;
     nav_lat                 = constrain(nav_lat, -3200, 3200);
 
-    std::cout<<"nav_lng="<<nav_lon<<std::endl;
-    std::cout<<"nav_lat="<<nav_lat<<std::endl;
+    DEBUG_PRINTF("calc_nav_rate    :    nav_lon = %d\n",nav_lon);
+    DEBUG_PRINTF("calc_nav_rate    :    nav_lat = %d\n",nav_lat);
 
     // copy over I term to Loiter_Rate
     g.pid_loiter_rate_lon.set_integrator(g.pid_nav_lon.get_integrator());
@@ -356,9 +356,8 @@ void Copter::calc_loiter_pitch_roll()
     // flip pitch because forward is negative
     auto_pitch = -auto_pitch;
 
-
-    std::cout<<"calc_loiter_pitch_roll   auto_roll="<<auto_roll<<std::endl;
-    std::cout<<"calc_loiter_pitch_roll   auto_pitch="<<auto_pitch<<std::endl;
+    DEBUG_PRINTF("calc_loiter_pitch_roll    :    auto_roll = %d\n",auto_roll);
+    DEBUG_PRINTF("calc_loiter_pitch_roll    :    auto_pitch = %d\n",auto_pitch);
 }
 #endif
 int16_t Copter::get_desired_speed(int16_t max_speed, bool _slow)
@@ -394,7 +393,7 @@ int16_t Copter::get_desired_speed(int16_t max_speed, bool _slow)
     }
 #endif
 
-    std::cout<<"max_speed="<<max_speed<<std::endl;
+    DEBUG_PRINTF("get_desired_speed    :    max_speed = %d\n",max_speed);
 
     return max_speed;//=150
 }
@@ -434,7 +433,7 @@ void Copter::update_crosstrack(void)
 	}
 
 #endif
-    std::cout<<"target_bearing - original_target_bearing="<<target_bearing - original_target_bearing<<std::endl;
+	DEBUG_PRINTF("update_crosstrack    :    target_bearing - original_target_bearing = %d\n",target_bearing - original_target_bearing);
 }
 #if 0
 static int32_t get_altitude_error()
@@ -622,20 +621,20 @@ int32_t Copter::get_new_altitude()
 
 int32_t Copter::read_barometer(void)
 {
-// 	float x, scaling, temp;
-//
-//	barometer.read();
-//	float abs_pressure = barometer.get_pressure();
-//
-//
-//	//Serial.printf("%ld, %ld, %ld, %ld\n", barometer.RawTemp, barometer.RawPress, barometer.Press, abs_pressure);
-//
-//	scaling 				= (float)ground_pressure / abs_pressure;
-//	temp 					= ((float)ground_temperature / 10.0f) + 273.15f;
-//	x 						= log(scaling) * temp * 29271.267f;
-//	return 	(x / 10);
+	// 	float x, scaling, temp;
+	//
+	//	barometer.read();
+	//	float abs_pressure = barometer.get_pressure();
+	//
+	//
+	//	//Serial.printf("%ld, %ld, %ld, %ld\n", barometer.RawTemp, barometer.RawPress, barometer.Press, abs_pressure);
+	//
+	//	scaling 				= (float)ground_pressure / abs_pressure;
+	//	temp 					= ((float)ground_temperature / 10.0f) + 273.15f;
+	//	x 						= log(scaling) * temp * 29271.267f;
+	//	return 	(x / 10);
 
-	std::cout<<"fdm_feed_back.altitude  [cm ]="<<fdm_feed_back.altitude*100<<std::endl;
+	DEBUG_PRINTF("read_barometer    :    fdm_feed_back.altitude*100 = %f\n",fdm_feed_back.altitude*100);
 
 	return (int)fdm_feed_back.altitude*100;
 }

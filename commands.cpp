@@ -159,29 +159,24 @@ This function sets the next waypoint command
 It precalculates all the necessary stuff.
 */
 
- void Copter:: set_next_WP(struct Location *wp)
+void Copter:: set_next_WP(struct Location *wp)
 {
-	//SendDebug("MSG <set_next_wp> wp_index: ");
-	//SendDebugln(g.command_index, DEC);
-
-		std::cout<<"进入set next wp"<<std::endl;
-		std::cout<<"set_next_WP    prev_WP.lng="<<prev_WP.lng<<std::endl;
-		std::cout<<"set_next_WP    prev_WP.lat="<<prev_WP.lat<<std::endl;
+	DEBUG_PRINTF("set_next_WP    :    prev_WP.lng = %d\n",prev_WP.lng);
+	DEBUG_PRINTF("set_next_WP    :    prev_WP.lat = %d\n",prev_WP.lat);
 
 	// copy the current WP into the OldWP slot
 	// ---------------------------------------
 	if (next_WP.lat == 0 || command_nav_index <= 1){
-		std::cout<<"command_nav_index ="<<command_nav_index <<std::endl;
 		prev_WP = current_loc;
 	}else{
-		//if (get_distance(&current_loc, &next_WP) < 10)
-		if (get_distance(&current_loc, &next_WP) < 100)//改了100
-		{
-			std::cout<<"set next wp success"<<std::endl;
-			prev_WP = next_WP;
-		}
-		else
-			prev_WP = current_loc;
+	//if (get_distance(&current_loc, &next_WP) < 10)
+	if (get_distance(&current_loc, &next_WP) < 100)//改了100
+	{
+		DEBUG_PRINTF("set_next_WP    :    set next wp success\n");
+		prev_WP = next_WP;
+	}
+	else
+	prev_WP = current_loc;
 	}
 
 	//Serial.printf("set_next_WP #%d, ", command_nav_index);
@@ -218,8 +213,8 @@ It precalculates all the necessary stuff.
 
 	original_target_bearing = target_bearing;
 
-	std::cout<<"set_next_WP original_target_bearing="<<original_target_bearing<<std::endl;
-	std::cout<<"set_next_WP target_bearing="<<target_bearing<<std::endl;
+	DEBUG_PRINTF("set_next_WP    :    original_target_bearing = %d\n",original_target_bearing);
+	DEBUG_PRINTF("set_next_WP    :    target_bearing = %d\n",target_bearing);
 
 	// reset speed governer
 	// --------------------

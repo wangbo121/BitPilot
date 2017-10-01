@@ -12,14 +12,14 @@
 //----------------------------------------
  void Copter:: Copter:: change_command(uint8_t cmd_index)
 {
-	//Serial.printf("change_command: %d\n",cmd_index );
+	//Serial.DEBUG_PRINTF("change_command: %d\n",cmd_index );
 	// limit range
 	cmd_index = min(g.command_total-1, cmd_index);
 
 	// load command
 	struct Location temp = get_cmd_with_index(cmd_index);
 
-	//Serial.printf("loading cmd: %d with id:%d\n", cmd_index, temp.id);
+	//Serial.DEBUG_PRINTF("loading cmd: %d with id:%d\n", cmd_index, temp.id);
 
 	// verify it's a nav command
 	if (temp.id > MAV_CMD_NAV_LAST ){
@@ -40,23 +40,23 @@
 // --------------------
  void Copter:: update_commands()
 {
-	//Serial.printf("update_commands: %d\n",increment );
+	//Serial.DEBUG_PRINTF("update_commands: %d\n",increment );
 	// A: if we do not have any commands there is nothing to do
 	// B: We have completed the mission, don't redo the mission
 	// XXX debug
 	//uint8_t tmp = g.command_index.get();
-	//Serial.printf("command_index %u \n", tmp);
+	//Serial.DEBUG_PRINTF("command_index %u \n", tmp);
 
 //	 std::cout<<"g.command_total ="<<g.command_total <<std::endl;
 //	 std::cout<<"g.command_index ="<<g.command_index <<std::endl;
-	 printf("g.command_total =%d\n",g.command_total);
-	 printf("g.command_index =%d\n",g.command_index);
+	 DEBUG_PRINTF("g.command_total =%d\n",g.command_total);
+	 DEBUG_PRINTF("g.command_index =%d\n",g.command_index);
 
 	if (g.command_total <= 1 || g.command_index >= 127)
 		return;
 
-	printf("update_commands   command_nav_queue.id  =%d\n",command_nav_queue.id );
-	printf("update_commands   command_nav_index =%d\n",command_nav_index );
+	DEBUG_PRINTF("update_commands   command_nav_queue.id  =%d\n",command_nav_queue.id );
+	DEBUG_PRINTF("update_commands   command_nav_index =%d\n",command_nav_index );
 
 
 	if(command_nav_queue.id == NO_COMMAND){
@@ -195,7 +195,7 @@
 	  * 如果完成则把命令导航的队列清零，即command_nav_queue.id = NO_COMMAND;
 	  */
 	if(verify_must()){
-		//Serial.printf("verified must cmd %d\n" , command_nav_index);
+		//Serial.DEBUG_PRINTF("verified must cmd %d\n" , command_nav_index);
 		command_nav_queue.id = NO_COMMAND;
 
 		// store our most recent executed nav command
@@ -209,17 +209,17 @@
 		command_cond_index 		= NO_COMMAND;
 		command_cond_queue.id 	= NO_COMMAND;
 
-		printf("verify must  command_cond_queue.id=%d\n",command_cond_queue.id);
+		DEBUG_PRINTF("verify must  command_cond_queue.id=%d\n",command_cond_queue.id);
 		std::cout<<"verify must    original_target_bearing="<<original_target_bearing<<std::endl;
 #endif
 
 	}else{
-		//Serial.printf("verified must false %d\n" , command_nav_index);
-		std::cout<<"verify_must failed 也就是还没有到达目标航点"<<std::endl;
+		//Serial.DEBUG_PRINTF("verified must false %d\n" , command_nav_index);
+		DEBUG_PRINTF("verify_commands    :    verify_must failed 也就是还没有到达目标航点\n");
 	}
 
 //	if(verify_may()){
-//		//Serial.printf("verified may cmd %d\n" , command_cond_index);
+//		//Serial.DEBUG_PRINTF("verified may cmd %d\n" , command_cond_index);
 //		command_cond_queue.id = NO_COMMAND;
 //	}
 }
