@@ -163,6 +163,8 @@ public:
 	int8_t		flap_1_speed;
 	int8_t		flap_2_percent;
 	int8_t		flap_2_speed;
+
+	Parameters() {}
 };
 
 

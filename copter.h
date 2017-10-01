@@ -1718,6 +1718,7 @@ extern int fd_ap2gcs;
 #ifdef LINUX_OS
 extern int fd_socket_generic;
 //extern int16_t             motor_out_flightgear[AP_MOTORS_MAX_NUM_MOTORS];
+extern int16_t motor_out_flightgear[];//这个不能删除，本来是输出给flightgear的但是这个1000-2000的量又得赋值给fdm模拟用的servos_set_out
 #endif
 
 #ifdef LINUX_OS

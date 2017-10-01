@@ -8,10 +8,8 @@
 #include "copter.h"
 
 #ifdef LINUX_OS
-//我们保留了fdm模拟部分，但是删除了把发送给无人船地面站和flightgear这2部分放在了最下面用#define LINUX_OS包含着
 /*
  * 四旋翼的飞行动力模型输入是4个电机的1000-2000的pwm值，输出是飞行的15个状态
- * 20180821发现初始化的纬度在先
  */
 //MultiCopter multi_copter("37.6136,-122.357,10,0","x");//x型机架，起始高度为10，yaw是0
 MultiCopter multi_copter("37.6136,-122.357,10,0","+");//+型机架，起始高度为10，yaw是0
@@ -25,7 +23,7 @@ T_FDM fdm_send;
 T_FDM fdm_feed_back;//这个动力模型解算出来后，就把数据返回给imu，gps，compass等
 
 #ifdef LINUX_OS
-int16_t             motor_out_flightgear[AP_MOTORS_MAX_NUM_MOTORS];//这个不能删除，本来是输出给flightgear的但是这个1000-2000的量又得赋值给fdm模拟用的servos_set_out
+int16_t motor_out_flightgear[AP_MOTORS_MAX_NUM_MOTORS];//这个不能删除，本来是输出给flightgear的但是这个1000-2000的量又得赋值给fdm模拟用的servos_set_out
 uint16_t servos_set_out[4];//这是驾驶仪计算的到的motor_out中的四个电机的转速，给电调的信号，1000～2000
 
 Aircraft::sitl_input input;//这个是4个电机的输入，然后用于multi_copter.update(input)更新出飞机的飞行状态
@@ -328,7 +326,7 @@ void Copter::loop_fast()
 	fast_loopTimer=timer;
 #endif
 
-	G_Dt=0.01;//这个设置为0.01秒也就是100hz主要是为了跟sim_aircraft的速率一致，但是其实20ms(50hz)就够
+	G_Dt=0.01;//G_Dt是dcm积分要用的，这个设置为0.01秒也就是100hz主要是为了跟sim_aircraft的速率一致，但是其实20ms(50hz)就够
 
 	/* 1--读取接收机的信号，获取遥控器各个通道 */
 	read_radio();
@@ -340,13 +338,12 @@ void Copter::loop_fast()
 	g.rc_5.set_pwm(1990);//rc_5大于1900时，是绕航点飞行状态
 
 	/* 2--更新姿态，获取飞机现在的姿态角 */
+	imu.update();
 	compass.read();
-	//gps.read();
-	//100hz更新gps数据没有太大的意义，并且在程序中我们需要用gps来计算实际的朝东和朝北的速度，
+	//这里本来应该有一个获取gps数据的，但是100hz更新gps数据没有太大的意义，并且在程序中我们需要用gps来计算实际的朝东和朝北的速度，
 	//如果gps更新太快，导致每次更新gps时，老的经纬度和新的经纬度几乎是一样的
 	//导致计算的actual_speed是0
 	//update_GPS();//gps read只是读取数据 update_GPS里面还需要给current_loc赋值//20170919放在这里太快了,还是放在10hz的里面好点
-	imu.update();
 	/*
 	 * 因为下面的ahrs中需要imu gps compass的数据，
 	 * 所以需要先读取那些传感器的数据
@@ -374,16 +371,15 @@ void Copter::loop_fast()
 		update_yaw_mode();//上面这两个函数有问题呀，上面两个函数赋值给的是EARTH_FRAME，但是下面的run_rate_controllers是用的BODY_FRAME，所以还需要仔细再看一下apm
 
 	    //这个是更新内环的速率控制器的目标，update targets to rate controllers
-	    update_rate_contoller_targets();//这个步骤很重要，是把上面的earth坐标系下的转为机体坐标系
+	    update_rate_contoller_targets();//这个步骤很重要，是把上面的earth坐标系下的计算数值量转为机体坐标系下的
 
 	    //这个是执行了角速度的控制器，需要从ahrs或者imu获取角速度的大小，扩大了100倍，这个函数还得看一下
 		run_rate_controllers();
 
-		//这个是油门的控制，跟姿态的控制分开，油门的更新放在了medium_loop中了，5分之1的loop的频率，如果是50hz的话，那么就是10hz，100ms更新一次
+		//这个是油门的控制，跟姿态的控制分开，油门的更新速率不需要那么快，油门的更新放在了medium_loop中了，5分之1的loop的频率，如果是50hz的话，那么就是10hz，100ms更新一次
 		//update_throttle_mode();//计算油门量的输出值
 		break;
 	case ACRO:
-		//std::cout<<"Hello ACRO MODE"<<std::endl;
 		// call rate controllers
 		g.channel_roll.servo_out = g.channel_roll.control_in;
 		g.channel_pitch.servo_out = g.channel_pitch.control_in;
@@ -391,9 +387,7 @@ void Copter::loop_fast()
 
 		g.channel_throttle.servo_out=g.channel_throttle.control_in;
 		break;
-
 	case AUTO:
-		//std::cout<<"Hello AUTO MODE 绕航点航行"<<std::endl;
 		/*
 		* 先是roll pitch yaw的2级pid控制
 		* 再是油门throttle的2级pid控制
@@ -413,7 +407,6 @@ void Copter::loop_fast()
 		//这个是油门的控制，跟姿态的控制分开，油门的更新放在了medium_loop中了，5分之1的loop的频率，如果是50hz的话，那么就是10hz，100ms更新一次
 		//update_throttle_mode();//计算油门量的输出值
 		break;
-
 	default:
 		break;
 	}
@@ -423,6 +416,7 @@ void Copter::loop_fast()
 
 	if(takeoff_complete == false)
 	{
+		//没有起飞之前，把所有的积分项都清零
 		// reset these I terms to prevent awkward tipping on takeoff
 		reset_rate_I();
 		reset_stability_I();
@@ -432,6 +426,7 @@ void Copter::loop_fast()
 	/*
 	 * 其实到这里主程序也就结束了，下面的程序主要是为了模拟仿真，把数据发送给flightgear
 	 */
+
 	/*
 	 * motors_output()函数中把最终输出给radio_out的数值，
 	 * 也就是每个电机的1000～2000的值赋值给了motor_out_flightgear
@@ -557,11 +552,6 @@ void Copter::update_current_flight_mode(void)
 		//std::cout<<"飞控模式是绕航点飞行:"<<std::endl;
 	}
 
-
-	/*
-	 * 什么时候是航点飞行模式呢
-	 */
-
 	/*
 	 * 根据飞行模式决定控制yaw roll pitch throttle的模式
 	 */
@@ -572,13 +562,11 @@ void Copter::update_current_flight_mode(void)
 		roll_pitch_mode = ROLL_PITCH_ACRO;
 		throttle_mode   = THROTTLE_MANUAL;
 		break;
-
 	case STABILIZE:
 		yaw_mode                = YAW_HOLD;
 		roll_pitch_mode = ROLL_PITCH_STABLE;
 		throttle_mode   = THROTTLE_MANUAL;
 		break;
-
 	case AUTO:
 		yaw_mode                = YAW_AUTO;
 		roll_pitch_mode = ROLL_PITCH_AUTO;
@@ -587,21 +575,15 @@ void Copter::update_current_flight_mode(void)
 		// loads the commands from where we left off
 		//init_commands();
 		break;
-
 	case LOITER:
 //		yaw_mode                = LOITER_YAW;
 //		roll_pitch_mode = LOITER_RP;
 //		throttle_mode   = LOITER_THR;
 //		set_next_WP(&current_loc);
 		break;
-
 	default:
 		break;
 	}
-
-
-
-
 }
 
 void Copter::stabilize()
@@ -609,92 +591,6 @@ void Copter::stabilize()
 
 }
 
-// write out the servo PWM values
-// ------------------------------
-void Copter::set_servos_4()
-{
-
-}
-
-void Copter::motors_output()
-{
-	int16_t             motor_out[AP_MOTORS_MAX_NUM_MOTORS];
-
-    //int8_t              _num_motors; // not a very useful variable as you really need to check the motor_enabled array to see which motors are enabled
-    float               _roll_factor[AP_MOTORS_MAX_NUM_MOTORS]; // each motors contribution to roll
-    float               _pitch_factor[AP_MOTORS_MAX_NUM_MOTORS]; // each motors contribution to pitch
-    float              _throttle_factor[AP_MOTORS_MAX_NUM_MOTORS];
-    float               _yaw_factor[AP_MOTORS_MAX_NUM_MOTORS];  // each motors contribution to yaw (normally 1 or -1)
-
-#if 0
-    //这个是x型的
-    /*
-     * 这里给factor赋值-1 0 或者1
-     */
-    _roll_factor[0]  =  -1;  _pitch_factor[0]  = +1;  _yaw_factor[0]  = +1;
-    _roll_factor[1]  =  -1;  _pitch_factor[1]  =  -1;  _yaw_factor[1]  =  -1;
-    _roll_factor[2]  = +1;  _pitch_factor[2]  =  -1;  _yaw_factor[2]  = +1;
-    _roll_factor[3]  = +1;  _pitch_factor[3]  = +1;  _yaw_factor[3]  =  -1;
-#else
-
-    //这个是针对+型机架的系数
-	_roll_factor[0]  =  -1;  _pitch_factor[0]  =   0;  _throttle_factor[0]= +1;  _yaw_factor[0]  = +1;
-	_roll_factor[1]  = +1;  _pitch_factor[1]  =   0;  _throttle_factor[1]= +1;  _yaw_factor[1]  = +1;
-	_roll_factor[2]  =   0;  _pitch_factor[2]  = +1;  _throttle_factor[2]= +1;  _yaw_factor[2]  =  -1;
-	_roll_factor[3]  =   0;  _pitch_factor[3]  =  -1;  _throttle_factor[3]= +1;  _yaw_factor[3]  =  -1;
-#endif
-
-	g.channel_roll.calc_pwm();
-	g.channel_pitch.calc_pwm();
-	g.channel_rudder.calc_pwm();
-	g.channel_throttle.calc_pwm();
-
-	DEBUG_PRINTF("motors_output    :    g.channel_roll.servo_out = %d\n",g.channel_roll.servo_out);
-	DEBUG_PRINTF("motors_output    :    g.channel_pitch.servo_out = %d\n",g.channel_pitch.servo_out);
-	DEBUG_PRINTF("motors_output    :    g.channel_rudder.servo_out = %d\n",g.channel_rudder.servo_out);
-	DEBUG_PRINTF("motors_output    :    g.channel_throttle.servo_out = %d\n",g.channel_throttle.servo_out);
-
-	DEBUG_PRINTF("motors_output    :    g.channel_roll.pwm_out = %d\n",g.channel_roll.pwm_out);
-	DEBUG_PRINTF("motors_output    :    g.channel_pitch.pwm_out = %d\n",g.channel_pitch.pwm_out);
-	DEBUG_PRINTF("motors_output    :    g.channel_rudder.pwm_out = %d\n",g.channel_rudder.pwm_out);
-	DEBUG_PRINTF("motors_output    :    g.channel_throttle.pwm_out = %d\n",g.channel_throttle.pwm_out);
-
-	DEBUG_PRINTF("motors_output    :    g.channel_roll.radio_out = %d\n",g.channel_roll.radio_out);
-	DEBUG_PRINTF("motors_output    :    g.channel_pitch.radio_out = %d\n",g.channel_pitch.radio_out);
-	DEBUG_PRINTF("motors_output    :    g.channel_rudder.radio_out = %d\n",g.channel_rudder.radio_out);
-	DEBUG_PRINTF("motors_output    :    g.channel_throttle.radio_out = %d\n",g.channel_throttle.radio_out);
-
-	/*
-	 * 20170930切记我们输出需要的是throttle的radio_out，而其他的都是需要的pwm_out
-	 */
-
-	for(int i=0;i<4;i++)
-	{
-
-		/*
-		 * 一定要注意这里的throttle是用的radio_out，radio_out=pwm_out+radio_trim，
-		 * calc是把servo_out的-4500～+4500转为pwm的-500～+500
-		 * radio_out=pwm_out+radio_trim=pwm_out+1500 radio_out的范围是1000-2000
-		 */
-		motor_out[i]=g.channel_throttle.radio_out*_throttle_factor[i]+ \
-								g.channel_roll.pwm_out*_roll_factor[i]+\
-								g.channel_pitch.pwm_out* _pitch_factor[i]+\
-								g.channel_rudder.pwm_out * _yaw_factor[i];
-	}
-
-#ifdef LINUX_OS
-	memcpy(motor_out_flightgear,motor_out,sizeof(motor_out));//模型fdm需要的四个输入量就是电机的1000-2000的信号量
-#endif
-
-	for(int i=0;i<4;i++)
-	{
-		g._rc.output_ch_pwm(i,motor_out[i]);//把控制量输出到all_external_device_output
-		//或者用下面的motors也是可以的
-		//motors.rc_write(i,motor_out[i]);
-		//std::cout<<"motor_out_flightgear["<<i<<"]="<<motor_out_flightgear[i]<<std::endl;
-		//sleep(1);
-	}
-}
 
 void Copter::init_led()
 {
@@ -709,35 +605,11 @@ void Copter::init_mpu6050()
 
 }
 
-
-
-
-
-
-
-void Copter::one_second_loop()
-{
-	/*
-	 * 一秒钟给地面站发送一组数据--实时数据
-	 */
-}
-
-
-
-//void Copter::navigate()
-//{
-//	// wp_distance is in ACTUAL meters, not the *100 meters we get from the GPS
-//	// ------------------------------------------------------------------------
-//
-//}
-
 // called after a GPS read
 void Copter::update_navigation()
 {
 	// wp_distance is in ACTUAL meters, not the *100 meters we get from the GPS
-		// ------------------------------------------------------------------------
-
-
+	// ------------------------------------------------------------------------
 
     // wp_distance is in CM
     // --------------------
@@ -757,13 +629,10 @@ void Copter::update_navigation()
         DEBUG_PRINTF("update_navigation    :    auto_roll = %d\n",auto_roll);
         DEBUG_PRINTF("update_navigation    :    auto_pitch = %d\n",auto_pitch);
         break;
-
-
     case STABILIZE:
         update_nav_wp();
         break;
     }
-
  }
 
 
@@ -785,9 +654,6 @@ void Copter::update_alt()
 	static int32_t 	old_baro_alt 	= 0;
 	static int16_t 	old_climb_rate 	= 0;
 
-
-	// This is real life
-
 	// read in Actual Baro Altitude
 	baro_alt 			= (baro_alt + read_barometer()) >> 1;
 
@@ -796,12 +662,9 @@ void Copter::update_alt()
 	baro_rate 			= (temp + baro_rate) >> 1;
 	old_baro_alt		= baro_alt;
 
-
-
 	// NO Sonar case
 	current_loc.alt = baro_alt + home.alt;
 	climb_rate 		= baro_rate;
-
 
 	// simple smoothing
 	climb_rate = (climb_rate + old_climb_rate)>>1;

@@ -5,7 +5,7 @@
  *      Author: wangbo
  */
 
-#include "navigation.h"
+//#include "navigation.h"
 #include "copter.h"
 #include "location.h"
 #include "fdm.h"
