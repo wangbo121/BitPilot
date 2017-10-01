@@ -512,6 +512,19 @@ enum gcs_severity {
     SEVERITY_CRITICAL
 };
 
+//enum MAV_MODE
+//{
+//    MAV_MODE_UNINIT = 0,     ///< System is in undefined state
+//    MAV_MODE_LOCKED = 1,     ///< Motors are blocked, system is safe
+//    MAV_MODE_MANUAL = 2,     ///< System is allowed to be active, under manual (RC) control
+//    MAV_MODE_GUIDED = 3,     ///< System is allowed to be active, under autonomous control, manual setpoint
+//    MAV_MODE_AUTO =   4,     ///< System is allowed to be active, under autonomous control and navigation
+//    MAV_MODE_TEST1 =  5,     ///< Generic test mode, for custom use
+//    MAV_MODE_TEST2 =  6,     ///< Generic test mode, for custom use
+//    MAV_MODE_TEST3 =  7,     ///< Generic test mode, for custom use
+//    MAV_MODE_READY =  8,     ///< System is ready, motors are unblocked, but controllers are inactive
+//    MAV_MODE_RC_TRAINING = 9 ///< System is blocked, only RC valued are read and reported back
+//};
 
 
 

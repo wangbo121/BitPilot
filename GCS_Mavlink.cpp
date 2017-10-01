@@ -47,6 +47,12 @@ void Copter::gcs_send_deferred(void)
 }
 
 /*
+ * 20171001 下面增加copter send_xxx函数时，按照global.h文件中的
+ * enum ap_message 这个结构的顺序增加，
+ * 我已经增加了心跳，姿态，位置，当前目标航点号4个，剩下的慢慢增加
+ */
+
+/*
  *  !!NOTE!!
  *
  *  the use of NOINLINE separate functions for each message type avoids
@@ -61,102 +67,86 @@ void Copter::gcs_send_deferred(void)
  */
 NOINLINE void Copter::send_heartbeat(mavlink_channel_t chan)
 {
+	uint8_t base_mode = MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
+	//    uint8_t system_status = ap.land_complete ? MAV_STATE_STANDBY : MAV_STATE_ACTIVE;
+	//uint8_t system_status =MAV_STATE_ACTIVE;
+	uint32_t custom_mode = control_mode;
 
-    uint8_t base_mode = MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
-//    uint8_t system_status = ap.land_complete ? MAV_STATE_STANDBY : MAV_STATE_ACTIVE;
-    uint8_t system_status =MAV_STATE_ACTIVE;
-    uint32_t custom_mode = control_mode;
+	//    // set system as critical if any failsafe have triggered
+	//    if (failsafe.radio || failsafe.battery || failsafe.gcs || failsafe.ekf)  {
+	//        system_status = MAV_STATE_CRITICAL;
+	//    }
 
-//    // set system as critical if any failsafe have triggered
-//    if (failsafe.radio || failsafe.battery || failsafe.gcs || failsafe.ekf)  {
-//        system_status = MAV_STATE_CRITICAL;
-//    }
+	// work out the base_mode. This value is not very useful
+	// for APM, but we calculate it as best we can so a generic
+	// MAVLink enabled ground station can work out something about
+	// what the MAV is up to. The actual bit values are highly
+	// ambiguous for most of the APM flight modes. In practice, you
+	// only get useful information from the custom_mode, which maps to
+	// the APM flight mode and has a well defined meaning in the
+	// ArduPlane documentation
+	base_mode = MAV_MODE_FLAG_STABILIZE_ENABLED;
+	switch (control_mode) {
+	case AUTO:
+	case RTL:
+	case LOITER:
+	case GUIDED:
+	case CIRCLE:
+	//    case POSHOLD:
+	//    case BRAKE:
+	base_mode |= MAV_MODE_FLAG_GUIDED_ENABLED;
+	// note that MAV_MODE_FLAG_AUTO_ENABLED does not match what
+	// APM does in any mode, as that is defined as "system finds its own goal
+	// positions", which APM does not currently do
+	break;
+	}
 
-    // work out the base_mode. This value is not very useful
-    // for APM, but we calculate it as best we can so a generic
-    // MAVLink enabled ground station can work out something about
-    // what the MAV is up to. The actual bit values are highly
-    // ambiguous for most of the APM flight modes. In practice, you
-    // only get useful information from the custom_mode, which maps to
-    // the APM flight mode and has a well defined meaning in the
-    // ArduPlane documentation
-    base_mode = MAV_MODE_FLAG_STABILIZE_ENABLED;
-    switch (control_mode) {
-    case AUTO:
-    case RTL:
-    case LOITER:
-    case GUIDED:
-    case CIRCLE:
-//    case POSHOLD:
-//    case BRAKE:
-        base_mode |= MAV_MODE_FLAG_GUIDED_ENABLED;
-        // note that MAV_MODE_FLAG_AUTO_ENABLED does not match what
-        // APM does in any mode, as that is defined as "system finds its own goal
-        // positions", which APM does not currently do
-        break;
-    }
+	// all modes except INITIALISING have some form of manual
+	// override if stick mixing is enabled
+	base_mode |= MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
 
-    // all modes except INITIALISING have some form of manual
-    // override if stick mixing is enabled
-    base_mode |= MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
+	#if HIL_MODE != HIL_MODE_DISABLED
+	base_mode |= MAV_MODE_FLAG_HIL_ENABLED;
+	#endif
 
-#if HIL_MODE != HIL_MODE_DISABLED
-    base_mode |= MAV_MODE_FLAG_HIL_ENABLED;
+	// we are armed if we are not initialising
+	if (motors.armed()) {
+	base_mode |= MAV_MODE_FLAG_SAFETY_ARMED;
+	}
+
+	// indicate we have set a custom mode
+	base_mode |= MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
+
+	mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+	mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+
+	// Define the system type, in this case an airplane
+	uint8_t system_type = MAV_TYPE_FIXED_WING;
+	uint8_t autopilot_type = MAV_AUTOPILOT_GENERIC;
+
+	uint8_t system_mode = MAV_MODE_PREFLIGHT; ///< Booting up
+	//uint32_t custom_mode = 0;                 ///< Custom mode, can be defined by user/adopter
+	uint8_t system_state = MAV_STATE_STANDBY; ///< System ready for flight
+
+	// Initialize the required buffers
+	mavlink_message_t msg;
+	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+	mavlink_msg_heartbeat_pack( mavlink_system.sysid,mavlink_system.compid,&msg,system_type,autopilot_type,system_mode,custom_mode,system_state);
+
+	// Copy the message to the send buffer
+	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+#ifdef LINUX_OS
+	// Send the message with the standard UART send function
+	// uart0_send might be named differently depending on
+	// the individual microcontroller / library in use.
+	//uart0_send(buf, len);
+	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
 #endif
-
-    // we are armed if we are not initialising
-    if (motors.armed()) {
-        base_mode |= MAV_MODE_FLAG_SAFETY_ARMED;
-    }
-
-    // indicate we have set a custom mode
-    base_mode |= MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
-
-
-    mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
-    mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
-
-    // Define the system type, in this case an airplane
-    uint8_t system_type = MAV_TYPE_FIXED_WING;
-    uint8_t autopilot_type = MAV_AUTOPILOT_GENERIC;
-
-    uint8_t system_mode = MAV_MODE_PREFLIGHT; ///< Booting up
-    //uint32_t custom_mode = 0;                 ///< Custom mode, can be defined by user/adopter
-    uint8_t system_state = MAV_STATE_STANDBY; ///< System ready for flight
-
-   // mavlink_msg_heartbeat_send(
-//
-//        chan,
-//        MAV_TYPE_QUADROTOR,
-//        MAV_AUTOPILOT_ARDUPILOTMEGA,
-//        base_mode,
-//        custom_mode,
-//        system_status);
-
-    // Initialize the required buffers
-    mavlink_message_t msg;
-    uint8_t buf[MAVLINK_MAX_PACKET_LEN];
-
-
-        mavlink_msg_heartbeat_pack( mavlink_system.sysid,mavlink_system.compid,&msg,system_type,autopilot_type,system_mode,custom_mode,system_state);
-
-
-        // Copy the message to the send buffer
-        uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-
-        // Send the message with the standard UART send function
-        // uart0_send might be named differently depending on
-        // the individual microcontroller / library in use.
-        //uart0_send(buf, len);
-        send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
-
 }
 
 NOINLINE void Copter::send_attitude(mavlink_channel_t chan)
 {
-
-	const Vector3f &gyro = copter.imu.get_gyro();
-
 	mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
 	mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
 
@@ -213,8 +203,6 @@ void NOINLINE Copter::send_location(mavlink_channel_t chan)
 	mavlink_message_t msg;
 	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
 
-	//    mavlink_msg_global_position_int_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,\
-	//    		                                                             0,current_loc.lat,-current_loc.lng,current_loc.alt,current_loc.alt,0,0,0,0);
 	mavlink_msg_global_position_int_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,\
 																		ap2gcs_mavlink.time_boot_ms,\
 																		ap2gcs_mavlink.global_position_lat,\
@@ -238,15 +226,6 @@ void NOINLINE Copter::send_location(mavlink_channel_t chan)
 	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
 #endif
 }
-
-
-//#if AC_FENCE == ENABLED
-//NOINLINE void Copter::send_limits_status(mavlink_channel_t chan)
-//{
-//    fence_send_mavlink_status(chan);
-//}
-//#endif
-
 
 NOINLINE void Copter::send_extended_status1(mavlink_channel_t chan)
 {
@@ -370,245 +349,6 @@ void NOINLINE Copter::send_statustext(mavlink_channel_t chan)
 
 }
 
-// are we still delaying telemetry to try to avoid Xbee bricking?
-//bool Copter::telemetry_delayed(mavlink_channel_t chan)
-//{
-//
-//}
-
-
-// try to send a message, return false if it won't fit in the serial tx buffer
-bool GCS_MAVLINK::try_send_message(enum ap_message id)
-{
-//    if (copter.telemetry_delayed(chan)) {
-//        return false;
-//    }
-
-#if HIL_MODE != HIL_MODE_SENSORS
-    // if we don't have at least 250 micros remaining before the main loop
-    // wants to fire then don't send a mavlink message. We want to
-    // prioritise the main flight control loop over communications
-    if (copter.scheduler.time_available_usec() < 250 && copter.motors.armed()) {
-        copter.gcs_out_of_time = true;
-        return false;
-    }
-#endif
-
-//    switch(id) {
-//    case MSG_HEARTBEAT:
-//        CHECK_PAYLOAD_SIZE(HEARTBEAT);
-//        copter.gcs[chan-MAVLINK_COMM_0].last_heartbeat_time = hal.scheduler->millis();
-//        copter.send_heartbeat(chan);
-//        break;
-//
-//    case MSG_EXTENDED_STATUS1:
-//        // send extended status only once vehicle has been initialised
-//        // to avoid unnecessary errors being reported to user
-//        if (copter.ap.initialised) {
-//            CHECK_PAYLOAD_SIZE(SYS_STATUS);
-//            copter.send_extended_status1(chan);
-//            CHECK_PAYLOAD_SIZE(POWER_STATUS);
-//            copter.gcs[chan-MAVLINK_COMM_0].send_power_status();
-//        }
-//        break;
-//
-//    case MSG_EXTENDED_STATUS2:
-//        CHECK_PAYLOAD_SIZE(MEMINFO);
-//        copter.gcs[chan-MAVLINK_COMM_0].send_meminfo();
-//        break;
-//
-//    case MSG_ATTITUDE:
-//        CHECK_PAYLOAD_SIZE(ATTITUDE);
-//        copter.send_attitude(chan);
-//        break;
-//
-//    case MSG_LOCATION:
-//        CHECK_PAYLOAD_SIZE(GLOBAL_POSITION_INT);
-//        copter.send_location(chan);
-//        break;
-//
-//    case MSG_LOCAL_POSITION:
-//        CHECK_PAYLOAD_SIZE(LOCAL_POSITION_NED);
-//        send_local_position(copter.ahrs);
-//        break;
-//
-//    case MSG_NAV_CONTROLLER_OUTPUT:
-//        CHECK_PAYLOAD_SIZE(NAV_CONTROLLER_OUTPUT);
-//        copter.send_nav_controller_output(chan);
-//        break;
-//
-//    case MSG_GPS_RAW:
-//        return copter.gcs[chan-MAVLINK_COMM_0].send_gps_raw(copter.gps);
-//
-//    case MSG_SYSTEM_TIME:
-//        CHECK_PAYLOAD_SIZE(SYSTEM_TIME);
-//        copter.gcs[chan-MAVLINK_COMM_0].send_system_time(copter.gps);
-//        break;
-//
-//    case MSG_SERVO_OUT:
-//        CHECK_PAYLOAD_SIZE(RC_CHANNELS_SCALED);
-//        copter.send_servo_out(chan);
-//        break;
-//
-//    case MSG_RADIO_IN:
-//        CHECK_PAYLOAD_SIZE(RC_CHANNELS_RAW);
-//        copter.gcs[chan-MAVLINK_COMM_0].send_radio_in(copter.receiver_rssi);
-//        break;
-//
-//    case MSG_RADIO_OUT:
-//        CHECK_PAYLOAD_SIZE(SERVO_OUTPUT_RAW);
-//        copter.send_radio_out(chan);
-//        break;
-//
-//    case MSG_VFR_HUD:
-//        CHECK_PAYLOAD_SIZE(VFR_HUD);
-//        copter.send_vfr_hud(chan);
-//        break;
-//
-//    case MSG_RAW_IMU1:
-//        CHECK_PAYLOAD_SIZE(RAW_IMU);
-//        copter.gcs[chan-MAVLINK_COMM_0].send_raw_imu(copter.ins, copter.compass);
-//        break;
-//
-//    case MSG_RAW_IMU2:
-//        CHECK_PAYLOAD_SIZE(SCALED_PRESSURE);
-//        copter.gcs[chan-MAVLINK_COMM_0].send_scaled_pressure(copter.barometer);
-//        break;
-//
-//    case MSG_RAW_IMU3:
-//        CHECK_PAYLOAD_SIZE(SENSOR_OFFSETS);
-//        copter.gcs[chan-MAVLINK_COMM_0].send_sensor_offsets(copter.ins, copter.compass, copter.barometer);
-//        break;
-//
-//    case MSG_CURRENT_WAYPOINT:
-//        CHECK_PAYLOAD_SIZE(MISSION_CURRENT);
-//        copter.send_current_waypoint(chan);
-//        break;
-//
-//    case MSG_NEXT_PARAM:
-//        CHECK_PAYLOAD_SIZE(PARAM_VALUE);
-//        copter.gcs[chan-MAVLINK_COMM_0].queued_param_send();
-//        break;
-//
-//    case MSG_NEXT_WAYPOINT:
-//        CHECK_PAYLOAD_SIZE(MISSION_REQUEST);
-//        copter.gcs[chan-MAVLINK_COMM_0].queued_waypoint_send();
-//        break;
-//
-//    case MSG_RANGEFINDER:
-//#if CONFIG_SONAR == ENABLED
-//        CHECK_PAYLOAD_SIZE(RANGEFINDER);
-//        copter.send_rangefinder(chan);
-//#endif
-//        break;
-//
-//    case MSG_RPM:
-//        CHECK_PAYLOAD_SIZE(RPM);
-//        copter.send_rpm(chan);
-//        break;
-//
-//    case MSG_TERRAIN:
-//#if AP_TERRAIN_AVAILABLE
-//        CHECK_PAYLOAD_SIZE(TERRAIN_REQUEST);
-//        copter.terrain.send_request(chan);
-//#endif
-//        break;
-//
-//    case MSG_CAMERA_FEEDBACK:
-//#if CAMERA == ENABLED
-//        CHECK_PAYLOAD_SIZE(CAMERA_FEEDBACK);
-//        copter.camera.send_feedback(chan, copter.gps, copter.ahrs, copter.current_loc);
-//#endif
-//        break;
-//
-//    case MSG_STATUSTEXT:
-//        CHECK_PAYLOAD_SIZE(STATUSTEXT);
-//        copter.send_statustext(chan);
-//        break;
-//
-//    case MSG_LIMITS_STATUS:
-//#if AC_FENCE == ENABLED
-//        CHECK_PAYLOAD_SIZE(LIMITS_STATUS);
-//        copter.send_limits_status(chan);
-//#endif
-//        break;
-//
-//    case MSG_AHRS:
-//        CHECK_PAYLOAD_SIZE(AHRS);
-//        copter.gcs[chan-MAVLINK_COMM_0].send_ahrs(copter.ahrs);
-//        break;
-//
-//    case MSG_SIMSTATE:
-//#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-//        CHECK_PAYLOAD_SIZE(SIMSTATE);
-//        copter.send_simstate(chan);
-//#endif
-//        CHECK_PAYLOAD_SIZE(AHRS2);
-//        copter.gcs[chan-MAVLINK_COMM_0].send_ahrs2(copter.ahrs);
-//        break;
-//
-//    case MSG_HWSTATUS:
-//        CHECK_PAYLOAD_SIZE(HWSTATUS);
-//        copter.send_hwstatus(chan);
-//        break;
-//
-//    case MSG_MOUNT_STATUS:
-//#if MOUNT == ENABLED
-//        CHECK_PAYLOAD_SIZE(MOUNT_STATUS);
-//        copter.camera_mount.status_msg(chan);
-//#endif // MOUNT == ENABLED
-//        break;
-//
-//    case MSG_BATTERY2:
-//        CHECK_PAYLOAD_SIZE(BATTERY2);
-//        copter.gcs[chan-MAVLINK_COMM_0].send_battery2(copter.battery);
-//        break;
-//
-//    case MSG_OPTICAL_FLOW:
-//#if OPTFLOW == ENABLED
-//        CHECK_PAYLOAD_SIZE(OPTICAL_FLOW);
-//        copter.gcs[chan-MAVLINK_COMM_0].send_opticalflow(copter.ahrs, copter.optflow);
-//#endif
-//        break;
-//
-//    case MSG_GIMBAL_REPORT:
-//#if MOUNT == ENABLED
-//        CHECK_PAYLOAD_SIZE(GIMBAL_REPORT);
-//        copter.camera_mount.send_gimbal_report(chan);
-//#endif
-//        break;
-//
-//    case MSG_EKF_STATUS_REPORT:
-//        CHECK_PAYLOAD_SIZE(EKF_STATUS_REPORT);
-//        copter.ahrs.get_NavEKF().send_status_report(chan);
-//        break;
-//
-//    case MSG_FENCE_STATUS:
-//    case MSG_WIND:
-//        // unused
-//        break;
-//
-//    case MSG_PID_TUNING:
-//        CHECK_PAYLOAD_SIZE(PID_TUNING);
-//        copter.send_pid_tuning(chan);
-//        break;
-//
-//    case MSG_VIBRATION:
-//        CHECK_PAYLOAD_SIZE(VIBRATION);
-//        send_vibration(copter.ins);
-//        break;
-//
-//    case MSG_MISSION_ITEM_REACHED:
-//        CHECK_PAYLOAD_SIZE(MISSION_ITEM_REACHED);
-//        mavlink_msg_mission_item_reached_send(chan, mission_item_reached_index);
-//        break;
-//
-//    case MSG_RETRY_DEFERRED:
-//        break; // just here to prevent a warning
-//    }
-
-    return true;
-}
 
 // see if we should send a stream now. Called at 50Hz
 bool GCS_MAVLINK::stream_trigger(enum streams stream_num)
@@ -1366,7 +1106,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
     uint8_t result = MAV_RESULT_FAILED;         // assume failure.  Each messages id is responsible for return ACK or NAK if required
 
-    DEBUG_PRINTF("msg->msgid=%d\n",msg->msgid);
+    DEBUG_PRINTF("handleMessage    :    msg->msgid=%d\n",msg->msgid);
 
 
     switch (msg->msgid) {
@@ -1387,6 +1127,8 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 				freq = packet.req_message_rate; // start sending
 			else
 				break;
+
+			DEBUG_PRINTF("handleMessage    :    REQUEST_DATA_STREAM freq=%d\n",freq);
 
 			switch(packet.req_stream_id){
 
@@ -2075,7 +1817,38 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 		}
 
 
+    case MAVLINK_MSG_ID_SET_MODE:       // MAV ID: 11
+    {
+        //handle_set_mode(msg, FUNCTOR_BIND(&copter, &Copter::set_mode, bool, uint8_t));
 
+    	// decode
+		mavlink_set_mode_t packet;
+		mavlink_msg_set_mode_decode(msg, &packet);
+
+		switch(packet.base_mode){
+
+			case 2:
+				DEBUG_PRINTF("handleMessage    :    地面站请求设置控制模式，增稳\n");
+				//set_mode(STABILIZE);
+				break;
+
+			case 3:
+				//set_mode(GUIDED);
+				break;
+
+			case 4:
+//				if(mav_nav == 255 || mav_nav == MAV_NAV_WAYPOINT) 	set_mode(AUTO);
+//				if(mav_nav == MAV_NAV_RETURNING)					set_mode(RTL);
+//				if(mav_nav == MAV_NAV_LOITER)						set_mode(LOITER);
+//				mav_nav = 255;
+				break;
+
+			case 0:
+				//set_mode(STABILIZE);
+				break;
+		}
+        break;
+    }
 
 
 
