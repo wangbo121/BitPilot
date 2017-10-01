@@ -49,8 +49,8 @@
 
 //	 std::cout<<"g.command_total ="<<g.command_total <<std::endl;
 //	 std::cout<<"g.command_index ="<<g.command_index <<std::endl;
-	 DEBUG_PRINTF("g.command_total =%d\n",g.command_total);
-	 DEBUG_PRINTF("g.command_index =%d\n",g.command_index);
+	 DEBUG_PRINTF("update_commands    :    g.command_total =%d\n",g.command_total);
+	 DEBUG_PRINTF("update_commands    :    g.command_index =%d\n",g.command_index);
 
 	if (g.command_total <= 1 || g.command_index >= 127)
 		return;

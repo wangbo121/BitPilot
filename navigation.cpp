@@ -111,8 +111,8 @@ void Copter::calc_XY_velocity()
 	x_actual_speed  = (float)(gps.longitude - last_longitude)  *  tmp;
 	y_actual_speed  = (float)(gps.latitude  - last_latitude)  * tmp;
 
-	DEBUG_PRINTF("calc_XY_velocity    :    x_actual_speed = %ld\n",x_actual_speed);
-	DEBUG_PRINTF("calc_XY_velocity    :    y_actual_speed = %ld\n",y_actual_speed);
+	DEBUG_PRINTF("calc_XY_velocity    :    x_actual_speed = %d\n",x_actual_speed);
+	DEBUG_PRINTF("calc_XY_velocity    :    y_actual_speed = %d\n",y_actual_speed);
 
 	last_longitude  = gps.longitude;
 	last_latitude   = gps.latitude;
@@ -133,8 +133,8 @@ void Copter::calc_XY_velocity()
 	filtered_loc.lng = gps.longitude;
 	filtered_loc.lat = gps.latitude;
 
-	DEBUG_PRINTF("calc_XY_velocity    :    filtered_loc.lng = %ld\n",filtered_loc.lng);
-	DEBUG_PRINTF("calc_XY_velocity    :    filtered_loc.lat = %ld\n",filtered_loc.lat);
+	DEBUG_PRINTF("calc_XY_velocity    :    filtered_loc.lng = %d\n",filtered_loc.lng);
+	DEBUG_PRINTF("calc_XY_velocity    :    filtered_loc.lat = %d\n",filtered_loc.lat);
 	#endif
 }
 

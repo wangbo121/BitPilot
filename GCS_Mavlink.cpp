@@ -1832,7 +1832,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			/*
 			 * 20170928已经断点测试，这个函数在地面站给驾驶仪设置航点时，会设置g.command_total微packet.count
 			 */
-			DEBUG_PRINTF("copter.g.command_total=%d------------------------------------------------------------------------------------------------------------------------------------------------------------\n",copter.g.command_total);
+			DEBUG_PRINTF("handleMessage    ：    copter.g.command_total=%d\n",copter.g.command_total);
 
 
 
@@ -1981,9 +1981,6 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			} else {
 				// Check if receiving waypoints (mission upload expected)
 				if (!waypoint_receiving) break;
-
-
-				//Serial.printf("req: %d, seq: %d, total: %d\n", waypoint_request_i,packet.seq, g.command_total.get());
 
 				static int seq_temp=0;
 				seq_temp=packet.seq;

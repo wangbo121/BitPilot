@@ -1670,7 +1670,7 @@ extern mavlink_system_t mavlink_system;
 #endif
 
 #ifdef LINUX_OS
-#include "boatlink.h"
+//#include "boatlink.h"
 #endif
 
 #ifdef LINUX_OS
