@@ -1486,6 +1486,7 @@ private:
 	// void send_attitude(mavlink_channel_t chan);
 #endif
 	 void update_all_external_device_input( void );
+	 void update_mavlink_reatime();
 
 
 

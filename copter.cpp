@@ -309,6 +309,7 @@ void Copter::loop_fast()
 	 */
 	//20170918添加了all_external_device_input和output一直循环从驱动中获取数据，至于硬件驱动到底多大频率获取的我不管，我只是每次从这里获取数据
 	update_all_external_device_input();
+	update_mavlink_reatime();
 
 	/*
 	 * wangbo20170801
@@ -1229,7 +1230,15 @@ void Copter::update_all_external_device_input( void )
 	 * 我需要的是下面的从all_external_device_input获取数据
 	 */
 }
-
+void Copter::update_mavlink_reatime()
+{
+	ap2gcs_mavlink.attitude_roll_rad=ahrs.roll;
+	ap2gcs_mavlink.attitude_pitch_rad=ahrs.pitch;
+	ap2gcs_mavlink.attitude_yaw_rad=ahrs.yaw;
+	ap2gcs_mavlink.attitude_roll_speed=imu._gyro.x;
+	ap2gcs_mavlink.attitude_pitch_speed=imu._gyro.y;
+	ap2gcs_mavlink.attitude_yaw_speed=imu._gyro.z;
+}
 
 
 #define AUTO_ARMING_DELAY 60
@@ -1287,7 +1296,7 @@ Copter copter;
 mavlink_system_t mavlink_system;
 #endif
 struct Location wp_total_array_temp[255]={0};
-
+struct T_MAVLINK_REALTIME_DATA ap2gcs_mavlink;
 
 
 

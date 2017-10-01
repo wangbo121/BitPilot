@@ -102,7 +102,6 @@ void Copter::loop()
 	fifty_hz_loop();
 
 	maintask_cnt++;
-
 	// trigger our 1 hz loop
 	//因为我这里改成了100hz所以需要改成100
 	if(maintask_cnt>100)
@@ -111,34 +110,8 @@ void Copter::loop()
 		super_slow_loop();//心跳包在super_slow_loop里面
 
 		maintask_cnt = 0;
-		/*
-		 * 发送数据包给地面站,但是里面的串口发送还用的是linux的,仍然需要更改
-		 */
-		//gcs_send_heartbeat();
-		//send_heartbeat_to_gcs();
-		//send_attitude_to_gcs();
 	}
 
-//#ifdef LINUX_OS
-//	maintask_cnt++;
-//	if(maintask_cnt>100)
-//	{
-//		//这个是1秒钟打印一次
-//		//DEBUG_PRINTF("*********maintask_cnt>100*********************************************************");
-//		float system_time_s=0;
-//		system_time_s=clock_gettime_ms();
-//		DEBUG_PRINTF("system_time_s==%f\n",system_time_s/1000);
-//
-//
-//		//发送实时数据给地面站，只是作为在linux平台的测试，在linux平台上暂时测试是1秒钟发送一个实时数据包
-//		//send_realdata_to_gcs();//这个用的还是无人船的地面站
-//
-//		maintask_cnt=0;
-//	}
-//
-//	//这个是10ms就判断一次是否收到地面站请求回传航点的命令
-//	//verify_send_all_waypoint_to_gcs();//这个是用无人船地面站测试时用的函数，现在不需要了
-//#endif
 }
 
 void send_heartbeat_to_gcs( void )
@@ -198,29 +171,3 @@ void send_attitude_to_gcs( void )
 #endif
 
 }
-
-#ifdef  LINUX_OS
-//void verify_send_all_waypoint_to_gcs( void)
-//{
-//	if(global_bool_boatpilot.send_ap2gcs_wp_req)
-//	{
-//		//global_bool_boatpilot.wp_total_num=4;
-//		//global_bool_boatpilot.send_ap2gcs_wp_end_num=3;
-//		printf("电台--请求发送航点数据给地面站\n");
-//		global_bool_boatpilot.ap2gcs_wp_cnt++;
-//
-//		if(global_bool_boatpilot.ap2gcs_wp_cnt_previous!=global_bool_boatpilot.ap2gcs_wp_cnt)
-//		{
-//			ap2gcs_wp.pack_func_info3=global_bool_boatpilot.ap2gcs_wp_cnt;
-//
-//			if(global_bool_boatpilot.send_ap2gcs_wp_end_num>=global_bool_boatpilot.wp_total_num-1)
-//			{
-//				global_bool_boatpilot.send_ap2gcs_wp_end_num=global_bool_boatpilot.wp_total_num-1;
-//			}
-//			send_ap2gcs_waypoint_num(global_bool_boatpilot.send_ap2gcs_wp_start_num,global_bool_boatpilot.send_ap2gcs_wp_end_num-global_bool_boatpilot.send_ap2gcs_wp_start_num+1);
-//			global_bool_boatpilot.ap2gcs_wp_cnt_previous=global_bool_boatpilot.ap2gcs_wp_cnt;
-//			global_bool_boatpilot.send_ap2gcs_wp_req=FALSE;
-//		}
-//	}
-//}
-#endif

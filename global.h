@@ -1092,6 +1092,50 @@ struct AP2GCS_REAL
 
 };
 
+struct T_MAVLINK_REALTIME_DATA
+{
+	/*
+	 * 驾驶仪给地面站通过mavlink协议发送实时数据时
+	 * 从这里取数据，这个结构的数据的单位跟mavlink协议规定的单位是一致的
+	 */
+
+	/**
+	 * @brief Pack a attitude message
+	 * @param system_id ID of this system
+	 * @param component_id ID of this component (e.g. 200 for IMU)
+	 * @param msg The MAVLink message to compress the data into
+	 *
+	 * @param time_boot_ms Timestamp (milliseconds since system boot)
+	 * @param roll Roll angle (rad, -pi..+pi)
+	 * @param pitch Pitch angle (rad, -pi..+pi)
+	 * @param yaw Yaw angle (rad, -pi..+pi)
+	 * @param rollspeed Roll angular speed (rad/s)
+	 * @param pitchspeed Pitch angular speed (rad/s)
+	 * @param yawspeed Yaw angular speed (rad/s)
+	 * @return length of the message in bytes (excluding serial stream start sign)
+	 */
+	float attitude_roll_rad;//(rad, -pi..+pi)
+	float attitude_pitch_rad;//(rad, -pi..+pi)
+	float attitude_yaw_rad;//(rad, -pi..+pi)
+	float attitude_roll_speed;//(rad/s)
+	float attitude_pitch_speed;//(rad/s)
+	float attitude_yaw_speed;//(rad/s)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+};
+
 struct T_GLOBAL_BOOL
 {
 	/*
@@ -1103,6 +1147,6 @@ struct T_GLOBAL_BOOL
 };
 
 extern struct T_GLOBAL_BOOL_BOATPILOT  global_bool_boatpilot;
-
+extern struct T_MAVLINK_REALTIME_DATA ap2gcs_mavlink;
 
 #endif /* GLOBAL_H_ */

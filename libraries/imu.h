@@ -91,12 +91,13 @@ public:
 	///
 	uint8_t 	adc_constraints;
 
-protected:
+//protected:
+public:
 	/// Most recent accelerometer reading obtained by ::update
 	Vector3f		_accel;
 
 	/// Most recent gyro reading obtained by ::update
-	Vector3f		_gyro;
+	Vector3f		_gyro;//[rad/s]单位是弧度每秒
 
 public:
 

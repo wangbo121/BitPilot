@@ -5,6 +5,10 @@
  *      Author: wangbo
  */
 
+/*
+ * 20171001 GCS_Mavlink是与地面站通信的部分，非常重要，改变时必须小心对照，并且测试
+ */
+
 #include "copter.h"
 #include "GCS_Mavlink.h"
 #include <limits.h>
@@ -18,7 +22,7 @@
 
 
 /*
- *  send a message on both GCS links
+ *  send a message on both GCS links，原来说的是2个地面站口，但是我这里先只用1个
  */
 void Copter::gcs_send_message(enum ap_message id)
 {
@@ -51,7 +55,10 @@ void Copter::gcs_send_deferred(void)
  *  stack needed for each message type. Please be careful to follow the
  *  pattern below when adding any new messages
  */
-
+/*
+ * 20171001wangbo内联函数的目的是为了解决程序中函数调用的效率问题，因为内联函数会把函数内的语句直接展开，而不是调用
+ * 这样就省去了函数调用保存堆栈的空间和时间，但是我们下面这些函数都不允许内联，防止出错，非常重要，所以下面函数都是noinline
+ */
 NOINLINE void Copter::send_heartbeat(mavlink_channel_t chan)
 {
 
@@ -161,12 +168,17 @@ NOINLINE void Copter::send_attitude(mavlink_channel_t chan)
    mavlink_message_t msg;
    uint8_t buf[MAVLINK_MAX_PACKET_LEN];
 
-
-
-   static float pitch_radian=0.0;
-   pitch_radian+=0.001;
-    //mavlink_msg_attitude_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,0,0,0.5,0,0,0,0);
-   mavlink_msg_attitude_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,0,0,pitch_radian,0,0,0,0);
+//   static float pitch_radian=0.0;
+//   pitch_radian+=0.001;
+//   mavlink_msg_attitude_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,0,0,pitch_radian,0,0,0,0);
+   mavlink_msg_attitude_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,\
+		                                             0,\
+		                                             ap2gcs_mavlink.attitude_roll_rad,\
+		                                             ap2gcs_mavlink.attitude_pitch_rad,\
+		                                             ap2gcs_mavlink.attitude_yaw_rad,\
+		                                             ap2gcs_mavlink.attitude_roll_speed,\
+		                                             ap2gcs_mavlink.attitude_pitch_speed,\
+		                                             ap2gcs_mavlink.attitude_yaw_speed);
 
     // Copy the message to the send buffer
 	   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
