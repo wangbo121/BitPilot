@@ -154,53 +154,91 @@ NOINLINE void Copter::send_heartbeat(mavlink_channel_t chan)
 
 NOINLINE void Copter::send_attitude(mavlink_channel_t chan)
 {
-#if 1
-    const Vector3f &gyro = copter.imu.get_gyro();
+
+	const Vector3f &gyro = copter.imu.get_gyro();
+
+	mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+	mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
 
 
 
-    mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
-   mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+	// Initialize the required buffers
+	mavlink_message_t msg;
+	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+	mavlink_msg_attitude_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,\
+													0,\
+													ap2gcs_mavlink.attitude_roll_rad,\
+													ap2gcs_mavlink.attitude_pitch_rad,\
+													ap2gcs_mavlink.attitude_yaw_rad,\
+													ap2gcs_mavlink.attitude_roll_speed,\
+													ap2gcs_mavlink.attitude_pitch_speed,\
+													ap2gcs_mavlink.attitude_yaw_speed);
+
+	// Copy the message to the send buffer
+	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+
+#ifdef LINUX_OS
+	//20171001下面注释不要删除，查看一下uart0_send(buf, len);这个函数是apm哪个版本的函数
+	// Send the message with the standard UART send function
+	// uart0_send might be named differently depending on
+	// the individual microcontroller / library in use.
+	//uart0_send(buf, len);
+	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+#endif
+}
 
 
-
-   // Initialize the required buffers
-   mavlink_message_t msg;
-   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
-
-//   static float pitch_radian=0.0;
-//   pitch_radian+=0.001;
-//   mavlink_msg_attitude_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,0,0,pitch_radian,0,0,0,0);
-   mavlink_msg_attitude_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,\
-		                                             0,\
-		                                             ap2gcs_mavlink.attitude_roll_rad,\
-		                                             ap2gcs_mavlink.attitude_pitch_rad,\
-		                                             ap2gcs_mavlink.attitude_yaw_rad,\
-		                                             ap2gcs_mavlink.attitude_roll_speed,\
-		                                             ap2gcs_mavlink.attitude_pitch_speed,\
-		                                             ap2gcs_mavlink.attitude_yaw_speed);
-
-    // Copy the message to the send buffer
-	   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-
-	   // Send the message with the standard UART send function
-	   // uart0_send might be named differently depending on
-	   // the individual microcontroller / library in use.
-	   //uart0_send(buf, len);
-	   send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
-//    mavlink_msg_attitude_send(
-//        chan,
-//        gettimeofday_ms(),
-//        ahrs.roll,
-//        ahrs.pitch,
-//        ahrs.yaw,
-//        gyro.x,
-//        gyro.y,
-//        gyro.z);
+void NOINLINE Copter::send_location(mavlink_channel_t chan)
+{
+#if 0
+	/*
+	 * 20171001这里有个旋转矩阵，把gps的速度分解了
+	 */
+    Matrix3f rot = dcm.get_dcm_matrix(); // neglecting angle of attack for now
+    mavlink_msg_global_position_int_send(
+	chan,
+	current_loc.lat,
+	current_loc.lng,
+	current_loc.alt * 10,
+	g_gps->ground_speed * rot.a.x,
+	g_gps->ground_speed * rot.b.x,
+	g_gps->ground_speed * rot.c.x);
 #endif
 
+	mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+	mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
 
+	// Initialize the required buffers
+	mavlink_message_t msg;
+	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+	//    mavlink_msg_global_position_int_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,\
+	//    		                                                             0,current_loc.lat,-current_loc.lng,current_loc.alt,current_loc.alt,0,0,0,0);
+	mavlink_msg_global_position_int_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,\
+																		ap2gcs_mavlink.time_boot_ms,\
+																		ap2gcs_mavlink.global_position_lat,\
+																		ap2gcs_mavlink.global_position_lon,\
+																		ap2gcs_mavlink.global_position_alt,\
+																		ap2gcs_mavlink.global_position_relative_alt,\
+																		ap2gcs_mavlink.global_position_vx,\
+																		ap2gcs_mavlink.global_position_vy,\
+																		ap2gcs_mavlink.global_position_vz,\
+																		ap2gcs_mavlink.global_position_hdg);
+
+
+	// Copy the message to the send buffer
+	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+
+#ifdef LINUX_OS
+	// Send the message with the standard UART send function
+	// uart0_send might be named differently depending on
+	// the individual microcontroller / library in use.
+	//uart0_send(buf, len);
+	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+#endif
 }
+
 
 //#if AC_FENCE == ENABLED
 //NOINLINE void Copter::send_limits_status(mavlink_channel_t chan)
@@ -214,48 +252,6 @@ NOINLINE void Copter::send_extended_status1(mavlink_channel_t chan)
 {
 
 
-}
-
-void NOINLINE Copter::send_location(mavlink_channel_t chan)
-{
-#if 0
-    Matrix3f rot = dcm.get_dcm_matrix(); // neglecting angle of attack for now
-    mavlink_msg_global_position_int_send(
-	chan,
-	current_loc.lat,
-	current_loc.lng,
-	current_loc.alt * 10,
-	g_gps->ground_speed * rot.a.x,
-	g_gps->ground_speed * rot.b.x,
-	g_gps->ground_speed * rot.c.x);
-#else
-
-
-
-    mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
-   mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
-
-
-
-   // Initialize the required buffers
-   mavlink_message_t msg;
-   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
-
-    mavlink_msg_global_position_int_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,\
-    		                                                             0,current_loc.lat,-current_loc.lng,current_loc.alt,current_loc.alt,0,0,0,0);
-
-	// Copy the message to the send buffer
-	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-
-	// Send the message with the standard UART send function
-	// uart0_send might be named differently depending on
-	// the individual microcontroller / library in use.
-	//uart0_send(buf, len);
-	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
-
-
-
-#endif
 }
 
 void NOINLINE Copter::send_nav_controller_output(mavlink_channel_t chan)
@@ -324,6 +320,30 @@ void NOINLINE Copter::send_vfr_hud(mavlink_channel_t chan)
 
 void NOINLINE Copter::send_current_waypoint(mavlink_channel_t chan)
 {
+
+	mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+	mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+
+	// Initialize the required buffers
+	mavlink_message_t msg;
+	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+
+	mavlink_msg_mission_current_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,\
+																	g.command_index);
+
+
+	// Copy the message to the send buffer
+	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+
+#ifdef LINUX_OS
+	// Send the message with the standard UART send function
+	// uart0_send might be named differently depending on
+	// the individual microcontroller / library in use.
+	//uart0_send(buf, len);
+	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+#endif
+
 
 }
 
@@ -1153,7 +1173,18 @@ bool GCS_MAVLINK::mavlink_try_send_message(mavlink_channel_t chan, enum ap_messa
         CHECK_PAYLOAD_SIZE(HEARTBEAT);
         //send_message(MSG_HEARTBEAT);
         copter.send_heartbeat(chan);
-        return true;
+        //return true;
+        break;
+
+    case MSG_ATTITUDE:
+            CHECK_PAYLOAD_SIZE(ATTITUDE);
+            copter.send_attitude(chan);
+            break;
+
+        case MSG_LOCATION:
+            CHECK_PAYLOAD_SIZE(GLOBAL_POSITION_INT);
+            copter.send_location(chan);
+            break;
 
 //    case MSG_EXTENDED_STATUS1:
 //        CHECK_PAYLOAD_SIZE(SYS_STATUS);
@@ -1165,15 +1196,7 @@ bool GCS_MAVLINK::mavlink_try_send_message(mavlink_channel_t chan, enum ap_messa
 //        send_meminfo(chan);
 //        break;
 
-    case MSG_ATTITUDE:
-        CHECK_PAYLOAD_SIZE(ATTITUDE);
-        copter.send_attitude(chan);
-        break;
 
-    case MSG_LOCATION:
-        CHECK_PAYLOAD_SIZE(GLOBAL_POSITION_INT);
-        copter.send_location(chan);
-        break;
 //
 //    case MSG_NAV_CONTROLLER_OUTPUT:
 //        CHECK_PAYLOAD_SIZE(NAV_CONTROLLER_OUTPUT);
@@ -1229,10 +1252,10 @@ bool GCS_MAVLINK::mavlink_try_send_message(mavlink_channel_t chan, enum ap_messa
 //        send_gps_status(chan);
 //        break;
 //
-//    case MSG_CURRENT_WAYPOINT:
-//        CHECK_PAYLOAD_SIZE(WAYPOINT_CURRENT);
-//        send_current_waypoint(chan);
-//        break;
+    case MSG_CURRENT_WAYPOINT:
+        CHECK_PAYLOAD_SIZE(WAYPOINT_CURRENT);
+        copter.send_current_waypoint(chan);
+        break;
 //
         /*
          * 发送参数的

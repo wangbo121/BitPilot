@@ -55,8 +55,9 @@
 	if (g.command_total <= 1 || g.command_index >= 127)
 		return;
 
-	DEBUG_PRINTF("update_commands   command_nav_queue.id  =%d\n",command_nav_queue.id );
-	DEBUG_PRINTF("update_commands   command_nav_index =%d\n",command_nav_index );
+	DEBUG_PRINTF("update_commands    :    command_nav_queue.id  =%d\n",command_nav_queue.id );
+	DEBUG_PRINTF("update_commands    :    command_nav_index =%d\n",command_nav_index );
+
 
 
 	if(command_nav_queue.id == NO_COMMAND){

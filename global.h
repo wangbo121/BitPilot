@@ -1099,6 +1099,8 @@ struct T_MAVLINK_REALTIME_DATA
 	 * 从这里取数据，这个结构的数据的单位跟mavlink协议规定的单位是一致的
 	 */
 
+	uint32_t time_boot_ms;
+
 	/**
 	 * @brief Pack a attitude message
 	 * @param system_id ID of this system
@@ -1120,6 +1122,37 @@ struct T_MAVLINK_REALTIME_DATA
 	float attitude_roll_speed;//(rad/s)
 	float attitude_pitch_speed;//(rad/s)
 	float attitude_yaw_speed;//(rad/s)
+
+
+
+	/**
+	 * @brief Pack a global_position_int message
+	 * @param system_id ID of this system
+	 * @param component_id ID of this component (e.g. 200 for IMU)
+	 * @param msg The MAVLink message to compress the data into
+	 *
+	 * @param time_boot_ms Timestamp (milliseconds since system boot)
+	 * @param lat Latitude, expressed as degrees * 1E7
+	 * @param lon Longitude, expressed as degrees * 1E7
+	 * @param alt Altitude in meters, expressed as * 1000 (millimeters), AMSL (not WGS84 - note that virtually all GPS modules provide the AMSL as well)
+	 * @param relative_alt Altitude above ground in meters, expressed as * 1000 (millimeters)
+	 * @param vx Ground X Speed (Latitude, positive north), expressed as m/s * 100
+	 * @param vy Ground Y Speed (Longitude, positive east), expressed as m/s * 100
+	 * @param vz Ground Z Speed (Altitude, positive down), expressed as m/s * 100
+	 * @param hdg Vehicle heading (yaw angle) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: UINT16_MAX
+	 * @return length of the message in bytes (excluding serial stream start sign)
+	 */
+
+	int32_t global_position_lat;//[degree * 1e7] 纬度*10的7次方 精确到厘米了
+	int32_t global_position_lon;
+	int32_t global_position_alt;//[ms]毫米
+	int32_t global_position_relative_alt;//[ms]毫米
+
+	int16_t global_position_vx;//[m/s * 100] 厘米每秒
+	int16_t global_position_vy;//[m/s * 100] 厘米每秒
+	int16_t global_position_vz;//[m/s * 100] 厘米每秒
+	uint16_t global_position_hdg;//[degree * 100] 度*100 这个是偏航方向 也就是机头的朝向 跟attitude_yaw_rad能不能一起发送呢，有可能这个是gps的速度的航向？还是磁力计与正北的方向
+
 
 
 
