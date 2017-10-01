@@ -138,8 +138,8 @@ typedef struct FGNetFDM
 }T_FDM;
 
 extern T_FDM fdm;
-extern T_FDM fdm_send;
-extern T_FDM fdm_feed_back;
+extern T_FDM fdm_send;//通过udp发送给flightgear的结构变量
+extern T_FDM fdm_feed_back;//把fdm飞行动力模型的信息反馈给控制器，作为模拟的所有传感器的数据
 
 
 
