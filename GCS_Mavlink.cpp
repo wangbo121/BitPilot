@@ -637,8 +637,10 @@ void GCS_MAVLINK::update(void)
 	if (streamRates[STREAM_PARAMS] <= 0) {
 		streamRates[STREAM_PARAMS]=10;
 	}
+	send_message(MSG_NEXT_PARAM);
+	DEBUG_PRINTF()("update    :    streamRates[STREAM_PARAMS]=%d\n",streamRates[STREAM_PARAMS]);//20171002测试是10
 	if (stream_trigger(STREAM_PARAMS)) {
-		send_message(MSG_NEXT_PARAM);
+		//send_message(MSG_NEXT_PARAM);//20171002按照apm是放在这里的，我先放在外面测试一下，因为我发现参数多的时候，地面站获取全部参数总是出现错误中断
 	}
 	// don't send anything else at the same time as parameters
 	return;
@@ -1576,7 +1578,8 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			 */
 			_queued_parameter_wang = &param_all[0];
 			_queued_parameter_index = 0;
-			_queued_parameter_count = 2;
+			//_queued_parameter_count = 2;
+			_queued_parameter_count = 4;
 
 			break;
 		}
@@ -1615,14 +1618,38 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			printf("handleMessage    :    key = %s\n",key);
 			printf("handleMessage    :    param value = %f\n",value);
 
-			for(int i=0;i<_queued_parameter_count;i++)
+			int i=0;
+			for(i=0;i<_queued_parameter_count;i++)
 			{
 				if(!strcmp(key,param_all[i].name))
 				{
 					//key param_all.name相同
 					printf("handleMessage    :    字符串相同 i=%d\n",i);
 					param_all[i].value=value;
+					break;//找到相同的后，就停止查询
 				}
+			}
+
+			/*
+			 * 然后该怎么把参数赋值给参数呢？我这里先用switch语句，然后按照Parameters.h中定义的变量的顺序
+			 */
+			switch(param_all[i].key)
+			{
+			case k_param_format_version:
+				//Parameters::k_format_version=(uint16_t)value;
+				break;
+			case k_param_software_type:
+				//Parameters::k_software_type=(uint16_t)value;
+			break;
+			case k_param_waypoint_radius:
+				copter.g.waypoint_radius=(int8_t)value;
+				copter.battery_voltage1=12;
+				printf("handleMessage    :    copter.g.waypoint_radius=%d\n",copter.g.waypoint_radius);
+				break;
+
+			default:
+				break;
+
 			}
 
 
@@ -1638,7 +1665,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 //			                               const char *param_id, float param_value, uint8_t param_type, uint16_t param_count, uint16_t param_index);
 
 			mavlink_msg_param_value_pack(mavlink_system.sysid,mavlink_system.compid,&msg,\
-					                                                    key,8.0,MAVLINK_TYPE_FLOAT,2,1);
+					                                                    key,value,MAVLINK_TYPE_FLOAT,_queued_parameter_count,_queued_parameter_index);
 			// Copy the message to the send buffer
 			uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
 			send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);

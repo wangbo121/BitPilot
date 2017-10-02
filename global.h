@@ -459,6 +459,25 @@ enum MAV_CMD
 #endif
 
 
+//////////////////////////////////////////////////////////////////////////////
+// Navigation defaults
+//
+#ifndef WP_RADIUS_DEFAULT
+# define WP_RADIUS_DEFAULT		5
+#endif
+
+#ifndef LOITER_RADIUS
+# define LOITER_RADIUS 10		// meters for circle mode
+#endif
+
+#ifndef ALT_HOLD_HOME
+# define ALT_HOLD_HOME 0		// height to return to Home, 0 = Maintain current altitude
+#endif
+
+#ifndef USE_CURRENT_ALT
+# define USE_CURRENT_ALT FALSE
+#endif
+
 
 
 // nav byte mask
