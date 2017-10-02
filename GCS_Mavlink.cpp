@@ -805,7 +805,11 @@ void GCS_MAVLINK::mavlink_send_message(mavlink_channel_t chan, enum ap_message i
     struct mavlink_queue *q = &mavlink_queue[(uint8_t)chan];
 
     /*
-     * 什么时候这个num_deferred_messages不等于0呢，只有不等于0才能发送呀
+     * 什么时候这个num_deferred_messages不等于0呢，只有不等于0才能发送呀，我看下面  if (q->num_deferred_messages != 0 ||
+     *   !mavlink_try_send_message  mavlink_try_send_message这个函数只有在缓存空间不够的情况下才可能返回false 如果缓存一直够的话，
+     *   num_deferred_messages会一直都是0
+     *   那么这个mavlink_send_message其实 while循环 for循环都没啥用，最下面的if语句，也就只有mavlink_try_send_message需要执行，
+     *   所以这个mavlink_send_message就执行了一条语句，即mavlink_try_send_message
      * 初始化时这些
      */
     // see if we can send the deferred messages, if any
@@ -934,30 +938,6 @@ GCS_MAVLINK::queued_param_send()
     char param_name[ONBOARD_PARAM_NAME_LENGTH];
     vp->copy_name(param_name, sizeof(param_name), true);
 
-//    mavlink_msg_param_value_send(
-//        chan,
-//        param_name,
-//        value,
-//        mav_var_type(_queued_parameter_type),
-//        _queued_parameter_count,
-//        _queued_parameter_index);
-
-
-    /**
-     * @brief Pack a param_value message on a channel
-     * @param system_id ID of this system
-     * @param component_id ID of this component (e.g. 200 for IMU)
-     * @param chan The MAVLink channel this message will be sent over
-     * @param msg The MAVLink message to compress the data into
-     * @param param_id Onboard parameter id, terminated by NULL if the length is less than 16 human-readable chars and WITHOUT null termination (NULL) byte if the length is exactly 16 chars - applications have to provide 16+1 bytes storage if the ID is stored as string
-     * @param param_value Onboard parameter value
-     * @param param_type Onboard parameter type: see the MAV_PARAM_TYPE enum for supported data types.
-     * @param param_count Total number of onboard parameters
-     * @param param_index Index of this onboard parameter
-     * @return length of the message in bytes (excluding serial stream start sign)
-     */
-
-
     mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
    mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
 
@@ -978,13 +958,7 @@ GCS_MAVLINK::queued_param_send()
 
     // Copy the message to the send buffer
    uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-
-   // Send the message with the standard UART send function
-   // uart0_send might be named differently depending on
-   // the individual microcontroller / library in use.
-   //uart0_send(buf, len);
    send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
-
 
     _queued_parameter = AP_Param::next_scalar(&_queued_parameter_token, &_queued_parameter_type);
     _queued_parameter_index++;

@@ -171,6 +171,14 @@ public:
 	uint16_t    _queued_parameter_count;            ///< saved count of parameters for queued send
 
 
+	/*
+	 * 20171002我不按照apm的AP_Param来写了，怎么建立了参数的数组param_all
+	 */
+
+
+
+
+
 	//AP_Var      *_queued_parameter;                 ///< next parameter to be sent in queue
 //	uint16_t    _queued_parameter_index;            ///< next queued parameter's index
 //    uint16_t    _queued_parameter_count;            ///< saved count of parameters for queued send

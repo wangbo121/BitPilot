@@ -1130,11 +1130,7 @@ void Copter::super_slow_loop()
 	}
 #endif
 
-    //gcs_send_message(MSG_HEARTBEAT);
-    //gcs_data_stream_send(1,3);
-
-    gcs_send_message(MSG_HEARTBEAT);
-    //gcs_update();
+	gcs_send_heartbeat();
 
 	// agmatthews - USERHOOKS
 	#ifdef USERHOOK_SUPERSLOWLOOP
