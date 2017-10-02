@@ -511,10 +511,10 @@ public:
 
 typedef struct PARAM
 {
-	float default_valu;
+	float value;
 	uint8_t key;
 	char name[16];
-	struct PARAM *next_para;
+	struct PARAM *next_param;
 }T_PARAM;
 
 extern T_PARAM param_all[];

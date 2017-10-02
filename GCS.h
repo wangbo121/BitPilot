@@ -17,6 +17,7 @@
 //#include <Stream.h>
 #include <stdint.h>
 #include "AP_Param.h"
+#include "Parameters.h"
 
 ///
 /// @class	GCS
@@ -174,7 +175,7 @@ public:
 	/*
 	 * 20171002我不按照apm的AP_Param来写了，怎么建立了参数的数组param_all
 	 */
-
+	T_PARAM   *_queued_parameter_wang;                  ///< next parameter to be sent in queue
 
 
 

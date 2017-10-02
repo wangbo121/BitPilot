@@ -631,7 +631,9 @@ void GCS_MAVLINK::update(void)
 //		}
 //	}
 
-	 if (_queued_parameter != NULL) {
+	 //if (_queued_parameter != NULL) {
+	//20171002 修改这个判断成wang
+	 if (_queued_parameter_wang != NULL) {
 	if (streamRates[STREAM_PARAMS] <= 0) {
 		streamRates[STREAM_PARAMS]=10;
 	}
@@ -919,24 +921,74 @@ GCS_MAVLINK::queued_waypoint_send()
 * @brief Send the next pending parameter, called from deferred message
 * handling code
 */
+/*
+ * 20171002先注释掉，试一试我的行不行
+ */
+//void
+//GCS_MAVLINK::queued_param_send()
+//{
+//    // Check to see if we are sending parameters
+//    if (NULL == _queued_parameter) return;
+//
+//    AP_Param      *vp;
+//    float       value;
+//
+//    // copy the current parameter and prepare to move to the next
+//    vp = _queued_parameter;
+//
+//    // if the parameter can be cast to float, report it here and break out of the loop
+//    //value = vp->cast_to_float(_queued_parameter_type);
+//    value = (float)(_queued_parameter_type);
+//
+//    char param_name[ONBOARD_PARAM_NAME_LENGTH];
+//    vp->copy_name(param_name, sizeof(param_name), true);
+//
+//    mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+//   mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+//
+//
+//
+//   // Initialize the required buffers
+//   mavlink_message_t msg;
+//   uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+//
+//    mavlink_msg_param_value_pack_chan(mavlink_system.sysid ,mavlink_system.compid ,chan,
+//    		                                                             &msg,
+//    		                                                             param_name,
+//																		 value,
+//																		 mav_var_type(_queued_parameter_type),
+//																		 _queued_parameter_count,
+//																		 _queued_parameter_index );
+//
+//
+//    // Copy the message to the send buffer
+//   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+//   send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+//
+//    _queued_parameter = AP_Param::next_scalar(&_queued_parameter_token, &_queued_parameter_type);
+//    _queued_parameter_index++;
+//    printf("_queued_parameter_index=%d\n",_queued_parameter_index);
+//}
 void
 GCS_MAVLINK::queued_param_send()
 {
     // Check to see if we are sending parameters
-    if (NULL == _queued_parameter) return;
+    if (NULL == _queued_parameter_wang) return;
 
-    AP_Param      *vp;
+    T_PARAM      *vp;
     float       value;
 
     // copy the current parameter and prepare to move to the next
-    vp = _queued_parameter;
+    vp = _queued_parameter_wang;
 
     // if the parameter can be cast to float, report it here and break out of the loop
     //value = vp->cast_to_float(_queued_parameter_type);
-    value = (float)(_queued_parameter_type);
+    //value = (float)(_queued_parameter_type);
+    value=_queued_parameter_wang->value;
 
     char param_name[ONBOARD_PARAM_NAME_LENGTH];
-    vp->copy_name(param_name, sizeof(param_name), true);
+    //vp->copy_name(param_name, sizeof(param_name), true);
+    memcpy(param_name,&_queued_parameter_wang->name, sizeof(param_name));//只复制了15个字节，但是name定义的是16个字节
 
     mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
    mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
@@ -951,7 +1003,8 @@ GCS_MAVLINK::queued_param_send()
     		                                                             &msg,
     		                                                             param_name,
 																		 value,
-																		 mav_var_type(_queued_parameter_type),
+																		 MAVLINK_TYPE_FLOAT,
+																		 //mav_var_type(_queued_parameter_type),
 																		 _queued_parameter_count,
 																		 _queued_parameter_index );
 
@@ -960,7 +1013,7 @@ GCS_MAVLINK::queued_param_send()
    uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
    send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
 
-    _queued_parameter = AP_Param::next_scalar(&_queued_parameter_token, &_queued_parameter_type);
+    _queued_parameter_wang = _queued_parameter_wang->next_param;
     _queued_parameter_index++;
     printf("_queued_parameter_index=%d\n",_queued_parameter_index);
 }
@@ -1516,6 +1569,15 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			_queued_parameter = AP_Param::first(&_queued_parameter_token, &_queued_parameter_type);
 			_queued_parameter_index = 0;
 			_queued_parameter_count = _count_parameters();
+
+
+			/*
+			 * 20171002
+			 */
+			_queued_parameter_wang = &param_all[0];
+			_queued_parameter_index = 0;
+			_queued_parameter_count = 2;
+
 			break;
 		}
 
