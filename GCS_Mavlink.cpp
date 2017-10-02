@@ -1579,7 +1579,8 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			_queued_parameter_wang = &param_all[0];
 			_queued_parameter_index = 0;
 			//_queued_parameter_count = 2;
-			_queued_parameter_count = 4;
+			//_queued_parameter_count = 4;
+			_queued_parameter_count = param_all_cnt;//20171002这个参数在Parameters.h文件中声明定义
 
 			break;
 		}
@@ -1645,6 +1646,45 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 				copter.g.waypoint_radius=(int8_t)value;
 				copter.battery_voltage1=12;
 				printf("handleMessage    :    copter.g.waypoint_radius=%d\n",copter.g.waypoint_radius);
+				break;
+			case k_param_p_stabilize_roll:
+				copter.g.pi_stabilize_roll.set_kP(value);
+				printf("handleMessage    :    g.pi_stabilize_roll  P=%f\n",value);
+				break;
+			case k_param_p_stabilize_pitch:
+				copter.g.pi_stabilize_pitch.set_kP(value);
+				printf("handleMessage    :    g.pi_stabilize_pitch  P=%f\n",value);
+				break;
+			case k_param_p_stabilize_yaw:
+				copter.g.pi_stabilize_yaw.set_kP(value);
+				printf("handleMessage    :    g.pi_stabilize_yaw  P=%f\n",value);
+				break;
+			case k_param_pid_rate_roll_p:
+				copter.g.pid_rate_roll.set_kP(value);
+				break;
+			case k_param_pid_rate_roll_i:
+				copter.g.pid_rate_roll.set_kI(value);
+				break;
+			case k_param_pid_rate_roll_d:
+				copter.g.pid_rate_roll.set_kD(value);
+				break;
+			case k_param_pid_rate_pitch_p:
+				copter.g.pid_rate_pitch.set_kP(value);
+				break;
+			case k_param_pid_rate_pitch_i:
+				copter.g.pid_rate_pitch.set_kI(value);
+				break;
+			case k_param_pid_rate_pitch_d:
+				copter.g.pid_rate_pitch.set_kD(value);
+				break;
+			case k_param_pid_rate_yaw_p:
+				copter.g.pid_rate_yaw.set_kP(value);
+				break;
+			case k_param_pid_rate_yaw_i:
+				copter.g.pid_rate_yaw.set_kI(value);
+				break;
+			case k_param_pid_rate_yaw_d:
+				copter.g.pid_rate_yaw.set_kD(value);
 				break;
 
 			default:

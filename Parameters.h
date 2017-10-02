@@ -479,18 +479,35 @@ public:
 	//
 	k_param_acro_rp_p = 221,
 	k_param_axis_lock_p,    // remove
-	k_param_pid_rate_roll,
-	k_param_pid_rate_pitch,
-	k_param_pid_rate_yaw,
+
 	k_param_p_stabilize_roll,
 	k_param_p_stabilize_pitch,
 	k_param_p_stabilize_yaw,
-	k_param_p_pos_xy,
-	k_param_p_loiter_lon,       // remove
-	k_param_pid_loiter_rate_lat,    // remove
-	k_param_pid_loiter_rate_lon,    // remove
-	k_param_pid_nav_lat,        // remove
-	k_param_pid_nav_lon,        // remove
+
+	k_param_pid_rate_roll_p,
+	k_param_pid_rate_roll_i,
+	k_param_pid_rate_roll_d,
+
+	k_param_pid_rate_pitch_p,
+	k_param_pid_rate_pitch_i,
+	k_param_pid_rate_pitch_d,
+
+	k_param_pid_rate_yaw_p,
+	k_param_pid_rate_yaw_i,
+	k_param_pid_rate_yaw_d,
+
+	k_param_pid_nav_lat_p,
+	k_param_pid_nav_lat_i,
+	k_param_pid_nav_lat_d,
+
+	k_param_pid_nav_lon_p,
+	k_param_pid_nav_lon_i,
+	k_param_pid_nav_lon_d,
+
+
+
+
+
 	k_param_p_alt_hold,
 	k_param_p_vel_z,
 	k_param_pid_optflow_roll,       // remove
@@ -510,6 +527,48 @@ public:
 	k_param_autotune_min_d, // 251
 
 	// 254,255: reserved
+
+
+
+
+
+
+//	//
+//	// 220: PI/D Controllers
+//	//
+//	k_param_acro_rp_p = 221,
+//	k_param_axis_lock_p,    // remove
+//	k_param_pid_rate_roll,
+//	k_param_pid_rate_pitch,
+//	k_param_pid_rate_yaw,
+//	k_param_p_stabilize_roll,
+//	k_param_p_stabilize_pitch,
+//	k_param_p_stabilize_yaw,
+//	k_param_p_pos_xy,
+//	k_param_p_loiter_lon,       // remove
+//	k_param_pid_loiter_rate_lat,    // remove
+//	k_param_pid_loiter_rate_lon,    // remove
+//	k_param_pid_nav_lat,        // remove
+//	k_param_pid_nav_lon,        // remove
+//	k_param_p_alt_hold,
+//	k_param_p_vel_z,
+//	k_param_pid_optflow_roll,       // remove
+//	k_param_pid_optflow_pitch,      // remove
+//	k_param_acro_balance_roll_old,  // remove
+//	k_param_acro_balance_pitch_old, // remove
+//	k_param_pid_accel_z,
+//	k_param_acro_balance_roll,
+//	k_param_acro_balance_pitch,
+//	k_param_acro_yaw_p,
+//	k_param_autotune_axis_bitmask,
+//	k_param_autotune_aggressiveness,
+//	k_param_pi_vel_xy,
+//	k_param_fs_ekf_action,
+//	k_param_rtl_climb_min,
+//	k_param_rpm_sensor,
+//	k_param_autotune_min_d, // 251
+//
+//	// 254,255: reserved
 };
 
 typedef struct PARAM
@@ -522,7 +581,7 @@ typedef struct PARAM
 
 extern T_PARAM param_all[];
 
-
+extern uint8_t param_all_cnt;
 
 
 
