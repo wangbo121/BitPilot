@@ -333,6 +333,35 @@ NOINLINE void Copter::send_extended_status1(mavlink_channel_t chan)
 
 }
 
+void NOINLINE Copter::send_gps_raw(mavlink_channel_t chan)
+{
+	mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+	mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+
+	// Initialize the required buffers
+	mavlink_message_t msg;
+	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+	mavlink_msg_gps_raw_int_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,\
+															ap2gcs_mavlink.gps_raw_time_usec,\
+															ap2gcs_mavlink.gps_raw_fix_type,\
+															ap2gcs_mavlink.gps_raw_lat,\
+															ap2gcs_mavlink.gps_raw_lon,\
+															ap2gcs_mavlink.gps_raw_alt,\
+															ap2gcs_mavlink.gps_raw_eph,\
+															ap2gcs_mavlink.gps_raw_epv,\
+															ap2gcs_mavlink.gps_raw_vel,\
+															ap2gcs_mavlink.gps_raw_cog,\
+															ap2gcs_mavlink.gps_raw_satellites_visible);
+
+	// Copy the message to the send buffer
+	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+
+#ifdef LINUX_OS
+	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+#endif
+}
+
 void NOINLINE Copter::send_nav_controller_output(mavlink_channel_t chan)
 {
 
@@ -453,12 +482,22 @@ void NOINLINE Copter::send_statustext(mavlink_channel_t chan)
 // see if we should send a stream now. Called at 50Hz
 bool GCS_MAVLINK::stream_trigger(enum streams stream_num)
 {
-	 int16_t *stream_rates = &streamRateRawSensors;
-	uint8_t rate = (uint8_t)stream_rates[stream_num];
 
+	int16_t *stream_rates = &streamRateRawSensors;
+	uint8_t rate = (uint8_t)stream_rates[stream_num];//20171002必须非常注意这里，他这里用了类似于数组的方式，但是其实stream_rates并不是数组，只是streamRateRawSensors的地址，而这个streamRateRawSensors变量是在GCS.h中定义的
+
+	//DEBUG_PRINTF("GCS_MAVLINK::stream_trigger    :    rate = %d\n",rate);
+	//printf("GCS_MAVLINK::stream_trigger    :    rate = %d\n",rate);
+	/*
+	 * 因为并没有程序给streamRateRawSensors 以及 stream_rates赋值，所以一开始这里的stream_rates[stream_num] 必然都等于0
+	 * 可是为什么一连接上地面站这个rate就不等于0了呢，我测试过了，一开始没有连接地面站时，rate的确一直是0
+	 * 但是地面站在点击右上角的连接时，就会给驾驶仪发送MAVLINK_MSG_ID_REQUEST_DATA_STREAM: //66  从而给每个参数包设置频率freq
+	 */
 	if (rate == 0) {
 		return false;
 	}
+
+	DEBUG_PRINTF("GCS_MAVLINK::stream_trigger    :    rate = %d\n",rate);
 
 	if (stream_ticks[stream_num] == 0) {
 		// we're triggering now, setup the next trigger point
@@ -1073,14 +1112,9 @@ bool GCS_MAVLINK::mavlink_try_send_message(mavlink_channel_t chan, enum ap_messa
 //        send_nav_controller_output(chan);
 //        break;
 //
-//    case MSG_GPS_RAW:
-//#if MAVLINK10 == ENABLED
-//        CHECK_PAYLOAD_SIZE(GPS_RAW_INT);
-//#else
-//        CHECK_PAYLOAD_SIZE(GPS_RAW);
-//#endif
-//        send_gps_raw(chan);
-//        break;
+		case MSG_GPS_RAW:
+			copter.send_gps_raw(chan);
+			break;
 //
 //    case MSG_SERVO_OUT:
 //        CHECK_PAYLOAD_SIZE(RC_CHANNELS_SCALED);
@@ -1267,6 +1301,8 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 				case MAV_DATA_STREAM_EXTENDED_STATUS:
 					//streamRateExtendedStatus.set_and_save(freq);
 					streamRateExtendedStatus = freq;
+
+					//DEBUG_PRINTF("handleMessage    :    MAV_DATA_STREAM_EXTENDED_STATUS freq=%d\n",freq);//20171002已测试 地面站连接驾驶仪时，地面站在请求驾驶仪回传全部参数会每一个参数都设置频率freq
 					break;
 
 				case MAV_DATA_STREAM_RC_CHANNELS:
@@ -1283,6 +1319,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
 				case MAV_DATA_STREAM_POSITION:
 					streamRatePosition = freq;
+					//DEBUG_PRINTF("handleMessage    :    MAV_DATA_STREAM_POSITION freq=%d\n",freq);//20171002已测试 地面站连接驾驶仪时，地面站在请求驾驶仪回传全部参数会每一个参数都设置频率freq
 					break;
 
 				case MAV_DATA_STREAM_EXTRA1:
@@ -1553,11 +1590,11 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 		{
 			// gcs_send_text_P(SEVERITY_LOW,PSTR("param request list"));
 
-			//DEBUG_PRINTF("******************************************************************************请求回传所有参数\n");
-			printf("******************************************************************************请求回传所有参数\n");
+			DEBUG_PRINTF("******************************************************************************请求回传所有参数\n");
 
 			/*
-			 * 参数的发送放在了gcs_update里面 航点的回传也是放在那里了
+			 * 参数的发送放在了gcs_update里面，这里只是设置以下参数队列中的第一个排队的，_queued_parameter_wang
+			 * 航点的回传也是放在了gcs_update里面，
 			 *
 			 */
 
@@ -1578,8 +1615,6 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			 */
 			_queued_parameter_wang = &param_all[0];
 			_queued_parameter_index = 0;
-			//_queued_parameter_count = 2;
-			//_queued_parameter_count = 4;
 			_queued_parameter_count = param_all_cnt;//20171002这个参数在Parameters.h文件中声明定义
 
 			break;
@@ -1616,8 +1651,8 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
 			value=packet.param_value;
 
-			printf("handleMessage    :    key = %s\n",key);
-			printf("handleMessage    :    param value = %f\n",value);
+			DEBUG_PRINTF("handleMessage    :    key = %s\n",key);
+			DEBUG_PRINTF("handleMessage    :    param value = %f\n",value);
 
 			int i=0;
 			for(i=0;i<_queued_parameter_count;i++)
@@ -1625,7 +1660,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 				if(!strcmp(key,param_all[i].name))
 				{
 					//key param_all.name相同
-					printf("handleMessage    :    字符串相同 i=%d\n",i);
+					DEBUG_PRINTF("handleMessage    :    字符串相同 i=%d\n",i);
 					param_all[i].value=value;
 					break;//找到相同的后，就停止查询
 				}
@@ -1645,19 +1680,19 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			case k_param_waypoint_radius:
 				copter.g.waypoint_radius=(int8_t)value;
 				copter.battery_voltage1=12;
-				printf("handleMessage    :    copter.g.waypoint_radius=%d\n",copter.g.waypoint_radius);
+				DEBUG_PRINTF("handleMessage    :    copter.g.waypoint_radius=%d\n",copter.g.waypoint_radius);
 				break;
 			case k_param_p_stabilize_roll:
 				copter.g.pi_stabilize_roll.set_kP(value);
-				printf("handleMessage    :    g.pi_stabilize_roll  P=%f\n",value);
+				DEBUG_PRINTF("handleMessage    :    g.pi_stabilize_roll  P=%f\n",value);
 				break;
 			case k_param_p_stabilize_pitch:
 				copter.g.pi_stabilize_pitch.set_kP(value);
-				printf("handleMessage    :    g.pi_stabilize_pitch  P=%f\n",value);
+				DEBUG_PRINTF("handleMessage    :    g.pi_stabilize_pitch  P=%f\n",value);
 				break;
 			case k_param_p_stabilize_yaw:
 				copter.g.pi_stabilize_yaw.set_kP(value);
-				printf("handleMessage    :    g.pi_stabilize_yaw  P=%f\n",value);
+				DEBUG_PRINTF("handleMessage    :    g.pi_stabilize_yaw  P=%f\n",value);
 				break;
 			case k_param_pid_rate_roll_p:
 				copter.g.pid_rate_roll.set_kP(value);

@@ -723,6 +723,36 @@ struct T_MAVLINK_REALTIME_DATA
 	int16_t global_position_vz;//[m/s * 100] 厘米每秒
 	uint16_t global_position_hdg;//[degree * 100] 度*100 这个是偏航方向 也就是机头的朝向 跟attitude_yaw_rad能不能一起发送呢，有可能这个是gps的速度的航向？还是磁力计与正北的方向
 
+
+	/**
+	 * @brief Pack a gps_raw_int message
+	 * @param system_id ID of this system
+	 * @param component_id ID of this component (e.g. 200 for IMU)
+	 * @param msg The MAVLink message to compress the data into
+	 *
+	 * @param time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
+	 * @param fix_type See the GPS_FIX_TYPE enum.
+	 * @param lat Latitude (WGS84, EGM96 ellipsoid), in degrees * 1E7
+	 * @param lon Longitude (WGS84, EGM96 ellipsoid), in degrees * 1E7
+	 * @param alt Altitude (AMSL, NOT WGS84), in meters * 1000 (positive for up). Note that virtually all GPS modules provide the AMSL altitude in addition to the WGS84 altitude.
+	 * @param eph GPS HDOP horizontal dilution of position (unitless). If unknown, set to: UINT16_MAX
+	 * @param epv GPS VDOP vertical dilution of position (unitless). If unknown, set to: UINT16_MAX
+	 * @param vel GPS ground speed (m/s * 100). If unknown, set to: UINT16_MAX
+	 * @param cog Course over ground (NOT heading, but direction of movement) in degrees * 100, 0.0..359.99 degrees. If unknown, set to: UINT16_MAX
+	 * @param satellites_visible Number of satellites visible. If unknown, set to 255
+	 * @return length of the message in bytes (excluding serial stream start sign)
+	 */
+	uint64_t gps_raw_time_usec;
+	uint8_t gps_raw_fix_type;
+	int32_t gps_raw_lat;
+	int32_t gps_raw_lon;
+	int32_t gps_raw_alt;
+	uint16_t gps_raw_eph;
+	uint16_t gps_raw_epv;
+	uint16_t gps_raw_vel;
+	uint16_t gps_raw_cog;
+	uint8_t gps_raw_satellites_visible;
+
 };
 
 struct T_GLOBAL_BOOL

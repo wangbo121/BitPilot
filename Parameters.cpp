@@ -13,6 +13,7 @@ uint8_t param_all_cnt=16;
 /*
  * 把这里修改结束后，还需要把GCS_Mavlink.cpp中_queued_parameter_count = ;这句代码改为param_all的数组内元素的个数
  * 后来改成不需要改了，改上面的param_all_cnt就可以了
+ * key值的编写和name名字的编写，参照apm2.0.5到apm2.8的Parameters.h中最后面Parameters类的构造函数中的名字
  */
 T_PARAM param_all[]={//value                                                key                                                              name                                                 *next param
 										{113.0,                                              0,                                                                 "SYSID_SW_MREV",                          &param_all[1]},

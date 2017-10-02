@@ -1548,6 +1548,7 @@ public:
 	void NOINLINE send_current_waypoint(mavlink_channel_t chan);
 
 	void NOINLINE send_rangefinder(mavlink_channel_t chan);
+	void NOINLINE send_gps_raw(mavlink_channel_t chan);
 	/*
 	send RPM packet
 	*/

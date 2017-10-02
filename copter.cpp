@@ -1104,6 +1104,19 @@ void Copter::update_mavlink_reatime()
 	ap2gcs_mavlink.global_position_vz=fdm_feed_back.v_down * 100;
 	ap2gcs_mavlink.global_position_hdg=0;
 
+	ap2gcs_mavlink.gps_raw_time_usec=0;
+	ap2gcs_mavlink.gps_raw_fix_type=GPS_FIX_TYPE_3D_FIX;
+	ap2gcs_mavlink.gps_raw_lat=(int32_t)gps.latitude;
+	ap2gcs_mavlink.gps_raw_lon=-(int32_t)gps.longitude;//这里正常情况下是没有负号的，我因为用flightgear模拟，定的机场是-122度，所以我加了负号，把他变为122度，山东的附近
+	ap2gcs_mavlink.gps_raw_alt=(int32_t)gps.altitude * 10;//gps.altitude的高度是厘米，但是发送给地面站的是毫米
+	ap2gcs_mavlink.gps_raw_eph=0;
+	ap2gcs_mavlink.gps_raw_epv=0;
+	ap2gcs_mavlink.gps_raw_vel=gps.ground_speed;//这个是地速，应该赋值实际的速度
+	ap2gcs_mavlink.gps_raw_cog=gps.ground_course;
+	ap2gcs_mavlink.gps_raw_satellites_visible=5;
+
+
+
 }
 
 

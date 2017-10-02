@@ -218,6 +218,9 @@ public:
 	uint16_t waypoint_send_timeout; // milliseconds
 	uint16_t waypoint_receive_timeout; // milliseconds
 
+	/*
+	 * 20171002这下面的序列不能随便改，决定了发送各个类型包的频率，与bool GCS_MAVLINK::stream_trigger(enum streams stream_num)函数有关
+	 */
 	// data stream rates
 	//AP_Var_group	    _group;
 	int16_t streamRateRawSensors;
