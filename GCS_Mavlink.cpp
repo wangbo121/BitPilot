@@ -1592,108 +1592,144 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 
 
 	    case MAVLINK_MSG_ID_PARAM_SET:     // 23
-	    {
-//	    			AP_Var				  *vp;
-//	    			AP_Meta_class::Type_id  var_type;
+		{
+			//	    			AP_Var				  *vp;
+			//	    			AP_Meta_class::Type_id  var_type;
 
-	    			// decode
-	    			mavlink_param_set_t packet;
-	    			mavlink_msg_param_set_decode(msg, &packet);
+			// decode
+			mavlink_param_set_t packet;
+			mavlink_msg_param_set_decode(msg, &packet);
 
-	    			if (mavlink_check_target(packet.target_system, packet.target_component))
-	    				break;
+			if (mavlink_check_target(packet.target_system, packet.target_component))
+			break;
 
-	    			// set parameter
+			// set parameter
+			float value=0.0;
 
-	    			char key[ONBOARD_PARAM_NAME_LENGTH+1];
-	    			strncpy(key, (char *)packet.param_id, ONBOARD_PARAM_NAME_LENGTH);
-	    			key[ONBOARD_PARAM_NAME_LENGTH] = 0;
+			char key[ONBOARD_PARAM_NAME_LENGTH+1];
+			strncpy(key, (char *)packet.param_id, ONBOARD_PARAM_NAME_LENGTH);
+			key[ONBOARD_PARAM_NAME_LENGTH] = 0;
 
-	    			printf("handleMessage    :    key = %s\n",key);
+			value=packet.param_value;
 
-	    			/*
-	    			 * 现在已经找到了参数的名称保存在key里面
-	    			 * 需要通过key找到驾驶仪中参数的变量名称，然后把packet.param_value赋值给这个参数变量
-	    			 * 这里面有个问题就是这个packet.param_value是具有不同类型的，有可能是int 也有可能是float
-	    			 * 所以我需要进行如下操作
-	    			 * 1把所有的参数名称写成字符串数组列表，这样与key比对，能够得到该key在数组中的位置
-	    			 * 2得到位置后，用switch语句，case这个位置值，根据case的值分别给参数赋值
-	    			 * 3这样可能麻烦一点，但是好歹能够使用数组来保存参数了
-	    			 * 4别忘了设置参数后，需要把设置好的参数发回给地面站，相应一下
-	    			 */
+			printf("handleMessage    :    key = %s\n",key);
+			printf("handleMessage    :    param value = %f\n",value);
 
-	    			//	    				// Report back the new value if we accepted the change
-	    			//	    				// we send the value we actually set, which could be
-	    			//	    				// different from the value sent, in case someone sent
-	    			//	    				// a fractional value to an integer type
-	    			//	    				mavlink_msg_param_value_send(
-	    			//	    					chan,
-	    			//	    					(int8_t *)key,
-	    			//	    					vp->cast_to_float(),
-	    			//	    					_count_parameters(),
-	    			//	    					-1); // XXX we don't actually know what its index is...
-	    			//
-	    			//	    			}
+			for(int i=0;i<_queued_parameter_count;i++)
+			{
+				if(!strcmp(key,param_all[i].name))
+				{
+					//key param_all.name相同
+					printf("handleMessage    :    字符串相同 i=%d\n",i);
+					param_all[i].value=value;
+				}
+			}
 
 
-
-	    			/*
-	    			 * 下面其实就是通过key这个字符串，也就是参数的名字，找到该字符串在flash中的位置，
-	    			 * 然后对vp这个指针根据 var_type也就是数据的类型，强制转换，从而保存地面站发送过来的参数值
-	    			 * 再接收到参数值后还需要返回mavlink_msg_param_value_send
-	    			 *static inline uint16_t mavlink_msg_param_value_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
-                               const char *param_id, float param_value, uint8_t param_type, uint16_t param_count, uint16_t param_index) 实际用这个函数打包
-                               参考网址
-                               http://qgroundcontrol.org/mavlink/parameter_protocol
-	    			 */
+			mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+			mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
 
 
-	    			// find the requested parameter
-//	    			vp = AP_Var::find(key);
-//
-//	    			if ((NULL != vp) &&							 		// exists
-//	    					!isnan(packet.param_value) &&			   // not nan
-//	    					!isinf(packet.param_value)) {			   // not inf
-//
-//	    				// add a small amount before casting parameter values
-//	    				// from float to integer to avoid truncating to the
-//	    				// next lower integer value.
-//	    				float rounding_addition = 0.01;
-//
-//	    				// fetch the variable type ID
-//	    				var_type = vp->meta_type_id();
-//
-//	    				// handle variables with standard type IDs
-//	    				if (var_type == AP_Var::k_typeid_float) {
-//	    					((AP_Float *)vp)->set_and_save(packet.param_value);
-//	    #if LOGGING_ENABLED == ENABLED
-//	    					Log_Write_Data(1, (float)((AP_Float *)vp)->get());
-//	    #endif
-//	    				} else if (var_type == AP_Var::k_typeid_float16) {
-//	    					((AP_Float16 *)vp)->set_and_save(packet.param_value);
-//	    #if LOGGING_ENABLED == ENABLED
-//	    					Log_Write_Data(2, (float)((AP_Float *)vp)->get());
-//	    #endif
-//	    				} else if (var_type == AP_Var::k_typeid_int32) {
-//	    					if (packet.param_value < 0) rounding_addition = -rounding_addition;
-//	    					((AP_Int32 *)vp)->set_and_save(packet.param_value+rounding_addition);}
+			// Initialize the required buffers
+			mavlink_message_t msg;
+			uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+//			static inline uint16_t mavlink_msg_param_value_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
+//			                               const char *param_id, float param_value, uint8_t param_type, uint16_t param_count, uint16_t param_index);
+
+			mavlink_msg_param_value_pack(mavlink_system.sysid,mavlink_system.compid,&msg,\
+					                                                    key,8.0,MAVLINK_TYPE_FLOAT,2,1);
+			// Copy the message to the send buffer
+			uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+			send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
 
 
-//	    				// Report back the new value if we accepted the change
-//	    				// we send the value we actually set, which could be
-//	    				// different from the value sent, in case someone sent
-//	    				// a fractional value to an integer type
-//	    				mavlink_msg_param_value_send(
-//	    					chan,
-//	    					(int8_t *)key,
-//	    					vp->cast_to_float(),
-//	    					_count_parameters(),
-//	    					-1); // XXX we don't actually know what its index is...
-//
-//	    			}
 
-	    			break;
-	    		} // end case
+
+
+			/*
+			* 现在已经找到了参数的名称保存在key里面
+			* 需要通过key找到驾驶仪中参数的变量名称，然后把packet.param_value赋值给这个参数变量
+			* 这里面有个问题就是这个packet.param_value是具有不同类型的，有可能是int 也有可能是float
+			* 所以我需要进行如下操作
+			* 1把所有的参数名称写成字符串数组列表，这样与key比对，能够得到该key在数组中的位置
+			* 2得到位置后，用switch语句，case这个位置值，根据case的值分别给参数赋值
+			* 3这样可能麻烦一点，但是好歹能够使用数组来保存参数了
+			* 4别忘了设置参数后，需要把设置好的参数发回给地面站，相应一下
+			*/
+
+			//	    				// Report back the new value if we accepted the change
+			//	    				// we send the value we actually set, which could be
+			//	    				// different from the value sent, in case someone sent
+			//	    				// a fractional value to an integer type
+			//	    				mavlink_msg_param_value_send(
+			//	    					chan,
+			//	    					(int8_t *)key,
+			//	    					vp->cast_to_float(),
+			//	    					_count_parameters(),
+			//	    					-1); // XXX we don't actually know what its index is...
+			//
+			//	    			}
+
+
+
+			/*
+			* 下面其实就是通过key这个字符串，也就是参数的名字，找到该字符串在flash中的位置，
+			* 然后对vp这个指针根据 var_type也就是数据的类型，强制转换，从而保存地面站发送过来的参数值
+			* 再接收到参数值后还需要返回mavlink_msg_param_value_send
+			*static inline uint16_t mavlink_msg_param_value_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
+			const char *param_id, float param_value, uint8_t param_type, uint16_t param_count, uint16_t param_index) 实际用这个函数打包
+			参考网址
+			http://qgroundcontrol.org/mavlink/parameter_protocol
+			*/
+
+
+			// find the requested parameter
+			//	    			vp = AP_Var::find(key);
+			//
+			//	    			if ((NULL != vp) &&							 		// exists
+			//	    					!isnan(packet.param_value) &&			   // not nan
+			//	    					!isinf(packet.param_value)) {			   // not inf
+			//
+			//	    				// add a small amount before casting parameter values
+			//	    				// from float to integer to avoid truncating to the
+			//	    				// next lower integer value.
+			//	    				float rounding_addition = 0.01;
+			//
+			//	    				// fetch the variable type ID
+			//	    				var_type = vp->meta_type_id();
+			//
+			//	    				// handle variables with standard type IDs
+			//	    				if (var_type == AP_Var::k_typeid_float) {
+			//	    					((AP_Float *)vp)->set_and_save(packet.param_value);
+			//	    #if LOGGING_ENABLED == ENABLED
+			//	    					Log_Write_Data(1, (float)((AP_Float *)vp)->get());
+			//	    #endif
+			//	    				} else if (var_type == AP_Var::k_typeid_float16) {
+			//	    					((AP_Float16 *)vp)->set_and_save(packet.param_value);
+			//	    #if LOGGING_ENABLED == ENABLED
+			//	    					Log_Write_Data(2, (float)((AP_Float *)vp)->get());
+			//	    #endif
+			//	    				} else if (var_type == AP_Var::k_typeid_int32) {
+			//	    					if (packet.param_value < 0) rounding_addition = -rounding_addition;
+			//	    					((AP_Int32 *)vp)->set_and_save(packet.param_value+rounding_addition);}
+
+
+			//	    				// Report back the new value if we accepted the change
+			//	    				// we send the value we actually set, which could be
+			//	    				// different from the value sent, in case someone sent
+			//	    				// a fractional value to an integer type
+			//	    				mavlink_msg_param_value_send(
+			//	    					chan,
+			//	    					(int8_t *)key,
+			//	    					vp->cast_to_float(),
+			//	    					_count_parameters(),
+			//	    					-1); // XXX we don't actually know what its index is...
+			//
+			//	    			}
+
+			break;
+		} // end case
 
 	    /*
 	     * 20170928地面站在给驾驶仪发送航点时应该会先发送这个航点数的吧
