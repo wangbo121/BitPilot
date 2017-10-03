@@ -16,11 +16,6 @@
 //****************************************************************
 int Copter::navigate()
 {
-
-    // waypoint distance from plane in cm
-    // ---------------------------------------
-
-
 	DEBUG_PRINTF("navigate    :    next_WP.lng = %d\n",next_WP.lng);
 	DEBUG_PRINTF("navigate    :    next_WP.lat = %d\n",next_WP.lat);
 
@@ -79,8 +74,6 @@ uint8_t Copter::check_missed_wp()
 // ------------------------------
 void Copter::calc_XY_velocity()
 {
-	//    static int32_t last_longitude = 0;
-	//    static int32_t last_latitude  = 0;
 	static long last_longitude = 0;
 	static long last_latitude  = 0;
 
@@ -101,13 +94,11 @@ void Copter::calc_XY_velocity()
 	//float tmp = 1.0/dTnav;
 	float tmp = 1000.0/dTnav;//20170919如果dTnav单位是ms毫秒的话,
 
-
 	DEBUG_PRINTF("calc_XY_velocity    :    gps.longitude = %ld\n",gps.longitude);
 	DEBUG_PRINTF("calc_XY_velocity    :    gps.latitude = %ld\n",gps.latitude);
 	DEBUG_PRINTF("calc_XY_velocity    :    last_longitude = %ld\n",last_longitude);
 	DEBUG_PRINTF("calc_XY_velocity    :    last_latitude = %ld\n",last_latitude);
 
-	// x_actual_speed  = (float)(gps.longitude - last_longitude)  * scaleLongDown * tmp;
 	x_actual_speed  = (float)(gps.longitude - last_longitude)  *  tmp;
 	y_actual_speed  = (float)(gps.latitude  - last_latitude)  * tmp;
 
@@ -159,98 +150,6 @@ void Copter::calc_location_error(struct Location *next_loc)
     DEBUG_PRINTF("calc_location_error    :    lat_error = %d\n",lat_error);
 }
 
-#if 0
-
-
-#define NAV_ERR_MAX 600
-#define NAV_RATE_ERR_MAX 250
-static void calc_loiter(int16_t x_error, int16_t y_error)
-{
-    int32_t p,i,d;                                              // used to capture pid values for logging
-    int32_t output;
-    int32_t x_target_speed, y_target_speed;
-
-    // East / West
-    x_target_speed  = g.pi_loiter_lon.get_p(x_error);                           // calculate desired speed from lon error
-
-#if LOGGING_ENABLED == ENABLED
-    // log output if PID logging is on and we are tuning the yaw
-    if( g.log_bitmask & MASK_LOG_PID && (g.radio_tuning == CH6_LOITER_KP || g.radio_tuning == CH6_LOITER_KI) ) {
-        Log_Write_PID(CH6_LOITER_KP, x_error, x_target_speed, 0, 0, x_target_speed, tuning_value);
-    }
-#endif
-
-
-    // calculate rate error
-#if INERTIAL_NAV == ENABLED
-    x_rate_error    = x_target_speed - accels_velocity.x;               // calc the speed error
-#else
-    x_rate_error    = x_target_speed - x_actual_speed;                          // calc the speed error
-#endif
-
-
-    p                               = g.pid_loiter_rate_lon.get_p(x_rate_error);
-    i                               = g.pid_loiter_rate_lon.get_i(x_rate_error + x_error, dTnav);
-    d                               = g.pid_loiter_rate_lon.get_d(x_error, dTnav);
-    d                               = constrain(d, -2000, 2000);
-
-    // get rid of noise
-    if(abs(x_actual_speed) < 50) {
-        d = 0;
-    }
-
-    output                  = p + i + d;
-    nav_lon                 = constrain(output, -3200, 3200);
-
-#if LOGGING_ENABLED == ENABLED
-    // log output if PID logging is on and we are tuning the yaw
-    if( g.log_bitmask & MASK_LOG_PID && (g.radio_tuning == CH6_LOITER_RATE_KP || g.radio_tuning == CH6_LOITER_RATE_KI || g.radio_tuning == CH6_LOITER_RATE_KD) ) {
-        Log_Write_PID(CH6_LOITER_RATE_KP, x_rate_error, p, i, d, nav_lon, tuning_value);
-    }
-#endif
-
-    // North / South
-    y_target_speed  = g.pi_loiter_lat.get_p(y_error);                           // calculate desired speed from lat error
-
-#if LOGGING_ENABLED == ENABLED
-    // log output if PID logging is on and we are tuning the yaw
-    if( g.log_bitmask & MASK_LOG_PID && (g.radio_tuning == CH6_LOITER_KP || g.radio_tuning == CH6_LOITER_KI) ) {
-        Log_Write_PID(CH6_LOITER_KP+100, y_error, y_target_speed, 0, 0, y_target_speed, tuning_value);
-    }
-#endif
-
-    // calculate rate error
-#if INERTIAL_NAV == ENABLED
-    y_rate_error    = y_target_speed - accels_velocity.y;               // calc the speed error
-#else
-    y_rate_error    = y_target_speed - y_actual_speed;                          // calc the speed error
-#endif
-
-    p                               = g.pid_loiter_rate_lat.get_p(y_rate_error);
-    i                               = g.pid_loiter_rate_lat.get_i(y_rate_error + y_error, dTnav);
-    d                               = g.pid_loiter_rate_lat.get_d(y_error, dTnav);
-    d                               = constrain(d, -2000, 2000);
-
-    // get rid of noise
-    if(abs(y_actual_speed) < 50) {
-        d = 0;
-    }
-
-    output                  = p + i + d;
-    nav_lat                 = constrain(output, -3200, 3200);
-
-#if LOGGING_ENABLED == ENABLED
-    // log output if PID logging is on and we are tuning the yaw
-    if( g.log_bitmask & MASK_LOG_PID && (g.radio_tuning == CH6_LOITER_RATE_KP || g.radio_tuning == CH6_LOITER_RATE_KI || g.radio_tuning == CH6_LOITER_RATE_KD) ) {
-        Log_Write_PID(CH6_LOITER_RATE_KP+100, y_rate_error, p, i, d, nav_lat, tuning_value);
-    }
-#endif
-
-    // copy over I term to Nav_Rate
-    g.pid_nav_lon.set_integrator(g.pid_loiter_rate_lon.get_integrator());
-    g.pid_nav_lat.set_integrator(g.pid_loiter_rate_lat.get_integrator());
-}
-#endif
 void Copter::calc_nav_rate(int16_t max_speed)
 {
     float temp, temp_x, temp_y;
@@ -397,20 +296,7 @@ int16_t Copter::get_desired_speed(int16_t max_speed, bool _slow)
 
     return max_speed;//=150
 }
-#if 0
-int16_t Copter::get_desired_climb_rate()
-{
-    if(alt_change_flag == ASCENDING) {
-        return constrain(altitude_error / 4, 100, 180);         // 180cm /s up, minimum is 100cm/s
 
-    }else if(alt_change_flag == DESCENDING) {
-        return constrain(altitude_error / 6, -100, -10);         // -100cm /s down, max is -10cms
-
-    }else{
-        return 0;
-    }
-}
-#endif
 void Copter::update_crosstrack(void)
 {
 #if 0
@@ -435,79 +321,11 @@ void Copter::update_crosstrack(void)
 #endif
 	DEBUG_PRINTF("update_crosstrack    :    target_bearing - original_target_bearing = %d\n",target_bearing - original_target_bearing);
 }
-#if 0
-static int32_t get_altitude_error()
-{
-    // Next_WP alt is our target alt
-    // It changes based on climb rate
-    // until it reaches the target_altitude
-    return next_WP.alt - current_loc.alt;
-}
-
-static void clear_new_altitude()
-{
-    alt_change_flag = REACHED_ALT;
-}
-
-static void force_new_altitude(int32_t new_alt)
-{
-    next_WP.alt     = new_alt;
-    alt_change_flag = REACHED_ALT;
-}
-
-static void set_new_altitude(int32_t new_alt)
-{
-    next_WP.alt     = new_alt;
-
-    if(next_WP.alt > current_loc.alt + 20) {
-        // we are below, going up
-        alt_change_flag = ASCENDING;
-
-    }else if(next_WP.alt < current_loc.alt - 20) {
-        // we are above, going down
-        alt_change_flag = DESCENDING;
-
-    }else{
-        // No Change
-        alt_change_flag = REACHED_ALT;
-    }
-}
-
-static void verify_altitude()
-{
-    if(alt_change_flag == ASCENDING) {
-        // we are below, going up
-        if(current_loc.alt >  next_WP.alt - 50) {
-            alt_change_flag = REACHED_ALT;
-        }
-    }else if (alt_change_flag == DESCENDING) {
-        // we are above, going down
-        if(current_loc.alt <=  next_WP.alt + 50)
-            alt_change_flag = REACHED_ALT;
-    }
-}
-
-
-static int32_t wrap_360(int32_t error)
-{
-    if (error > 36000) error -= 36000;
-    if (error < 0) error += 36000;
-    return error;
-}
-
-static int32_t wrap_180(int32_t error)
-{
-    if (error > 18000) error -= 36000;
-    if (error < -18000) error += 36000;
-    return error;
-}
-#endif
 
 void Copter::clear_new_altitude()
 {
 	alt_change_flag = REACHED_ALT;
 }
-
 
 void Copter::set_new_altitude(int32_t _new_alt)
 {
@@ -550,7 +368,6 @@ int32_t Copter::get_altitude_error()
 	// until it reaches the target_altitude
 	return next_WP.alt - current_loc.alt;
 }
-
 
 int32_t Copter::get_new_altitude()
 {

@@ -7,16 +7,8 @@
 
 #include "copter.h"
 
-//static int32_t wrap_180(int32_t error)
-//{
-//    if (error > 18000) error -= 36000;
-//    if (error < -18000) error += 36000;
-//    return error;
-//}
-
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 
-//get_yaw_rate_stabilized_ef(g.rc_4.control_in);
 void
 Copter::get_stabilize_roll(int32_t target_angle)
 {
@@ -53,7 +45,6 @@ Copter::get_stabilize_roll(int32_t target_angle)
 	     */
 	    set_roll_rate_target(target_rate+i_stab, EARTH_FRAME);
 }
-
 
 void
 Copter::get_stabilize_pitch(int32_t target_angle)
@@ -666,93 +657,6 @@ void Copter::update_throttle_mode(void)
 			break;
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if 0
-void
-Copter::update_throttle_mode_old()
-{
-	// calculate angle boost
-	if(throttle_mode ==  THROTTLE_MANUAL) {
-		angle_boost = get_angle_boost(g.channel_throttle.control_in);
-	}else{
-		angle_boost = get_angle_boost(g.throttle_cruise);
-	}
-
-	switch(throttle_mode)
-	{
-	case THROTTLE_STABLE:
-		if (g.channel_throttle.control_in > 0)
-		{
-			g.channel_throttle.servo_out        = g.channel_throttle.control_in + angle_boost;
-		}
-		break;
-	case THROTTLE_ACRO:
-		g.channel_throttle.servo_out        = g.channel_throttle.control_in;
-		break;
-
-	case THROTTLE_AUTO:
-#if 0
-	//if(motors.auto_armed() == true)
-		if(1)
-	{
-
-		// how far off are we
-		altitude_error = get_altitude_error();
-
-		int16_t desired_speed;
-		if(alt_change_flag == REACHED_ALT) {                    // we are at or above the target alt
-			desired_speed           = g.pi_alt_hold.get_p(altitude_error);                                          // calculate desired speed from lon error
-			update_throttle_cruise(g.pi_alt_hold.get_i(altitude_error, .02));
-			desired_speed           = constrain(desired_speed, -250, 250);
-			nav_throttle            = get_throttle_rate(desired_speed);
-		}else{
-			desired_speed           = get_desired_climb_rate();
-			nav_throttle            = get_throttle_rate(desired_speed);
-		}
-	}
-
-	// hack to remove the influence of the ground effect
-	if(g.sonar_enabled && current_loc.alt < 100 && landing_boost != 0) {
-		nav_throttle = min(nav_throttle, 0);
-	}
-
-#if FRAME_CONFIG == HELI_FRAME
-	throttle_out = heli_get_angle_boost(g.throttle_cruise + nav_throttle - landing_boost);
-#else
-	throttle_out = g.throttle_cruise + nav_throttle + angle_boost - landing_boost;
-#endif
-	g.channel_throttle.servo_out = throttle_out;
-#endif
-
-
-
-	//g.channel_throttle.servo_out = 1000;
-	g.channel_throttle.servo_out = 600;
-	break;
-
-	default:
-		break;
-	}
-}
-#endif
-
-
-
-
 
 /*
  * angle boost 角度加速器

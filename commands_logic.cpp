@@ -5,8 +5,6 @@
  *      Author: wangbo
  */
 
-
-
 #include "copter.h"
 
 /********************************************************************************/
@@ -113,18 +111,6 @@ void Copter:: process_now_command()
 //			do_target_yaw();
 	}
 }
-
-
-//void Copter:: handle_no_commands()
-/*{
-	switch (control_mode){
-		default:
-			set_mode(RTL);
-			break;
-	}
-	return;
-	Serial.println("Handle No CMDs");
-}*/
 
 /********************************************************************************/
 // Verify command Handlers
@@ -281,23 +267,7 @@ void Copter:: do_nav_wp()
 
 void Copter:: do_land()
 {
-//	wp_control = LOITER_MODE;
-//
-//	// just to make sure
-//	land_complete		= false;
-//
-//	// landing boost lowers the main throttle to mimmick
-//	// the effect of a user's hand
-//	landing_boost 		= 0;
-//
-//	// A counter that goes up if our climb rate stalls out.
-//	ground_detector 	= 0;
-//
-//	// hold at our current location
-//	set_next_WP(&current_loc);
-//
-//	// Set a new target altitude very low, incase we are landing on a hill!
-//	set_new_altitude(-1000);
+
 }
 
 void Copter:: do_loiter_unlimited()
@@ -331,10 +301,6 @@ void Copter:: do_loiter_turns()
 	loiter_total = command_nav_queue.p1 * 360;
 	loiter_sum	 = 0;
 	old_target_bearing = target_bearing;
-
-//	circle_angle = target_bearing + 18000;
-//	circle_angle = wrap_360(circle_angle);
-//	circle_angle *= RADX100;
 }
 
 void Copter:: do_loiter_time()
@@ -357,82 +323,17 @@ void Copter:: do_loiter_time()
 
 bool Copter:: verify_takeoff()
 {
-//	// wait until we are ready!
-//	if(g.rc_3.control_in == 0){
-//		return false;
-//	}
-//	// are we above our target altitude?
-//	//return (current_loc.alt > next_WP.alt);
-//	return (current_loc.alt > target_altitude);
+	return 0;
 }
 
 // called at 10hz
 bool Copter:: verify_land_sonar()
 {
-//	float icount = 1;
-//
-//	if(current_loc.alt > 300){
-//		wp_control = LOITER_MODE;
-//		icount = 1;
-//		ground_detector = 0;
-//	}else{
-//		// begin to pull down on the throttle
-//		landing_boost++;
-//	}
-//
-//	if(current_loc.alt < 200 ){
-//		wp_control 	= NO_NAV_MODE;
-//	}
-//
-//	if(current_loc.alt < 150 ){
-//		//rapid throttle reduction
-//		int16_t lb  = (1.75 * icount * icount) - (7.2 * icount);
-//		icount++;
-//		lb =  constrain(lb, 0, 180);
-//		landing_boost += lb;
-//		//Serial.printf("%0.0f, %d, %d, %d\n", icount, current_loc.alt, landing_boost, lb);
-//
-//		if(current_loc.alt < 40 || abs(climb_rate) < 20) {
-//			if(ground_detector++ > 20) {
-//				land_complete = true;
-//				ground_detector = 0;
-//				icount = 1;
-//				// init disarm motors
-//				init_disarm_motors();
-//				return true;
-//			}
-//		}
-//	}
 	return false;
 }
 
 bool Copter:: verify_land_baro()
 {
-//	if(current_loc.alt > 300){
-//		wp_control = LOITER_MODE;
-//		ground_detector = 0;
-//	}else{
-//		// begin to pull down on the throttle
-//		landing_boost++;
-//		landing_boost = min(landing_boost, 40);
-//	}
-//
-//	if(current_loc.alt < 200 ){
-//		wp_control 	= NO_NAV_MODE;
-//	}
-//
-//	if(current_loc.alt < 150 ){
-//		if(abs(climb_rate) < 20) {
-//			landing_boost++;
-//			if(ground_detector++ > 30) {
-//				land_complete = true;
-//				ground_detector = 0;
-//				// init disarm motors
-//				init_disarm_motors();
-//				return true;
-//			}
-//		}
-//	}
 	return false;
 }
 
@@ -505,24 +406,9 @@ bool Copter:: verify_nav_wp()
 	}
 }
 
-//bool Copter:: verify_loiter_unlim()
-//{
-//	return false;
-//}
-
 bool Copter:: verify_loiter_time()
 {
-//	if(wp_control == LOITER_MODE){
-//		if ((millis() - loiter_time) > loiter_time_max) {
-//			return true;
-//		}
-//	}
-//	if(wp_control == WP_MODE &&  wp_distance <= g.waypoint_radius){
-//		// reset our loiter time
-//		loiter_time = millis();
-//		// switch to position hold
-//		wp_control 	= LOITER_MODE;
-//	}
+
 	return false;
 }
 
@@ -646,13 +532,7 @@ void Copter:: do_yaw()
 
 bool Copter:: verify_wait_delay()
 {
-//	//Serial.print("vwd");
-//	if ((unsigned)(millis() - condition_start) > (unsigned)condition_value){
-//		//Serial.println("y");
-//		condition_value = 0;
-//		return true;
-//	}
-//	//Serial.println("n");
+
 	return false;
 }
 
@@ -685,28 +565,7 @@ bool Copter:: verify_within_distance()
 
 bool Copter:: verify_yaw()
 {
-//	//Serial.printf("vyaw %d\n", (int)(nav_yaw/100));
-//
-//	if((millis() - command_yaw_start_time) > command_yaw_time){
-//		// time out
-//		// make sure we hold at the final desired yaw angle
-//		nav_yaw 	= command_yaw_end;
-//		auto_yaw 	= nav_yaw;
-//
-//		//Serial.println("Y");
-//		return true;
-//
-//	}else{
-//		// else we need to be at a certain place
-//		// power is a ratio of the time : .5 = half done
-//		float power = (float)(millis() - command_yaw_start_time) / (float)command_yaw_time;
-//
-//		nav_yaw		= command_yaw_start + ((float)command_yaw_delta * power * command_yaw_dir);
-//		nav_yaw		= wrap_360(nav_yaw);
-//		auto_yaw 	= nav_yaw;
-//		//Serial.printf("ny %ld\n",nav_yaw);
-//		return false;
-//	}
+	return 0;
 }
 
 /********************************************************************************/
