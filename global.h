@@ -753,6 +753,166 @@ struct T_MAVLINK_REALTIME_DATA
 	uint16_t gps_raw_cog;
 	uint8_t gps_raw_satellites_visible;
 
+	/**
+	 * @brief Pack a gps_status message
+	 * @param system_id ID of this system
+	 * @param component_id ID of this component (e.g. 200 for IMU)
+	 * @param msg The MAVLink message to compress the data into
+	 *
+	 * @param satellites_visible Number of satellites visible
+	 * @param satellite_prn Global satellite ID
+	 * @param satellite_used 0: Satellite not used, 1: used for localization
+	 * @param satellite_elevation Elevation (0: right on top of receiver, 90: on the horizon) of satellite
+	 * @param satellite_azimuth Direction of satellite, 0: 0 deg, 255: 360 deg.
+	 * @param satellite_snr Signal to noise ratio of satellite
+	 * @return length of the message in bytes (excluding serial stream start sign)
+	 */
+	uint8_t gps_status_satellites_visible;
+	uint8_t *gps_status_satellite_prn;
+	uint8_t *gps_status_satellite_used;
+	uint8_t *gps_status_satellite_elevation;
+	uint8_t *gps_status_satellite_azimuth;
+	uint8_t *gps_statussatellite_snr;
+
+	/**
+	 * @brief Pack a raw_imu message
+	 * @param system_id ID of this system
+	 * @param component_id ID of this component (e.g. 200 for IMU)
+	 * @param msg The MAVLink message to compress the data into
+	 *
+	 * @param time_usec Timestamp (microseconds since UNIX epoch or microseconds since system boot)
+	 * @param xacc X acceleration (raw)
+	 * @param yacc Y acceleration (raw)
+	 * @param zacc Z acceleration (raw)
+	 * @param xgyro Angular speed around X axis (raw)
+	 * @param ygyro Angular speed around Y axis (raw)
+	 * @param zgyro Angular speed around Z axis (raw)
+	 * @param xmag X Magnetic field (raw)
+	 * @param ymag Y Magnetic field (raw)
+	 * @param zmag Z Magnetic field (raw)
+	 * @return length of the message in bytes (excluding serial stream start sign)
+	 */
+	 uint64_t raw_imu_time_usec;
+	 int16_t raw_imu_xacc;//* 1000.0
+	 int16_t raw_imu_yacc;//* 1000.0
+	 int16_t raw_imu_zacc;//* 1000.0
+	 int16_t raw_imu_xgyro;//* 1000.0
+	 int16_t raw_imu_ygyro;//* 1000.0
+	 int16_t raw_imu_zgyro;//* 1000.0
+	 int16_t raw_imu_xmag;
+	 int16_t raw_imu_ymag;
+	 int16_t raw_imu_zmag;
+
+	 /**
+	  * @brief Pack a nav_controller_output message
+	  * @param system_id ID of this system
+	  * @param component_id ID of this component (e.g. 200 for IMU)
+	  * @param msg The MAVLink message to compress the data into
+	  *
+	  * @param nav_roll Current desired roll in degrees
+	  * @param nav_pitch Current desired pitch in degrees
+	  * @param nav_bearing Current desired heading in degrees
+	  * @param target_bearing Bearing to current MISSION/target in degrees
+	  * @param wp_dist Distance to active MISSION in meters
+	  * @param alt_error Current altitude error in meters
+	  * @param aspd_error Current airspeed error in meters/second
+	  * @param xtrack_error Current crosstrack error on x-y plane in meters
+	  * @return length of the message in bytes (excluding serial stream start sign)
+	  */
+	 float nav_controller_output_nav_roll;
+	 float nav_controller_output_nav_pitch;
+	 int16_t nav_controller_output_nav_bearing;
+	 int16_t nav_controller_output_target_bearing;
+	 uint16_t nav_controller_output_wp_dist;
+	 float nav_controller_output_alt_error;
+	 float nav_controller_output_aspd_error;
+	 float nav_controller_output_xtrack_error;
+
+
+	 /**
+	  * @brief Pack a rc_channels_raw message
+	  * @param system_id ID of this system
+	  * @param component_id ID of this component (e.g. 200 for IMU)
+	  * @param msg The MAVLink message to compress the data into
+	  *
+	  * @param time_boot_ms Timestamp (milliseconds since system boot)
+	  * @param port Servo output port (set of 8 outputs = 1 port). Most MAVs will just use one, but this allows for more than 8 servos.
+	  * @param chan1_raw RC channel 1 value, in microseconds. A value of UINT16_MAX implies the channel is unused.
+	  * @param chan2_raw RC channel 2 value, in microseconds. A value of UINT16_MAX implies the channel is unused.
+	  * @param chan3_raw RC channel 3 value, in microseconds. A value of UINT16_MAX implies the channel is unused.
+	  * @param chan4_raw RC channel 4 value, in microseconds. A value of UINT16_MAX implies the channel is unused.
+	  * @param chan5_raw RC channel 5 value, in microseconds. A value of UINT16_MAX implies the channel is unused.
+	  * @param chan6_raw RC channel 6 value, in microseconds. A value of UINT16_MAX implies the channel is unused.
+	  * @param chan7_raw RC channel 7 value, in microseconds. A value of UINT16_MAX implies the channel is unused.
+	  * @param chan8_raw RC channel 8 value, in microseconds. A value of UINT16_MAX implies the channel is unused.
+	  * @param rssi Receive signal strength indicator, 0: 0%, 100: 100%, 255: invalid/unknown.
+	  * @return length of the message in bytes (excluding serial stream start sign)
+	  */
+	 uint32_t rc_channels_raw_time_boot_ms;
+	 uint8_t rc_channels_raw_port;
+	 uint16_t rc_channels_raw_chan1_raw;
+	 uint16_t rc_channels_raw_chan2_raw;
+	 uint16_t rc_channels_raw_chan3_raw;
+	 uint16_t rc_channels_raw_chan4_raw;
+	 uint16_t rc_channels_raw_chan5_raw;
+	 uint16_t rc_channels_raw_chan6_raw;
+	 uint16_t rc_channels_raw_chan7_raw;
+	 uint16_t rc_channels_raw_chan8_raw;
+	 uint8_t rc_channels_raw_rssi;
+
+	 /**
+	  * @brief Pack a servo_output_raw message
+	  * @param system_id ID of this system
+	  * @param component_id ID of this component (e.g. 200 for IMU)
+	  * @param msg The MAVLink message to compress the data into
+	  *
+	  * @param time_usec Timestamp (microseconds since system boot)
+	  * @param port Servo output port (set of 8 outputs = 1 port). Most MAVs will just use one, but this allows to encode more than 8 servos.
+	  * @param servo1_raw Servo output 1 value, in microseconds
+	  * @param servo2_raw Servo output 2 value, in microseconds
+	  * @param servo3_raw Servo output 3 value, in microseconds
+	  * @param servo4_raw Servo output 4 value, in microseconds
+	  * @param servo5_raw Servo output 5 value, in microseconds
+	  * @param servo6_raw Servo output 6 value, in microseconds
+	  * @param servo7_raw Servo output 7 value, in microseconds
+	  * @param servo8_raw Servo output 8 value, in microseconds
+	  * @return length of the message in bytes (excluding serial stream start sign)
+	  */
+	  uint32_t servo_output_raw_time_usec;
+	  uint8_t servo_output_raw_port;
+	  uint16_t servo_output_raw_servo1_raw;
+	  uint16_t servo_output_raw_servo2_raw;
+	  uint16_t servo_output_raw_servo3_raw;
+	  uint16_t servo_output_raw_servo4_raw;
+	  uint16_t servo_output_raw_servo5_raw;
+	  uint16_t servo_output_raw_servo6_raw;
+	  uint16_t servo_output_raw_servo7_raw;
+	  uint16_t servo_output_raw_servo8_raw;
+
+
+	  /**
+	   * @brief Pack a vfr_hud message on a channel
+	   * @param system_id ID of this system
+	   * @param component_id ID of this component (e.g. 200 for IMU)
+	   * @param chan The MAVLink channel this message will be sent over
+	   * @param msg The MAVLink message to compress the data into
+	   * @param airspeed Current airspeed in m/s
+	   * @param groundspeed Current ground speed in m/s
+	   * @param heading Current heading in degrees, in compass units (0..360, 0=north)
+	   * @param throttle Current throttle setting in integer percent, 0 to 100
+	   * @param alt Current altitude (MSL), in meters
+	   * @param climb Current climb rate in meters/second
+	   * @return length of the message in bytes (excluding serial stream start sign)
+	   */
+      float vfr_hud_airspeed;
+      float vfr_hud_groundspeed;
+      int16_t vfr_hud_heading;
+      uint16_t vfr_hud_throttle;
+      float vfr_hud_alt;
+      float vfr_hud_climb;
+
+
+
 };
 
 struct T_GLOBAL_BOOL

@@ -15,11 +15,6 @@
 
 #ifdef LINUX_OS
 
-/*
- * 20171001我为了保存参数，写了下面的这个字符串数组表
- */
-char * parameter_array[]={"hello","wangbo"};
-
 // default sensors are present and healthy: gyro, accelerometer, barometer, rate_control, attitude_stabilization, yaw_position, altitude control, x/y position control, motor_control
 #define MAVLINK_SENSOR_PRESENT_DEFAULT (MAV_SYS_STATUS_SENSOR_3D_GYRO | MAV_SYS_STATUS_SENSOR_3D_ACCEL | MAV_SYS_STATUS_SENSOR_ABSOLUTE_PRESSURE | MAV_SYS_STATUS_SENSOR_ANGULAR_RATE_CONTROL | MAV_SYS_STATUS_SENSOR_ATTITUDE_STABILIZATION | MAV_SYS_STATUS_SENSOR_YAW_POSITION | MAV_SYS_STATUS_SENSOR_Z_ALTITUDE_CONTROL | MAV_SYS_STATUS_SENSOR_XY_POSITION_CONTROL | MAV_SYS_STATUS_SENSOR_MOTOR_OUTPUTS | MAV_SYS_STATUS_AHRS)
 
@@ -187,7 +182,7 @@ void NOINLINE Copter::send_location(mavlink_channel_t chan)
 {
 #if 0
 	/*
-	 * 20171001这里有个旋转矩阵，把gps的速度分解了
+	 * 20171001这里有个旋转矩阵，把gps的速度分解了，先别删除
 	 */
     Matrix3f rot = dcm.get_dcm_matrix(); // neglecting angle of attack for now
     mavlink_msg_global_position_int_send(
@@ -223,10 +218,6 @@ void NOINLINE Copter::send_location(mavlink_channel_t chan)
 	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
 
 #ifdef LINUX_OS
-	// Send the message with the standard UART send function
-	// uart0_send might be named differently depending on
-	// the individual microcontroller / library in use.
-	//uart0_send(buf, len);
 	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
 #endif
 }
@@ -247,7 +238,7 @@ NOINLINE void Copter::send_extended_status1(mavlink_channel_t chan)
 //	if (&gps != NULL && g_gps->status() == GPS::GPS_OK) {
 //		control_sensors_present |= (1<<5); // GPS present
 //	}
-	control_sensors_present |= (1<<5); // GPS present
+	control_sensors_present |= (1<<5); // GPS present//20171003先假设任何时候gps都是存在的
 	control_sensors_present |= (1<<10); // 3D angular rate control
 	control_sensors_present |= (1<<11); // attitude stabilisation
 	control_sensors_present |= (1<<12); // yaw position
@@ -362,9 +353,102 @@ void NOINLINE Copter::send_gps_raw(mavlink_channel_t chan)
 #endif
 }
 
-void NOINLINE Copter::send_nav_controller_output(mavlink_channel_t chan)
+void NOINLINE Copter::send_gps_status(mavlink_channel_t chan)
+{
+	mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+	mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+
+	// Initialize the required buffers
+	mavlink_message_t msg;
+	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+	mavlink_msg_gps_status_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,\
+														ap2gcs_mavlink.gps_status_satellites_visible,
+														NULL,
+														NULL,
+														NULL,
+														NULL,
+														NULL);
+
+	// Copy the message to the send buffer
+	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+
+#ifdef LINUX_OS
+	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+#endif
+}
+void NOINLINE Copter::send_raw_imu1(mavlink_channel_t chan)
+{
+//    Vector3f accel = imu.get_accel();//20171003我不在这里获取了，直接放在ap2gcs_mavlink更新的函数中获取
+//    Vector3f gyro = imu.get_gyro();
+
+    mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+	mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+
+	// Initialize the required buffers
+	mavlink_message_t msg;
+	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+	mavlink_msg_raw_imu_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,\
+														ap2gcs_mavlink.raw_imu_time_usec,
+														ap2gcs_mavlink.raw_imu_xacc,
+														ap2gcs_mavlink.raw_imu_yacc,
+														ap2gcs_mavlink.raw_imu_zacc,
+														ap2gcs_mavlink.raw_imu_xgyro,
+														ap2gcs_mavlink.raw_imu_ygyro,
+														ap2gcs_mavlink.raw_imu_zgyro,
+														ap2gcs_mavlink.raw_imu_xmag,
+														ap2gcs_mavlink.raw_imu_ymag,
+														ap2gcs_mavlink.raw_imu_zmag);
+
+	// Copy the message to the send buffer
+	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+
+#ifdef LINUX_OS
+	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+#endif
+}
+/*
+ * 下面两个先不写了，只写上面一个imu的数据
+ */
+void NOINLINE Copter::send_raw_imu2(mavlink_channel_t chan)
 {
 
+}
+void NOINLINE Copter::send_raw_imu3(mavlink_channel_t chan)
+{
+
+}
+
+
+
+
+
+void NOINLINE Copter::send_nav_controller_output(mavlink_channel_t chan)
+{
+	mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+	mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+
+	// Initialize the required buffers
+	mavlink_message_t msg;
+	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+	mavlink_msg_nav_controller_output_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,\
+																			ap2gcs_mavlink.nav_controller_output_nav_roll,
+																			ap2gcs_mavlink.nav_controller_output_nav_pitch,
+																			ap2gcs_mavlink.nav_controller_output_nav_bearing,
+																			ap2gcs_mavlink.nav_controller_output_target_bearing,
+																			ap2gcs_mavlink.nav_controller_output_wp_dist,
+																			ap2gcs_mavlink.nav_controller_output_alt_error,
+																			ap2gcs_mavlink.nav_controller_output_aspd_error,
+																			ap2gcs_mavlink.nav_controller_output_xtrack_error);
+
+	// Copy the message to the send buffer
+	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+
+#ifdef LINUX_OS
+	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+#endif
 }
 
 // report simulator state
@@ -416,13 +500,97 @@ void NOINLINE Copter::send_servo_out(mavlink_channel_t chan)
 #endif // HIL_MODE
 }
 
+void NOINLINE Copter::send_radio_in(mavlink_channel_t chan)
+{
+	mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+	mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+
+	// Initialize the required buffers
+	mavlink_message_t msg;
+	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+	mavlink_msg_rc_channels_raw_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,\
+			ap2gcs_mavlink.rc_channels_raw_time_boot_ms,
+			ap2gcs_mavlink.rc_channels_raw_port,
+			ap2gcs_mavlink.rc_channels_raw_chan1_raw,
+			ap2gcs_mavlink.rc_channels_raw_chan2_raw,
+			ap2gcs_mavlink.rc_channels_raw_chan3_raw,
+			ap2gcs_mavlink.rc_channels_raw_chan4_raw,
+			ap2gcs_mavlink.rc_channels_raw_chan5_raw,
+			ap2gcs_mavlink.rc_channels_raw_chan6_raw,
+			ap2gcs_mavlink.rc_channels_raw_chan7_raw,
+			ap2gcs_mavlink.rc_channels_raw_chan8_raw,
+			ap2gcs_mavlink.rc_channels_raw_rssi);
+
+	// Copy the message to the send buffer
+	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+
+#ifdef LINUX_OS
+	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+#endif
+
+}
+
 void NOINLINE Copter::send_radio_out(mavlink_channel_t chan)
 {
+	mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+	mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
 
+	// Initialize the required buffers
+	mavlink_message_t msg;
+	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+	mavlink_msg_servo_output_raw_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,\
+			ap2gcs_mavlink.servo_output_raw_time_usec,
+			ap2gcs_mavlink.servo_output_raw_port,
+			ap2gcs_mavlink.servo_output_raw_servo1_raw,
+			ap2gcs_mavlink.servo_output_raw_servo2_raw,
+			ap2gcs_mavlink.servo_output_raw_servo3_raw,
+			ap2gcs_mavlink.servo_output_raw_servo4_raw,
+			ap2gcs_mavlink.servo_output_raw_servo5_raw,
+			ap2gcs_mavlink.servo_output_raw_servo6_raw,
+			ap2gcs_mavlink.servo_output_raw_servo7_raw,
+			ap2gcs_mavlink.servo_output_raw_servo8_raw);
+
+	// Copy the message to the send buffer
+	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+
+#ifdef LINUX_OS
+	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+#endif
 }
 
 void NOINLINE Copter::send_vfr_hud(mavlink_channel_t chan)
 {
+	/*
+	 * 20171003 vfr : visula flight rules 目视飞行规则，飞机降落时需要参考的数据
+	 */
+	mavlink_system.sysid = 20;                   ///< ID 20 for this airplane
+	mavlink_system.compid = MAV_COMP_ID_IMU;     ///< The component sending the message is the IMU, it could be also a Linux process
+
+	// Initialize the required buffers
+	mavlink_message_t msg;
+	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+
+	mavlink_msg_vfr_hud_pack(mavlink_system.sysid ,mavlink_system.compid,&msg,\
+			ap2gcs_mavlink.vfr_hud_airspeed,
+			ap2gcs_mavlink.vfr_hud_groundspeed,
+			ap2gcs_mavlink.vfr_hud_heading,
+			ap2gcs_mavlink.vfr_hud_throttle,
+			ap2gcs_mavlink.vfr_hud_alt,
+			ap2gcs_mavlink.vfr_hud_climb);
+
+	// Copy the message to the send buffer
+	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+
+#ifdef LINUX_OS
+	send_uart_data(uart_device_ap2gcs.uart_name, (char *)buf,len);
+#endif
+
+
+
+
+
 
 }
 
@@ -550,7 +718,7 @@ GCS_MAVLINK::data_stream_send(void)
 //    }
 
     if (stream_trigger(STREAM_RAW_SENSORS)) {
-        send_message(MSG_RAW_IMU1);
+        send_message(MSG_RAW_IMU1);//2hz
         send_message(MSG_RAW_IMU2);
         send_message(MSG_RAW_IMU3);
     }
@@ -558,58 +726,58 @@ GCS_MAVLINK::data_stream_send(void)
    // if (copter.gcs_out_of_time) return;
 
     if (stream_trigger(STREAM_EXTENDED_STATUS)) {
-        send_message(MSG_EXTENDED_STATUS1);
+        send_message(MSG_EXTENDED_STATUS1);//2hz
         send_message(MSG_EXTENDED_STATUS2);
         send_message(MSG_CURRENT_WAYPOINT);
-        send_message(MSG_GPS_RAW);
+        //send_message(MSG_GPS_RAW);// TODO - remove this message after location message is working 后面location已经有了，这里不需要了
         send_message(MSG_NAV_CONTROLLER_OUTPUT);
-//        send_message(MSG_LIMITS_STATUS);
+        //send_message(MSG_LIMITS_STATUS);
     }
 
    // if (copter.gcs_out_of_time) return;
 
     if (stream_trigger(STREAM_POSITION)) {
-        send_message(MSG_LOCATION);
-//        send_message(MSG_LOCAL_POSITION);
+        send_message(MSG_LOCATION);//3hz
+        //send_message(MSG_LOCAL_POSITION);
     }
 
    // if (copter.gcs_out_of_time) return;
 
+    //20171003 这个STREAM_RAW_CONTROLLER在连接地面站时貌似并没有设置她的发送频率
     if (stream_trigger(STREAM_RAW_CONTROLLER)) {
-        send_message(MSG_SERVO_OUT);
+        send_message(MSG_SERVO_OUT);//0hz
     }
 
     //if (copter.gcs_out_of_time) return;
 
     if (stream_trigger(STREAM_RC_CHANNELS)) {
-        send_message(MSG_RADIO_OUT);
+        send_message(MSG_RADIO_OUT);//2hz
         send_message(MSG_RADIO_IN);
     }
 
     //if (copter.gcs_out_of_time) return;
 
     if (stream_trigger(STREAM_EXTRA1)) {
-        send_message(MSG_ATTITUDE);
-        send_message(MSG_SIMSTATE);
-//        send_message(MSG_PID_TUNING);
+        send_message(MSG_ATTITUDE);//10hz
+        //send_message(MSG_SIMSTATE);
+        //send_message(MSG_PID_TUNING);
     }
 
    // if (copter.gcs_out_of_time) return;
 
+    //20171003VFR: visual flight rules 仪表飞行规则 靠眼睛进行着陆所需要的信息
     if (stream_trigger(STREAM_EXTRA2)) {
-        send_message(MSG_VFR_HUD);
+        send_message(MSG_VFR_HUD);//10hz
     }
 
   //  if (copter.gcs_out_of_time) return;
 
     if (stream_trigger(STREAM_EXTRA3)) {
-        send_message(MSG_AHRS);
-        send_message(MSG_HWSTATUS);
+//        send_message(MSG_AHRS);
+//        send_message(MSG_HWSTATUS);
 //        send_message(MSG_SYSTEM_TIME);
 //        send_message(MSG_RANGEFINDER);
-#if AP_TERRAIN_AVAILABLE
-        send_message(MSG_TERRAIN);
-#endif
+//        send_message(MSG_TERRAIN);
 //        send_message(MSG_BATTERY2);
 //        send_message(MSG_MOUNT_STATUS);
 //        send_message(MSG_OPTICAL_FLOW);
@@ -677,7 +845,7 @@ void GCS_MAVLINK::update(void)
 		streamRates[STREAM_PARAMS]=10;
 	}
 	send_message(MSG_NEXT_PARAM);
-	DEBUG_PRINTF()("update    :    streamRates[STREAM_PARAMS]=%d\n",streamRates[STREAM_PARAMS]);//20171002测试是10
+	DEBUG_PRINTF("update    :    streamRates[STREAM_PARAMS]=%d\n",streamRates[STREAM_PARAMS]);//20171002测试是10
 	if (stream_trigger(STREAM_PARAMS)) {
 		//send_message(MSG_NEXT_PARAM);//20171002按照apm是放在这里的，我先放在外面测试一下，因为我发现参数多的时候，地面站获取全部参数总是出现错误中断
 	}
@@ -1077,126 +1245,98 @@ bool GCS_MAVLINK::mavlink_try_send_message(mavlink_channel_t chan, enum ap_messa
 //    }
 
 	int payload_space=INT_MAX;//comm_get_txspace这个函数的返回值本来的意思是串口还剩下多少空间，但是这里直接返回最大值，意思就是串口总是有空闲的空间的
-	switch(id) {
-    case MSG_HEARTBEAT:
-        CHECK_PAYLOAD_SIZE(HEARTBEAT);
-        //send_message(MSG_HEARTBEAT);
-        copter.send_heartbeat(chan);
-        //return true;
-        break;
-
-    case MSG_ATTITUDE:
-            CHECK_PAYLOAD_SIZE(ATTITUDE);
-            copter.send_attitude(chan);
-            break;
-
-        case MSG_LOCATION:
-            CHECK_PAYLOAD_SIZE(GLOBAL_POSITION_INT);
-            copter.send_location(chan);
-            break;
-
-		case MSG_EXTENDED_STATUS1:
-			CHECK_PAYLOAD_SIZE(SYS_STATUS);
-			copter.send_extended_status1(chan);
-			break;
-//
-//    case MSG_EXTENDED_STATUS2:
-//        CHECK_PAYLOAD_SIZE(MEMINFO);
-//        send_meminfo(chan);
-//        break;
-
-
-//
-//    case MSG_NAV_CONTROLLER_OUTPUT:
-//        CHECK_PAYLOAD_SIZE(NAV_CONTROLLER_OUTPUT);
-//        send_nav_controller_output(chan);
-//        break;
-//
-		case MSG_GPS_RAW:
-			copter.send_gps_raw(chan);
-			break;
-//
-//    case MSG_SERVO_OUT:
+	switch(id)
+	{
+	case MSG_HEARTBEAT:
+		CHECK_PAYLOAD_SIZE(HEARTBEAT);
+		//send_message(MSG_HEARTBEAT);
+		copter.send_heartbeat(chan);
+		//return true;
+		break;
+	case MSG_ATTITUDE:
+		CHECK_PAYLOAD_SIZE(ATTITUDE);
+		copter.send_attitude(chan);
+		break;
+	case MSG_LOCATION:
+		CHECK_PAYLOAD_SIZE(GLOBAL_POSITION_INT);
+		copter.send_location(chan);
+		break;
+	case MSG_EXTENDED_STATUS1:
+		CHECK_PAYLOAD_SIZE(SYS_STATUS);
+		copter.send_extended_status1(chan);
+		break;
+	case MSG_EXTENDED_STATUS2:
+//		CHECK_PAYLOAD_SIZE(MEMINFO);
+//		send_meminfo(chan);
+		break;
+	case MSG_NAV_CONTROLLER_OUTPUT:
+		CHECK_PAYLOAD_SIZE(NAV_CONTROLLER_OUTPUT);
+		copter.send_nav_controller_output(chan);
+		break;
+	case MSG_GPS_RAW://这个其实已经不需要了 已经有了发送location这个
+		copter.send_gps_raw(chan);
+		break;
+    case MSG_SERVO_OUT:
 //        CHECK_PAYLOAD_SIZE(RC_CHANNELS_SCALED);
-//        send_servo_out(chan);
-//        break;
-//
-//    case MSG_RADIO_IN:
-//        CHECK_PAYLOAD_SIZE(RC_CHANNELS_RAW);
-//        send_radio_in(chan);
-//        break;
-//
-//    case MSG_RADIO_OUT:
-//        CHECK_PAYLOAD_SIZE(SERVO_OUTPUT_RAW);
-//        send_radio_out(chan);
-//        break;
-//
-//    case MSG_VFR_HUD:
+//        copter.send_servo_out(chan);
+        break;
+    case MSG_RADIO_IN:
+        CHECK_PAYLOAD_SIZE(RC_CHANNELS_RAW);
+        //copter.send_radio_in(chan);
+        break;
+    case MSG_RADIO_OUT:
+        CHECK_PAYLOAD_SIZE(SERVO_OUTPUT_RAW);
+        copter.send_radio_out(chan);
+        break;
+    case MSG_VFR_HUD:
 //        CHECK_PAYLOAD_SIZE(VFR_HUD);
 //        send_vfr_hud(chan);
-//        break;
-//
-//    case MSG_RAW_IMU1:
-//        CHECK_PAYLOAD_SIZE(RAW_IMU);
-//        send_raw_imu1(chan);
-//        break;
-//
-//    case MSG_RAW_IMU2:
+        break;
+    case MSG_RAW_IMU1:
+        CHECK_PAYLOAD_SIZE(RAW_IMU);
+        copter.send_raw_imu1(chan);
+        break;
+    case MSG_RAW_IMU2:
 //        CHECK_PAYLOAD_SIZE(SCALED_PRESSURE);
 //        send_raw_imu2(chan);
-//        break;
-//
-//    case MSG_RAW_IMU3:
+        break;
+    case MSG_RAW_IMU3:
 //        CHECK_PAYLOAD_SIZE(SENSOR_OFFSETS);
 //        send_raw_imu3(chan);
-//        break;
-//
-//    case MSG_GPS_STATUS:
-//        CHECK_PAYLOAD_SIZE(GPS_STATUS);
-//        send_gps_status(chan);
-//        break;
-//
-    case MSG_CURRENT_WAYPOINT:
-        CHECK_PAYLOAD_SIZE(WAYPOINT_CURRENT);
-        copter.send_current_waypoint(chan);
         break;
-//
-        /*
-         * 发送参数的
-         */
-    case MSG_NEXT_PARAM:
-        CHECK_PAYLOAD_SIZE(PARAM_VALUE);
-		copter.gcs0.queued_param_send();//这个函数其实没有调用，还是在gcs_mavlink::update函数中代用的
-
-
+    case MSG_GPS_STATUS:
+        CHECK_PAYLOAD_SIZE(GPS_STATUS);
+        copter.send_gps_status(chan);
         break;
-
-        /*
-         * 发送下一航点的
-         */
-    case MSG_NEXT_WAYPOINT:
-        CHECK_PAYLOAD_SIZE(WAYPOINT_REQUEST);
-        /*
-         * 下面这个回传函数是地面站给驾驶仪发送航点时，驾驶仪需要不断地向地面站请求发送航点
-         */
+	case MSG_CURRENT_WAYPOINT:
+		CHECK_PAYLOAD_SIZE(WAYPOINT_CURRENT);
+		copter.send_current_waypoint(chan);
+		break;
+	/*
+	* 发送参数的，这个比较重要，跟地面站通信用的，千万不要删除，谨慎修改
+	*/
+	case MSG_NEXT_PARAM:
+		CHECK_PAYLOAD_SIZE(PARAM_VALUE);
+		copter.gcs0.queued_param_send();//这个函数其实没有调用，还是在gcs_mavlink::update函数中调用的
+		break;
+	/*
+	* 发送下一航点的，发送参数的，这个比较重要，地面站个驾驶仪发送航点时跟地面站通信用的，千万不要删除，谨慎修改
+	* 下面这个回传函数是地面站给驾驶仪发送航点时，驾驶仪需要不断地向地面站请求发送航点
+	*/
+	case MSG_NEXT_WAYPOINT:
+		CHECK_PAYLOAD_SIZE(WAYPOINT_REQUEST);
 		copter.gcs0.queued_waypoint_send();
-
-        break;
-
-//    case MSG_STATUSTEXT:
+		break;
+    case MSG_STATUSTEXT:
 //        CHECK_PAYLOAD_SIZE(STATUSTEXT);
 //        send_statustext(chan);
-//        break;
-//
-//    case MSG_AHRS:
+        break;
+    case MSG_AHRS:
 //        CHECK_PAYLOAD_SIZE(AHRS);
 //        send_ahrs(chan);
-//
-//        break;
-//
-//
-//    case MSG_RETRY_DEFERRED:
-//        break; // just here to prevent a warning
+        break;
+	case MSG_RETRY_DEFERRED:
+	break; // just here to prevent a warning
 	}
     return true;
 }
@@ -1279,19 +1419,21 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 				break;
 
 			DEBUG_PRINTF("handleMessage    :    REQUEST_DATA_STREAM freq=%d\n",freq);
+			DEBUG_PRINTF("handleMessage    :    REQUEST_DATA_STREAM    packet.req_stream_id = %d\n",packet.req_stream_id);
+			DEBUG_PRINTF("handleMessage    :    REQUEST_DATA_STREAM    freq = %d\n",freq);
 
 			switch(packet.req_stream_id){
 
 				case MAV_DATA_STREAM_ALL:
-					streamRateRawSensors		= freq;
-					streamRateExtendedStatus	= freq;
-					streamRateRCChannels		= freq;
+					streamRateRawSensors		= freq;//20171003   频率freq是2
+					streamRateExtendedStatus	= freq;//20171003   频率freq是2
+					streamRateRCChannels		= freq;//20171003   频率freq是2
 					streamRateRawController		= freq;
-					streamRatePosition			= freq;
-					streamRateExtra1			= freq;
-					streamRateExtra2			= freq;
+					streamRatePosition			= freq;//20171003   频率freq是3
+					streamRateExtra1			= freq;//20171003   频率freq是10
+					streamRateExtra2			= freq;//20171003   频率freq是10
 					//streamRateExtra3.set_and_save(freq);	// We just do set and save on the last as it takes care of the whole group.
-					streamRateExtra3			= freq;	// Don't save!!
+					streamRateExtra3			= freq;	// Don't save!!  //20171003   频率freq是2
 					break;
 
 				case MAV_DATA_STREAM_RAW_SENSORS:

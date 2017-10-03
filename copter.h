@@ -1544,11 +1544,18 @@ public:
 
 	void NOINLINE send_servo_out(mavlink_channel_t chan);
 	void NOINLINE send_radio_out(mavlink_channel_t chan);
+	void NOINLINE send_radio_in(mavlink_channel_t chan);
 	void NOINLINE send_vfr_hud(mavlink_channel_t chan);
 	void NOINLINE send_current_waypoint(mavlink_channel_t chan);
 
 	void NOINLINE send_rangefinder(mavlink_channel_t chan);
 	void NOINLINE send_gps_raw(mavlink_channel_t chan);
+	void NOINLINE send_gps_status(mavlink_channel_t chan);
+	void NOINLINE send_raw_imu1(mavlink_channel_t chan);
+	void NOINLINE send_raw_imu2(mavlink_channel_t chan);
+	void NOINLINE send_raw_imu3(mavlink_channel_t chan);
+
+
 	/*
 	send RPM packet
 	*/

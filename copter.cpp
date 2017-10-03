@@ -1113,7 +1113,68 @@ void Copter::update_mavlink_reatime()
 	ap2gcs_mavlink.gps_raw_epv=0;
 	ap2gcs_mavlink.gps_raw_vel=gps.ground_speed;//这个是地速，应该赋值实际的速度
 	ap2gcs_mavlink.gps_raw_cog=gps.ground_course;
-	ap2gcs_mavlink.gps_raw_satellites_visible=5;
+	ap2gcs_mavlink.gps_raw_satellites_visible=gps.num_sats;//这里应该是gps.num_sats的，但是我先设置为5吧，GPS_FIX_TYPE_3D_FIX是三维定位的意思
+
+	//ap2gcs_mavlink.gps_status_satellites_visible=gps.num_sats;//20171003下面先设置为5测试
+	ap2gcs_mavlink.gps_status_satellites_visible=5;//
+
+	Vector3f accel = imu.get_accel();//20171003我不在这里获取了，直接放在ap2gcs_mavlink更新的函数中获取
+	Vector3f gyro = imu.get_gyro();
+	ap2gcs_mavlink.raw_imu_time_usec=0;
+	ap2gcs_mavlink.raw_imu_xacc=accel.x * 1000.0 / gravity;
+	ap2gcs_mavlink.raw_imu_yacc=accel.y * 1000.0 / gravity;
+	ap2gcs_mavlink.raw_imu_zacc=accel.z * 1000.0 / gravity;
+	ap2gcs_mavlink.raw_imu_xgyro=gyro.x * 1000.0;
+	ap2gcs_mavlink.raw_imu_ygyro=gyro.y * 1000.0;
+	ap2gcs_mavlink.raw_imu_zgyro=gyro.z * 1000.0;
+	ap2gcs_mavlink.raw_imu_xmag=0.0;
+	ap2gcs_mavlink.raw_imu_ymag=0.0;
+	ap2gcs_mavlink.raw_imu_zmag=0.0;
+
+	ap2gcs_mavlink.nav_controller_output_nav_roll=nav_roll / 1.0e2;
+	ap2gcs_mavlink.nav_controller_output_nav_pitch=nav_pitch / 1.0e2;
+	ap2gcs_mavlink.nav_controller_output_nav_bearing=target_bearing / 1.0e2;
+	ap2gcs_mavlink.nav_controller_output_target_bearing=ahrs.yaw_sensor / 1.0e2;
+	//ap2gcs_mavlink.nav_controller_output_wp_dist=wp_distance / 1.0e2;//20171003看apm2.8 以前是wp_distance是厘米的，但是我改成了米，所以用下面的
+	ap2gcs_mavlink.nav_controller_output_wp_dist=wp_distance;
+	ap2gcs_mavlink.nav_controller_output_alt_error=altitude_error / 1.0e2;
+	ap2gcs_mavlink.nav_controller_output_aspd_error=nav_lon / 1.0e2;
+	ap2gcs_mavlink.nav_controller_output_xtrack_error=nav_lat / 1.0e2;
+
+	uint8_t rssi = 1;
+	ap2gcs_mavlink.rc_channels_raw_time_boot_ms = 0;
+	ap2gcs_mavlink.rc_channels_raw_port = 1;
+	ap2gcs_mavlink.rc_channels_raw_chan1_raw = g.channel_roll.radio_in;
+	ap2gcs_mavlink.rc_channels_raw_chan2_raw = g.channel_pitch.radio_in;
+	ap2gcs_mavlink.rc_channels_raw_chan3_raw = g.channel_throttle.radio_in;
+	ap2gcs_mavlink.rc_channels_raw_chan4_raw = g.channel_rudder.radio_in;
+	ap2gcs_mavlink.rc_channels_raw_chan5_raw = g.rc_5.radio_in;
+	ap2gcs_mavlink.rc_channels_raw_chan6_raw = g.rc_6.radio_in;
+	ap2gcs_mavlink.rc_channels_raw_chan7_raw = g.rc_7.radio_in;
+	ap2gcs_mavlink.rc_channels_raw_chan8_raw = g.rc_8.radio_in;
+	ap2gcs_mavlink.rc_channels_raw_rssi = rssi;
+
+	ap2gcs_mavlink.servo_output_raw_time_usec = 0;
+	ap2gcs_mavlink.servo_output_raw_port = 1;
+	ap2gcs_mavlink.servo_output_raw_servo1_raw = motor_out_flightgear[0];
+	ap2gcs_mavlink.servo_output_raw_servo2_raw = motor_out_flightgear[1];
+	ap2gcs_mavlink.servo_output_raw_servo3_raw = motor_out_flightgear[2];
+	ap2gcs_mavlink.servo_output_raw_servo4_raw = motor_out_flightgear[3];
+	ap2gcs_mavlink.servo_output_raw_servo5_raw = motor_out_flightgear[4];
+	ap2gcs_mavlink.servo_output_raw_servo6_raw = motor_out_flightgear[5];
+	ap2gcs_mavlink.servo_output_raw_servo7_raw = motor_out_flightgear[6];
+	ap2gcs_mavlink.servo_output_raw_servo8_raw = motor_out_flightgear[7];
+
+	ap2gcs_mavlink.vfr_hud_airspeed = (float)airspeed / 100.0;
+	ap2gcs_mavlink.vfr_hud_groundspeed = (float)gps.ground_speed / 100.0;
+	ap2gcs_mavlink.vfr_hud_heading = (float)ahrs.yaw_sensor / 100.0;
+	ap2gcs_mavlink.vfr_hud_throttle = g.channel_throttle.servo_out/10;
+	ap2gcs_mavlink.vfr_hud_alt = (float)current_loc.alt / 100.0;
+	ap2gcs_mavlink.vfr_hud_climb = (float)climb_rate;
+
+
+
+
 
 
 
