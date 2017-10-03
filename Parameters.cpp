@@ -8,7 +8,7 @@
 #include "copter.h"
 #include "Parameters.h"
 
-uint8_t param_all_cnt=16;
+uint8_t param_all_cnt=17;
 
 /*
  * 把这里修改结束后，还需要把GCS_Mavlink.cpp中_queued_parameter_count = ;这句代码改为param_all的数组内元素的个数
@@ -31,6 +31,7 @@ T_PARAM param_all[]={//value                                                key 
 										{0.02,                                                 k_param_pid_rate_yaw_p ,                        "YAW_RATE_P",                                 &param_all[13]},
 										{0.2,                                                 k_param_pid_rate_yaw_i ,                        "YAW_RATE_I",                                  &param_all[14]},
 										{0.0,                                                 k_param_pid_rate_yaw_d ,                        "YAW_RATE_D",                                 &param_all[15]},
+										{400,                                                 k_param_waypoint_speed_max ,                        "WP_SPEED_MAX",                                 &param_all[16]},
 										{0.0,                                                    255,                                                            "JUNK_END",                                       NULL}
 										};
 

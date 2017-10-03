@@ -66,7 +66,7 @@ void Copter::gcs_send_deferred(void)
  */
 NOINLINE void Copter::send_heartbeat(mavlink_channel_t chan)
 {
-	uint8_t base_mode = MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
+	uint8_t base_mode = MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;//20171003 无人机的飞行状态 解锁还是上锁等
 	//    uint8_t system_status = ap.land_complete ? MAV_STATE_STANDBY : MAV_STATE_ACTIVE;
 	//uint8_t system_status =MAV_STATE_ACTIVE;
 	uint32_t custom_mode = control_mode;
@@ -107,11 +107,12 @@ NOINLINE void Copter::send_heartbeat(mavlink_channel_t chan)
 	#if HIL_MODE != HIL_MODE_DISABLED
 	base_mode |= MAV_MODE_FLAG_HIL_ENABLED;
 	#endif
-
 	// we are armed if we are not initialising
-	if (motors.armed()) {
+	if (motors.armed()) {//20171003 测试这个if进不来
 	base_mode |= MAV_MODE_FLAG_SAFETY_ARMED;
 	}
+	//20171003 模拟仿真的时候 假设我们一直是解锁状态
+	base_mode |= MAV_MODE_FLAG_SAFETY_ARMED;
 
 	// indicate we have set a custom mode
 	base_mode |= MAV_MODE_FLAG_CUSTOM_MODE_ENABLED;
@@ -123,7 +124,7 @@ NOINLINE void Copter::send_heartbeat(mavlink_channel_t chan)
 	uint8_t system_type = MAV_TYPE_FIXED_WING;
 	uint8_t autopilot_type = MAV_AUTOPILOT_GENERIC;
 
-	uint8_t system_mode = MAV_MODE_PREFLIGHT; ///< Booting up
+	//uint8_t system_mode = MAV_MODE_PREFLIGHT; ///< Booting up
 	//uint32_t custom_mode = 0;                 ///< Custom mode, can be defined by user/adopter
 	uint8_t system_state = MAV_STATE_STANDBY; ///< System ready for flight
 
@@ -131,7 +132,12 @@ NOINLINE void Copter::send_heartbeat(mavlink_channel_t chan)
 	mavlink_message_t msg;
 	uint8_t buf[MAVLINK_MAX_PACKET_LEN];
 
-	mavlink_msg_heartbeat_pack( mavlink_system.sysid,mavlink_system.compid,&msg,system_type,autopilot_type,system_mode,custom_mode,system_state);
+	mavlink_msg_heartbeat_pack( mavlink_system.sysid,mavlink_system.compid,&msg,\
+															system_type,
+															autopilot_type,
+															base_mode,
+															custom_mode,
+															system_state);
 
 	// Copy the message to the send buffer
 	uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
