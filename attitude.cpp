@@ -12,38 +12,32 @@
 void
 Copter::get_stabilize_roll(int32_t target_angle)
 {
-	   // angle error
-	    //target_angle            = wrap_180(target_angle - ahrs.roll_sensor);
 	target_angle            = wrap_180(target_angle - ahrs.roll_sensor,100);//20170814这里应该unimode=100
 
 	target_angle             = constrain_value(target_angle, -2000, 2000);
 
-	    //std::cout<<"roll target_angle="<<target_angle<<std::endl;
+	// convert to desired Rate:
+	/*
+	* 外环，也就是从角度误差经过pid控制器，把控制器的输出作为角速度环的输入，但是外环其实只用了p比例控制，没有用id
+	*/
+	int32_t target_rate = g.pi_stabilize_roll.get_p(target_angle);
 
-	    // convert to desired Rate:
-	    /*
-	     * 外环，也就是从角度误差经过pid控制器，把控制器的输出作为角速度环的输入，但是外环其实只用了p比例控制，没有用id
-	     */
-	    int32_t target_rate = g.pi_stabilize_roll.get_p(target_angle);
-		//int32_t target_rate = g.pi_stabilize_roll.get_pi(target_angle,G_Dt);//20170919改成pi
-	   // std::cout<<"target_rate="<<target_rate<<std::endl;
+	int16_t i_stab;
+	if(labs(ahrs.roll_sensor) < 500)
+	{
+		target_angle            = constrain_value(target_angle, -500, 500);
+		i_stab                          = g.pi_stabilize_roll.get_i(target_angle, G_Dt);
+	}
+	else
+	{
+		i_stab                          = g.pi_stabilize_roll.get_integrator();
+	}
 
-	    int16_t i_stab;
-	    if(labs(ahrs.roll_sensor) < 500)
-	    {
-	        target_angle            = constrain_value(target_angle, -500, 500);
-	        i_stab                          = g.pi_stabilize_roll.get_i(target_angle, G_Dt);
-	    }
-	    else
-	    {
-	        i_stab                          = g.pi_stabilize_roll.get_integrator();
-	    }
-
-	    // set targets for rate controller
-	    /*
-	     * 这个用EARTH_FRAME还是其他的，有讲究，得注意
-	     */
-	    set_roll_rate_target(target_rate+i_stab, EARTH_FRAME);
+	// set targets for rate controller
+	/*
+	* 这个用EARTH_FRAME还是其他的，有讲究，得注意
+	*/
+	set_roll_rate_target(target_rate+i_stab, EARTH_FRAME);
 }
 
 void
@@ -77,8 +71,6 @@ Copter::get_stabilize_pitch(int32_t target_angle)
 
 	// set targets for rate controller
 	set_pitch_rate_target(target_rate + i_stab, EARTH_FRAME);
-
-
 }
 
 void
@@ -87,9 +79,6 @@ Copter::get_stabilize_yaw(int32_t target_angle)
 	int32_t target_rate,i_term;
 	int32_t angle_error;
 	//int32_t output = 0;
-
-//	std::cout<<"%%%%%%target_angle="<<target_angle<<std::endl;
-//	std::cout<<"ahrs.yaw_sensor="<<ahrs.yaw_sensor<<std::endl;
 
 	// angle error
 	angle_error             = wrap_180(target_angle - ahrs.yaw_sensor,100.0);
@@ -107,51 +96,6 @@ Copter::get_stabilize_yaw(int32_t target_angle)
 
 }
 
-void
-Copter::get_stabilize_rate_yaw(int32_t target_rate)
-{
-
-}
-
-void
-Copter::get_acro_roll(int32_t target_rate)
-{
-
-}
-
-void
-Copter::get_acro_pitch(int32_t target_rate)
-{
-
-}
-
-void
-Copter::get_acro_yaw(int32_t target_rate)
-{
-
-}
-
-// Roll with rate input and stabilized in the earth frame
-void
-Copter::get_roll_rate_stabilized_ef(int32_t stick_angle)
-{
-
-}
-
-// Pitch with rate input and stabilized in the earth frame
-void
-Copter::get_pitch_rate_stabilized_ef(int32_t stick_angle)
-{
-
-}
-
-// Yaw with rate input and stabilized in the earth frame
-void
-Copter::get_yaw_rate_stabilized_ef(int32_t stick_angle)
-{
-
-
-}
 
 // set_roll_rate_target - to be called by upper controllers to set roll rate targets in the earth frame
 void
@@ -404,22 +348,6 @@ Copter::get_throttle_rate(int16_t z_target_speed)
 
 
 	return output;
-
-}
-
-
-/*
- *  reset all I integrators
- */
-void
-Copter::reset_I_all(void)
-{
-
-}
-
-void
-Copter::reset_rate_I()
-{
 
 }
 
@@ -774,4 +702,66 @@ Copter::get_nav_throttle(int32_t z_error)
 int Copter::get_z_damping()
 {
 	return 0;
+}
+
+
+void
+Copter::get_stabilize_rate_yaw(int32_t target_rate)
+{
+
+}
+
+void
+Copter::get_acro_roll(int32_t target_rate)
+{
+
+}
+
+void
+Copter::get_acro_pitch(int32_t target_rate)
+{
+
+}
+
+void
+Copter::get_acro_yaw(int32_t target_rate)
+{
+
+}
+
+// Roll with rate input and stabilized in the earth frame
+void
+Copter::get_roll_rate_stabilized_ef(int32_t stick_angle)
+{
+
+}
+
+// Pitch with rate input and stabilized in the earth frame
+void
+Copter::get_pitch_rate_stabilized_ef(int32_t stick_angle)
+{
+
+}
+
+// Yaw with rate input and stabilized in the earth frame
+void
+Copter::get_yaw_rate_stabilized_ef(int32_t stick_angle)
+{
+
+
+}
+
+/*
+ *  reset all I integrators
+ */
+void
+Copter::reset_I_all(void)
+{
+
+}
+
+void
+Copter::reset_rate_I()
+{
+
 }

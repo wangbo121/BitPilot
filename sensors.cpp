@@ -29,8 +29,6 @@ void zero_airspeed(void)
 
 }
 
-
-
 void read_battery(void)
 {
 
