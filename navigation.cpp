@@ -33,8 +33,9 @@ int Copter::navigate()
 //    wp_distance     = get_distance_cm(&filtered_loc, &next_WP);
 //    home_distance   = get_distance_cm(&filtered_loc, &home);
 	//20170919改成单位是米
-	 wp_distance     = get_distance(&filtered_loc, &next_WP);
+	wp_distance     = get_distance(&filtered_loc, &next_WP);
 	home_distance   = get_distance(&filtered_loc, &home);
+
 
     if (wp_distance < 0){
     		// something went very wrong
