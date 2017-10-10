@@ -47,7 +47,6 @@
 		 * 20170820我把航点先放在数组里进行测试
 		 */
 		DEBUG_PRINTF("get_cmd_with_index    :    即将要回传的航点的标号 = %d， 经度 = %d\n",i,wp_total_array[i].lng);//20171010为什么回传0航点的时候，经度变为-122了呢，哪里又给家赋值了？
-		printf("get_cmd_with_index    :    即将要回传的航点的标号 = %d， 经度 = %d\n",i,wp_total_array[i].lng);//20171010为什么回传0航点的时候，经度变为-122了呢，哪里又给家赋值了？
 		memcpy(&temp,&wp_total_array[i],sizeof(struct Location));
 
 #if  0

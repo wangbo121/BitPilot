@@ -850,9 +850,10 @@ void GCS_MAVLINK::update(void)
 	if (streamRates[STREAM_PARAMS] <= 0) {
 		streamRates[STREAM_PARAMS]=10;
 	}
-	send_message(MSG_NEXT_PARAM);
+	//send_message(MSG_NEXT_PARAM);
 	DEBUG_PRINTF("update    :    streamRates[STREAM_PARAMS]=%d\n",streamRates[STREAM_PARAMS]);//20171002测试是10
 	if (stream_trigger(STREAM_PARAMS)) {
+		send_message(MSG_NEXT_PARAM);
 		//send_message(MSG_NEXT_PARAM);//20171002按照apm是放在这里的，我先放在外面测试一下，因为我发现参数多的时候，地面站获取全部参数总是出现错误中断
 	}
 	// don't send anything else at the same time as parameters

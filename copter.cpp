@@ -63,23 +63,29 @@ void Copter::setup()
 	g.pi_stabilize_yaw.set_kD(stabilize_yaw_d);
 
 	//第2级pid参数设置
-	float stabilize_roll_rate_p=0.15;//0.255;
-	float stabilize_roll_rate_i=0.1;//0.122;
-	float stabilize_roll_rate_d=0.004;//0.017;
+	float stabilize_roll_rate_p=0.15;
+//	float stabilize_roll_rate_i=0.1;
+//	float stabilize_roll_rate_d=0.004;
+	float stabilize_roll_rate_i=0.0;
+	float stabilize_roll_rate_d=0.0;
 	g.pid_rate_roll.set_kP(stabilize_roll_rate_p);
 	g.pid_rate_roll.set_kI(stabilize_roll_rate_i);
 	g.pid_rate_roll.set_kD(stabilize_roll_rate_d);
 
-	float stabilize_pitch_rate_p=0.15;//0.255;
-	float stabilize_pitch_rate_i=0.1;//0.122;
-	float stabilize_pitch_rate_d=0.004;//0.017;
+	float stabilize_pitch_rate_p=0.15;
+//	float stabilize_pitch_rate_i=0.1;
+//	float stabilize_pitch_rate_d=0.004;
+	float stabilize_pitch_rate_i=0.0;
+	float stabilize_pitch_rate_d=0.0;
 	g.pid_rate_pitch.set_kP(stabilize_pitch_rate_p);
 	g.pid_rate_pitch.set_kI(stabilize_pitch_rate_i);
 	g.pid_rate_pitch.set_kD(stabilize_pitch_rate_d);
 
-	float stabilize_yaw_rate_p=0.2;//0.17;
-	float stabilize_yaw_rate_i=0.02;//0.2;
-	float stabilize_yaw_rate_d=0.0;//0.003;
+	float stabilize_yaw_rate_p=0.2;
+//	float stabilize_yaw_rate_i=0.02;
+//	float stabilize_yaw_rate_d=0.0;
+	float stabilize_yaw_rate_i=0.0;
+	float stabilize_yaw_rate_d=0.0;
 	g.pid_rate_yaw.set_kP(stabilize_yaw_rate_p);
 	g.pid_rate_yaw.set_kI(stabilize_yaw_rate_i);
 	g.pid_rate_yaw.set_kD(stabilize_yaw_rate_d);
@@ -91,15 +97,14 @@ void Copter::setup()
 	//经度差pid
 	float pid_p_3=2.0;
 	g.pid_nav_lon.set_kP(pid_p_3);
-	g.pid_nav_lon.set_kI(0.122);
-	//g.pid_nav_lon.set_kD(0.017);
+	//g.pid_nav_lon.set_kI(0.122);
+	g.pid_nav_lon.set_kI(0.0);
 	g.pid_nav_lon.set_kD(0.0);
 
 	//纬度差pid
-	//g.pid_nav_lat.set_kP(pid_p_3);
 	g.pid_nav_lat.set_kP(2.0);
-	g.pid_nav_lat.set_kI(0.122);//又犯了复制没有改名字的错误，set_kI写成了set_kP，导致p又改为了0
-	//g.pid_nav_lat.set_kD(0.017);
+	//g.pid_nav_lat.set_kI(0.122);//又犯了复制没有改名字的错误，set_kI写成了set_kP，导致p又改为了0
+	g.pid_nav_lat.set_kI(0.0);
 	g.pid_nav_lat.set_kD(0.0);
 
 	/*
@@ -110,8 +115,10 @@ void Copter::setup()
 	g.pi_alt_hold.set_kI(0.0);
 	g.pi_alt_hold.set_kD(0.0);
 
-	g.pid_throttle.set_kP(0.5);
-	g.pid_throttle.set_kI(1.0);
+	float pid_p_throttle=0.5;
+	g.pid_throttle.set_kP(pid_p_throttle);
+	//g.pid_throttle.set_kI(1.0);
+	g.pid_throttle.set_kI(0.0);
 	g.pid_throttle.set_kD(0.0);
 	//上面一共10组pid控制器
 
@@ -917,7 +924,7 @@ void Copter::medium_loop()
 		case 4:
 			medium_loopCounter = 0;
 
-			gcs_update();//发送参数包和航点包
+			//gcs_update();//发送参数包和航点包，每次发送之前都会判断地面站是否要求回传，只有在地面站要求回传的情况下才会回传//20171010按照其中stream_trigger函数中50/rate，这个gcs_update()应该放在fiftyhz循环中
 
 			if (g.battery_monitoring != 0){
 				//read_battery();
@@ -1040,6 +1047,7 @@ void Copter::fifty_hz_loop()
 	//gcs_update();//20170923发现使用这个函数后因为读取一个字节函数是有时间延时的，阻塞了，那么程序就不运行了，读取那里还需要更改
 	  //上面的gcs_update()中的更新函数，其实是从串口读取数据然后做解析，所以我习惯性的放在了串口的接收线程中，不再在这里运行，而gcs_update函数中只保留了发送参数包和航点包的，把接收删掉了
 	  // //gcs_data_stream_send(45,1000);
+    gcs_update();//发送参数包和航点包，每次发送之前都会判断地面站是否要求回传，只有在地面站要求回传的情况下才会回传//20171010按照其中stream_trigger函数中50/rate，这个gcs_update()应该放在fiftyhz循环中
 	gcs_data_stream_send();//gcs_data_stream_send()这个函数是发送实时数据的，也就是发送除了参数包，航点包等的，优先级要低于gcs_update
 
 }
