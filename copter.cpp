@@ -1047,6 +1047,7 @@ void Copter::fifty_hz_loop()
 	//gcs_update();//20170923发现使用这个函数后因为读取一个字节函数是有时间延时的，阻塞了，那么程序就不运行了，读取那里还需要更改
 	  //上面的gcs_update()中的更新函数，其实是从串口读取数据然后做解析，所以我习惯性的放在了串口的接收线程中，不再在这里运行，而gcs_update函数中只保留了发送参数包和航点包的，把接收删掉了
 	  // //gcs_data_stream_send(45,1000);
+	  //20171010不知道为什么gcs_update函数如果在发送航点前面没有加tnow > waypoint_timelast_request + 500 地面站写入航点就会失败 只能放在10hz的medium循环中才可以运行
     gcs_update();//发送参数包和航点包，每次发送之前都会判断地面站是否要求回传，只有在地面站要求回传的情况下才会回传//20171010按照其中stream_trigger函数中50/rate，这个gcs_update()应该放在fiftyhz循环中
 	gcs_data_stream_send();//gcs_data_stream_send()这个函数是发送实时数据的，也就是发送除了参数包，航点包等的，优先级要低于gcs_update
 
