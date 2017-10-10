@@ -46,7 +46,8 @@
 		 * 下面这里是读取航点信息的程序片段
 		 * 20170820我把航点先放在数组里进行测试
 		 */
-
+		DEBUG_PRINTF("get_cmd_with_index    :    即将要回传的航点的标号 = %d， 经度 = %d\n",i,wp_total_array[i].lng);//20171010为什么回传0航点的时候，经度变为-122了呢，哪里又给家赋值了？
+		printf("get_cmd_with_index    :    即将要回传的航点的标号 = %d， 经度 = %d\n",i,wp_total_array[i].lng);//20171010为什么回传0航点的时候，经度变为-122了呢，哪里又给家赋值了？
 		memcpy(&temp,&wp_total_array[i],sizeof(struct Location));
 
 #if  0
@@ -107,7 +108,11 @@
 	 * 我还是把航点放在数组里
 	 */
 
-	temp.lng=-temp.lng;//20170928只是为了显示，实际使用中这个不需要反号
+#ifdef SITL_LINUX
+	temp.lng=-temp.lng;//20171010因为地面站看到的是正122经度，而实际在驾驶仪中用的是-122经度，所以把地面站发送过来经度反号了，正常使用中不需要
+#endif
+
+
 
 	memcpy(&wp_total_array[i],&temp,sizeof(struct Location));
 
@@ -245,7 +250,8 @@ void Copter:: set_next_WP(struct Location *wp)
 	// Save Home to EEPROM
 	// -------------------
 	// no need to save this to EPROM
-	set_cmd_with_index(home, 0);
+	//20171010这个把家的经纬度在保存到eeprom中可能不太需要了，这个还需要再考虑考虑
+	//set_cmd_with_index(home, 0);//20171010正常使用时，要修改这个set_cmd_with_index函数，因为我把经度反号了
 	//print_wp(&home, 0);
 
 	// Save prev loc this makes the calcs look better before commands are loaded

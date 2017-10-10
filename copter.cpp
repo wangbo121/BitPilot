@@ -216,14 +216,20 @@ void Copter::setup()
 	for(int i=0;i<wp_num;i++)
 	{
 		DEBUG_PRINTF("setup    :    wp_total_array[%d].lng = %d\n",i,wp_total_array[i].lng);
-		DEBUG_PRINTF("setup    :    wp_total_array[%d].lng = %d\n",i,wp_total_array[i].lng);
-		DEBUG_PRINTF("setup    :    wp_total_array[%d].lng = %d\n",i,wp_total_array[i].lng);
+		DEBUG_PRINTF("setup    :    wp_total_array[%d].lat = %d\n",i,wp_total_array[i].lat);
+		DEBUG_PRINTF("setup    :    wp_total_array[%d].alt = %d\n",i,wp_total_array[i].alt);
+
+//		printf("setup    :    wp_total_array[%d].lng = %d\n",i,wp_total_array[i].lng);
+//		printf("setup    :    wp_total_array[%d].lat= %d\n",i,wp_total_array[i].lat);
+//		printf("setup    :    wp_total_array[%d].alt = %d\n",i,wp_total_array[i].alt);
 	}
 
 	init_home();
 
 	DEBUG_PRINTF("setup    :    home.lng = %d\n",home.lng);
 	DEBUG_PRINTF("setup    :    home.lat = %d\n",home.lat);
+//	printf("setup    :    home.lng = %d\n",home.lng);
+//	printf("setup    :    home.lat = %d\n",home.lat);
 
 	g.waypoint_total=wp_num;
 	next_WP.id=MAV_CMD_NAV_WAYPOINT;
@@ -1096,7 +1102,12 @@ void Copter::update_mavlink_reatime()
 	ap2gcs_mavlink.attitude_yaw_speed=imu._gyro.z;
 
 	ap2gcs_mavlink.global_position_lat=(int32_t)gps.latitude;
+#ifdef SITL_LINUX
+	//这个location是missionplanner作为显示飞机位置的信息，下面的gps_raw不是作为missionplanner显示的，这个包很重要
 	ap2gcs_mavlink.global_position_lon=-(int32_t)gps.longitude;//这里正常情况下是没有负号的，我因为用flightgear模拟，定的机场是-122度，所以我加了负号，把他变为122度，山东的附近
+#else
+	ap2gcs_mavlink.global_position_lon=(int32_t)gps.longitude;//这里正常情况下是没有负号的，我因为用flightgear模拟，定的机场是-122度，所以我加了负号，把他变为122度，山东的附近
+#endif
 	ap2gcs_mavlink.global_position_alt=(int32_t)gps.altitude * 10;//gps.altitude的高度是厘米，但是发送给地面站的是毫米
 	ap2gcs_mavlink.global_position_relative_alt=(int32_t)gps.altitude * 10;
 	ap2gcs_mavlink.global_position_vx=fdm_feed_back.v_north * 100;
@@ -1107,7 +1118,11 @@ void Copter::update_mavlink_reatime()
 	ap2gcs_mavlink.gps_raw_time_usec=0;
 	ap2gcs_mavlink.gps_raw_fix_type=GPS_FIX_TYPE_3D_FIX;
 	ap2gcs_mavlink.gps_raw_lat=(int32_t)gps.latitude;
+#ifdef SITL_LINUX
 	ap2gcs_mavlink.gps_raw_lon=-(int32_t)gps.longitude;//这里正常情况下是没有负号的，我因为用flightgear模拟，定的机场是-122度，所以我加了负号，把他变为122度，山东的附近
+#else
+	ap2gcs_mavlink.gps_raw_lon=(int32_t)gps.longitude;//这里正常情况下是没有负号的，我因为用flightgear模拟，定的机场是-122度，所以我加了负号，把他变为122度，山东的附近
+#endif
 	ap2gcs_mavlink.gps_raw_alt=(int32_t)gps.altitude * 10;//gps.altitude的高度是厘米，但是发送给地面站的是毫米
 	ap2gcs_mavlink.gps_raw_eph=0;
 	ap2gcs_mavlink.gps_raw_epv=0;

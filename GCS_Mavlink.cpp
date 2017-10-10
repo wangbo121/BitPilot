@@ -1508,7 +1508,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 		// Initialize the required buffers
 		mavlink_message_t msg;
 		uint8_t buf[MAVLINK_MAX_PACKET_LEN];
-		copter.g.command_total=10;
+		//copter.g.command_total=10;
 		mavlink_msg_mission_count_pack(mavlink_system.sysid , mavlink_system.compid,&msg,\
 				                                                     system_type,autopilot_type,copter.g.command_total);
 
@@ -1547,10 +1547,12 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			if (mavlink_check_target(packet.target_system, packet.target_component))
 				break;
 
-			DEBUG_PRINTF("handleMessage    :    即将要回传的航点的编号=%d\n",packet.seq);
+			//DEBUG_PRINTF("handleMessage    :    即将要回传的航点的编号=%d\n",packet.seq);
+			printf("handleMessage    :    即将要回传的航点的编号=%d\n",packet.seq);
 
 			// send waypoint
 			tell_command = copter.get_cmd_with_index(packet.seq);
+			printf("handleMessage    :    即将要回传的航点的经度 = %d\n",tell_command.lng);
 
 			// set frame of waypoint
 			uint8_t frame;
@@ -1578,7 +1580,11 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 				// command needs scaling
 				x = tell_command.lat/1.0e7; // local (x), global (latitude)
 				//y = tell_command.lng/1.0e7; // local (y), global (longitude)
+#ifdef SITL_LINUX
 				y = -tell_command.lng/1.0e7; // local (y), global (longitude)//20170928这个其实是不需要反号的，但是我的初始经度是-122，所以反号设置为正
+#else
+				y = tell_command.lng/1.0e7; // local (y), global (longitude)
+#endif
 				// ACM is processing alt inside each command. so we save and load raw values. - this is diffrent to APM
 				z = tell_command.alt/1.0e2; // local (z), global/relative (altitude)
 			}
@@ -1651,7 +1657,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 			mavlink_msg_mission_item_pack(mavlink_system.sysid,mavlink_system.compid,&msg,system_type,autopilot_type,\
 					                                                    packet.seq,frame,tell_command.id,current,autocontinue,param1,param2,param3,param4,\
 					                                                    //tell_command.lat,tell_command.lng,tell_command.alt );
-					                                                    x,y,z );
+					                                                    x,y,z );//这里其实应该是发送tell_command.lat,tell_command.lng,tell_command.alt 的，但是我反号了，就发送xyz
 
 			// Copy the message to the send buffer
 			uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);

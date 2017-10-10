@@ -23,6 +23,10 @@
 extern struct T_UART_DEVICE uart_device_ap2gcs;
 #endif
 
+#ifndef SITL_LINUX
+//#define SITL_LINUX
+#endif
+
 #include "location.h"
 
 /**
